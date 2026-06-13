@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بنك الأسئلة - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📚 بنك الأسئلة</h1>
+            <p>إضافة وتعديل وحذف الأسئلة الخاصة بك</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث في الأسئلة...">
+                <select id="typeFilter" class="filter-select">
+                    <option value="all">كل الأنواع</option>
+                    <option value="mcq">اختيار من متعدد</option>
+                    <option value="true_false">صح/خطأ</option>
+                    <option value="essay">مقالي</option>
+                </select>
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">كل الحالات</option>
+                    <option value="pending">قيد المراجعة</option>
+                    <option value="approved">معتمد</option>
+                    <option value="rejected">مرفوض</option>
+                </select>
+                <button class="btn btn-primary" onclick="openAddQuestionModal()">➕ إضافة سؤال</button>
+            </div>
+            <div id="questionsList"></div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة سؤال -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">➕ إضافة سؤال جديد</h3>
+            <div class="form-group">
+                <label>📝 نوع السؤال</label>
+                <select id="questionType" onchange="toggleQuestionFields()">
+                    <option value="mcq">اختيار من متعدد</option>
+                    <option value="true_false">صح/خطأ</option>
+                    <option value="essay">مقالي</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>❓ نص السؤال</label>
+                <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا..."></textarea>
+            </div>
+            <div id="mcqSection">
+                <div class="form-group">
+                    <label>🔘 الخيارات (سطر لكل خيار)</label>
+                    <textarea id="options" rows="4" placeholder="الخيار 1&#10;الخيار 2&#10;الخيار 3&#10;الخيار 4"></textarea>
+                </div>
+            </div>
+            <div id="trueFalseSection" style="display:none;">
+                <div class="form-group">
+                    <label>✅ الإجابة الصحيحة</label>
+                    <select id="trueFalseAnswer">
+                        <option value="true">صحيح</option>
+                        <option value="false">خطأ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                <div class="form-group">
+                    <label>⭐ الدرجة</label>
+                    <input type="number" id="points" value="5" min="1" max="50">
+                </div>
+                <div class="form-group">
+                    <label>📊 مستوى الصعوبة</label>
+                    <select id="difficulty">
+                        <option value="easy">🟢 سهل</option>
+                        <option value="medium">🟡 متوسط</option>
+                        <option value="hard">🔴 صعب</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📚 المادة</label>
+                    <input type="text" id="subject" placeholder="مثال: الرياضيات">
+                </div>
+            </div>
+            <div class="form-group" id="essaySection" style="display:none;">
+                <label>📝 نموذج الإجابة (اختياري)</label>
+                <textarea id="modelAnswer" rows="3" placeholder="نموذج الإجابة المتوقع..."></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveQuestion()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeModal('questionModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['teacher'])) return;
+        
+        const user = getUser();
+        let currentEditId = null;
+        document.getElementById('teacherName').innerHTML = user.name;
+        
+        async function loadQuestions() {
+            const search = document.getElementById('searchInput').value;
+            const type = document.getElementById('typeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let filters = { status: status !== 'all' ? status : undefined, type: type !== 'all' ? type : undefined };
+            let questions = await fetchQuestions(filters, 'teacher', user.id);
+            if (search) {
+                questions = questions.filter(q => q.text.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('questionsList');
+            if (questions.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد أسئلة<br><button class="btn btn-primary mt-3" onclick="openAddQuestionModal()">➕ أضف سؤالاً جديداً</button></div>';
+                return;
+            }
+            
+            container.innerHTML = questions.map(q => `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <p><strong>${q.text}</strong></p>
+                            <div class="exam-info">
+                                <span class="badge ${q.type === 'mcq' ? 'badge-primary' : q.type === 'true_false' ? 'badge-info' : 'badge-warning'}">
+                                    ${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : 'مقالي'}
+                                </span>
+                                <span>⭐ ${q.points} درجة</span>
+                                <span>${q.difficulty === 'easy' ? '🟢 سهل' : q.difficulty === 'medium' ? '🟡 متوسط' : '🔴 صعب'}</span>
+                                <span>📚 ${q.subject || '-'}</span>
+                                <span class="badge ${q.status === 'approved' ? 'badge-success' : q.status === 'pending' ? 'badge-warning' : 'badge-danger'}">
+                                    ${q.status === 'approved' ? 'معتمد' : q.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}
+                                </span>
+                            </div>
+                            ${q.type === 'mcq' && q.options ? `<div style="margin-top: 10px;"><strong>الخيارات:</strong> ${q.options.join(' | ')}</div>` : ''}
+                            ${q.correct_answer ? `<div><strong>الإجابة الصحيحة:</strong> ${q.correct_answer}</div>` : ''}
+                            ${q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger" style="margin-top: 10px;">سبب الرفض: ${q.feedback}</div>` : ''}
+                        </div>
+                        ${q.status === 'pending' ? `
+                            <div class="action-buttons">
+                                <button class="btn btn-warning btn-sm" onclick="editQuestion(${q.id})">✏️ تعديل</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteQuestionConfirm(${q.id})">🗑️ حذف</button>
+                            </div>
+                        ` : q.status === 'approved' ? `
+                            <div class="action-buttons">
+                                <button class="btn btn-danger btn-sm" onclick="deleteQuestionConfirm(${q.id})">🗑️ حذف</button>
+                            </div>
+                        ` : `
+                            <div class="action-buttons">
+                                <button class="btn btn-warning btn-sm" onclick="editQuestion(${q.id})">✏️ تعديل</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteQuestionConfirm(${q.id})">🗑️ حذف</button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleQuestionFields() {
+            const type = document.getElementById('questionType').value;
+            document.getElementById('mcqSection').style.display = type === 'mcq' ? 'block' : 'none';
+            document.getElementById('trueFalseSection').style.display = type === 'true_false' ? 'block' : 'none';
+            document.getElementById('essaySection').style.display = type === 'essay' ? 'block' : 'none';
+        }
+        
+        function openAddQuestionModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').innerHTML = '➕ إضافة سؤال جديد';
+            document.getElementById('questionText').value = '';
+            document.getElementById('options').value = '';
+            document.getElementById('points').value = '5';
+            document.getElementById('difficulty').value = 'medium';
+            document.getElementById('subject').value = '';
+            document.getElementById('modelAnswer').value = '';
+            document.getElementById('questionType').value = 'mcq';
+            toggleQuestionFields();
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+        
+        async function editQuestion(id) {
+            const questions = await fetchQuestions({}, 'teacher', user.id);
+            const q = questions.find(q => q.id === id);
+            if (!q) return;
+            
+            currentEditId = id;
+            document.getElementById('modalTitle').innerHTML = '✏️ تعديل سؤال';
+            document.getElementById('questionText').value = q.text;
+            document.getElementById('questionType').value = q.type;
+            document.getElementById('points').value = q.points;
+            document.getElementById('difficulty').value = q.difficulty || 'medium';
+            document.getElementById('subject').value = q.subject || '';
+            
+            if (q.type === 'mcq' && q.options) {
+                document.getElementById('options').value = q.options.join('\n');
+            }
+            if (q.type === 'true_false') {
+                document.getElementById('trueFalseAnswer').value = q.correct_answer === 'صحيح' ? 'true' : 'false';
+            }
+            if (q.type === 'essay' && q.model_answer) {
+                document.getElementById('modelAnswer').value = q.model_answer;
+            }
+            
+            toggleQuestionFields();
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+        
+        async function saveQuestion() {
+            const type = document.getElementById('questionType').value;
+            const text = document.getElementById('questionText').value;
+            const points = parseInt(document.getElementById('points').value);
+            const difficulty = document.getElementById('difficulty').value;
+            const subject = document.getElementById('subject').value;
+            
+            if (!text) {
+                showToast('نص السؤال مطلوب', 'error');
+                return;
+            }
+            
+            const questionData = {
+                teacher_id: user.id,
+                text: text,
+                type: type,
+                points: points,
+                difficulty: difficulty,
+                subject: subject || null,
+                status: 'pending'
+            };
+            
+            if (type === 'mcq') {
+                const optionsText = document.getElementById('options').value;
+                const options = optionsText.split('\n').filter(opt => opt.trim());
+                if (options.length < 2) {
+                    showToast('يجب إدخال خيارين على الأقل', 'error');
+                    return;
+                }
+                questionData.options = options;
+                questionData.correct_answer = '';
+            } else if (type === 'true_false') {
+                const answer = document.getElementById('trueFalseAnswer').value;
+                questionData.correct_answer = answer === 'true' ? 'صحيح' : 'خطأ';
+            } else if (type === 'essay') {
+                const modelAnswer = document.getElementById('modelAnswer').value;
+                if (modelAnswer) questionData.model_answer = modelAnswer;
+            }
+            
+            let result;
+            if (currentEditId) {
+                result = await updateQuestionStatus(currentEditId, 'pending');
+                if (result) showToast('تم تعديل السؤال، في انتظار المراجعة', 'success');
+            } else {
+                result = await createQuestion(questionData);
+            }
+            
+            if (result) {
+                closeModal('questionModal');
+                loadQuestions();
+            }
+        }
+        
+        function deleteQuestionConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذا السؤال؟', async () => {
+                await deleteQuestion(id);
+                loadQuestions();
+            });
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadQuestions());
+        document.getElementById('typeFilter').addEventListener('change', () => loadQuestions());
+        document.getElementById('statusFilter').addEventListener('change', () => loadQuestions());
+        
+        loadQuestions();
+    </script>
+</body>
+</html>
