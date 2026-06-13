@@ -50,8 +50,6 @@ function showConfirm(message, onConfirm, onCancel = null) {
     modal.querySelector('.confirm-no').onclick = () => { modal.remove(); if (onCancel) onCancel(); };
 }
 
-// ==================== دوال المستخدم ====================
-
 function getUser() {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
@@ -81,8 +79,6 @@ function checkAuth(allowedRoles = ['admin', 'teacher', 'student']) {
     return true;
 }
 
-// ==================== دوال التشفير ====================
-
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -100,29 +96,22 @@ function formatDateTime(date) {
     return new Date(date).toLocaleString('ar-EG');
 }
 
-// ==================== دوال المصادقة (Auth) ====================
+// ==================== دوال المصادقة ====================
 
 async function loginUser(identifier, password) {
     const hashedPassword = await hashPassword(password);
     
-    // محاولة البحث كـ (username للمعلم/الأدمن) أو (phone للطالب)
-    let query = sb
-        .from('users')
-        .select('*')
-        .eq('password_hash', hashedPassword);
+    let query = sb.from('users').select('*').eq('password_hash', hashedPassword);
     
-    // إذا كان الإدخال يبدأ برقم -> بحث بالهاتف (طالب)
     if (/^\d+$/.test(identifier)) {
         query = query.eq('phone', identifier);
     } else {
-        // وإلا بحث بالـ username (معلم أو أدمن)
         query = query.eq('username', identifier);
     }
     
     const { data, error } = await query.single();
     
     if (error || !data) {
-        // محاولة بحث إضافية بالبريد الإلكتروني (للحفاظ على التوافق)
         const { data: emailData } = await sb
             .from('users')
             .select('*')
@@ -132,7 +121,7 @@ async function loginUser(identifier, password) {
         
         if (emailData) {
             if (emailData.status !== 'active') {
-                return { success: false, error: 'الحساب غير مفعل، يرجى الانتظار حتى موافقة الأدمن' };
+                return { success: false, error: 'الحساب غير مفعل' };
             }
             return {
                 success: true,
@@ -148,12 +137,11 @@ async function loginUser(identifier, password) {
                 }
             };
         }
-        
         return { success: false, error: 'بيانات الدخول غير صحيحة' };
     }
     
     if (data.status !== 'active') {
-        return { success: false, error: 'الحساب غير مفعل، يرجى الانتظار حتى موافقة الأدمن' };
+        return { success: false, error: 'الحساب غير مفعل' };
     }
     
     return {
@@ -177,13 +165,8 @@ async function registerStudent(name, phone, password, classId, email = null) {
     const { data, error } = await sb
         .from('users')
         .insert({ 
-            name, 
-            phone, 
-            email, 
-            password_hash: hashedPassword, 
-            role: 'student', 
-            status: 'pending',
-            class_id: classId 
+            name, phone, email, password_hash: hashedPassword, 
+            role: 'student', status: 'pending', class_id: classId 
         })
         .select()
         .single();
@@ -195,7 +178,7 @@ async function registerStudent(name, phone, password, classId, email = null) {
     return { success: true, user: data };
 }
 
-// ==================== دوال المستخدمين (Users) ====================
+// ==================== دوال المستخدمين ====================
 
 async function fetchUsers(filters = {}) {
     let query = sb.from('users').select('*');
@@ -237,7 +220,7 @@ async function resetUserPassword(userId, newPassword) {
     return true;
 }
 
-// ==================== دوال الصفوف (Classes) ====================
+// ==================== دوال الصفوف ====================
 
 async function fetchClasses() {
     const { data, error } = await sb.from('classes').select('*').order('name');
@@ -266,12 +249,70 @@ async function deleteClass(id) {
     return true;
 }
 
-// ==================== دوال المواد (Subjects) ====================
+// ==================== دوال المواد ====================
 
 async function fetchSubjects() {
     const { data, error } = await sb.from('subjects').select('*').order('name');
     if (error) return [];
     return data;
+}
+
+async function createSubject(subjectData) {
+    const { data, error } = await sb.from('subjects').insert(subjectData).select().single();
+    if (error) return null;
+    showToast('تم إضافة المادة', 'success');
+    return data;
+}
+
+async function updateSubject(id, subjectData) {
+    const { error } = await sb.from('subjects').update(subjectData).eq('id', id);
+    if (error) return false;
+    showToast('تم تعديل المادة', 'success');
+    return true;
+}
+
+async function deleteSubject(id) {
+    const { error } = await sb.from('subjects').delete().eq('id', id);
+    if (error) return false;
+    showToast('تم حذف المادة', 'success');
+    return true;
+}
+
+// ==================== دوال ربط المواد بالصفوف ====================
+
+async function fetchClassSubjects(classId) {
+    const { data, error } = await sb
+        .from('class_subjects')
+        .select('*, subjects(*)')
+        .eq('class_id', classId);
+    if (error) return [];
+    return data || [];
+}
+
+async function fetchSubjectClasses(subjectId) {
+    const { data, error } = await sb
+        .from('class_subjects')
+        .select('*, classes(*)')
+        .eq('subject_id', subjectId);
+    if (error) return [];
+    return data || [];
+}
+
+async function addSubjectToClass(classId, subjectId) {
+    const { error } = await sb
+        .from('class_subjects')
+        .insert({ class_id: classId, subject_id: subjectId });
+    if (error) return false;
+    return true;
+}
+
+async function removeSubjectFromClass(classSubjectId) {
+    const { error } = await sb
+        .from('class_subjects')
+        .delete()
+        .eq('id', classSubjectId);
+    if (error) return false;
+    return true;
 }
 
 // ==================== دوال تعيينات المعلمين ====================
@@ -286,14 +327,12 @@ async function fetchTeacherAssignments(teacherId) {
 }
 
 async function addTeacherAssignment(teacherId, classId, subjectId) {
-    const { data, error } = await sb
+    const { error } = await sb
         .from('teacher_assignments')
-        .insert({ teacher_id: teacherId, class_id: classId, subject_id: subjectId })
-        .select()
-        .single();
-    if (error) return null;
+        .insert({ teacher_id: teacherId, class_id: classId, subject_id: subjectId });
+    if (error) return false;
     showToast('تم تعيين المعلم', 'success');
-    return data;
+    return true;
 }
 
 async function removeTeacherAssignment(id) {
@@ -303,14 +342,14 @@ async function removeTeacherAssignment(id) {
     return true;
 }
 
-// ==================== دوال الامتحانات (Exams) ====================
+// ==================== دوال الامتحانات ====================
 
 async function fetchExams(filters = {}) {
     let query = sb.from('exams').select(`
         *,
         classes!exams_class_id_fkey(id, name),
         subjects!exams_subject_id_fkey(id, name),
-        users!exams_teacher_id_fkey(id, name)
+        users!exams_teacher_id_fkey(id, name, username)
     `);
     
     if (filters.status && filters.status !== 'all') {
@@ -331,10 +370,17 @@ async function fetchExams(filters = {}) {
     return data;
 }
 
+async function createExam(examData) {
+    const { data, error } = await sb.from('exams').insert(examData).select().single();
+    if (error) return null;
+    showToast('تم إنشاء الامتحان', 'success');
+    return data;
+}
+
 async function updateExamStatus(id, status) {
     const { error } = await sb.from('exams').update({ status }).eq('id', id);
     if (error) return false;
-    showToast(`تم ${status === 'published' ? 'نشر' : status === 'closed' ? 'إغلاق' : 'حفظ'} الامتحان`, 'success');
+    showToast(`تم ${status === 'published' ? 'نشر' : 'حفظ'} الامتحان`, 'success');
     return true;
 }
 
@@ -345,10 +391,10 @@ async function deleteExam(id) {
     return true;
 }
 
-// ==================== دوال الأسئلة (Questions) ====================
+// ==================== دوال الأسئلة ====================
 
 async function fetchQuestions(filters = {}) {
-    let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name)');
+    let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name, username)');
     
     if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
@@ -359,9 +405,22 @@ async function fetchQuestions(filters = {}) {
     if (filters.teacherId) {
         query = query.eq('teacher_id', filters.teacherId);
     }
+    if (filters.classId && filters.classId !== 'all') {
+        query = query.eq('class_id', filters.classId);
+    }
+    if (filters.subjectId && filters.subjectId !== 'all') {
+        query = query.eq('subject_id', filters.subjectId);
+    }
     
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) return [];
+    return data;
+}
+
+async function createQuestion(questionData) {
+    const { data, error } = await sb.from('questions').insert(questionData).select().single();
+    if (error) return null;
+    showToast('تم إضافة السؤال', 'success');
     return data;
 }
 
@@ -374,14 +433,21 @@ async function updateQuestionStatus(id, status, feedback = null) {
     return true;
 }
 
-// ==================== دوال المجموعات (Groups) ====================
+async function deleteQuestion(id) {
+    const { error } = await sb.from('questions').delete().eq('id', id);
+    if (error) return false;
+    showToast('تم حذف السؤال', 'success');
+    return true;
+}
+
+// ==================== دوال المجموعات ====================
 
 async function fetchGroups(filters = {}) {
     let query = sb.from('groups').select(`
         *,
         classes!groups_class_id_fkey(id, name),
         subjects!groups_subject_id_fkey(id, name),
-        users!groups_teacher_id_fkey(id, name)
+        users!groups_teacher_id_fkey(id, name, username)
     `);
     
     if (filters.teacherId) {
@@ -391,7 +457,6 @@ async function fetchGroups(filters = {}) {
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) return [];
     
-    // جلب عدد الأعضاء لكل مجموعة
     for (const group of data) {
         const { count } = await sb
             .from('group_members')
@@ -404,10 +469,68 @@ async function fetchGroups(filters = {}) {
     return data;
 }
 
+async function createGroup(groupData) {
+    const { data, error } = await sb.from('groups').insert(groupData).select().single();
+    if (error) return null;
+    showToast('تم إنشاء المجموعة', 'success');
+    return data;
+}
+
+async function updateGroup(id, groupData) {
+    const { error } = await sb.from('groups').update(groupData).eq('id', id);
+    if (error) return false;
+    showToast('تم تعديل المجموعة', 'success');
+    return true;
+}
+
+async function deleteGroup(id) {
+    const { error } = await sb.from('groups').delete().eq('id', id);
+    if (error) return false;
+    showToast('تم حذف المجموعة', 'success');
+    return true;
+}
+
+async function joinGroup(groupId, studentId) {
+    const { data: existing } = await sb
+        .from('group_members')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('student_id', studentId)
+        .maybeSingle();
+    
+    if (existing) {
+        if (existing.status === 'pending') return { success: false, error: 'لديك طلب قيد المراجعة' };
+        if (existing.status === 'approved') return { success: false, error: 'أنت بالفعل عضو' };
+        return { success: false, error: 'لا يمكنك الانضمام' };
+    }
+    
+    const { data, error } = await sb
+        .from('group_members')
+        .insert({ group_id: groupId, student_id: studentId, status: 'pending' })
+        .select()
+        .single();
+    
+    if (error) return { success: false, error: error.message };
+    showToast('تم إرسال طلب الانضمام', 'success');
+    return { success: true, data };
+}
+
+async function updateGroupMemberStatus(groupId, studentId, status) {
+    const { error } = await sb
+        .from('group_members')
+        .update({ status, joined_at: status === 'approved' ? new Date() : null })
+        .eq('group_id', groupId)
+        .eq('student_id', studentId);
+    
+    if (error) return false;
+    showToast(`تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب`, 'success');
+    return true;
+}
+
 async function fetchGroupMembers(groupId) {
     const { data, error } = await sb
         .from('group_members')
-        .select('*, users!group_members_student_id_fkey(id, name, phone, email)')
+        .select('*, users!group_members_student_id_fkey(id, name, phone)')
         .eq('group_id', groupId);
     if (error) return [];
     return data;
@@ -435,40 +558,6 @@ async function fetchAdminStats() {
         totalAttempts: attempts.count || 0
     };
 }
-// ==================== دوال ربط المواد بالصفوف ====================
-
-async function fetchClassSubjects(classId) {
-    const { data, error } = await sb
-        .from('class_subjects')
-        .select('*, subjects(*)')
-        .eq('class_id', classId);
-    if (error) return [];
-    return data || [];
-}
-
-async function fetchSubjectClasses(subjectId) {
-    const { data, error } = await sb
-        .from('class_subjects')
-        .select('*, classes(*)')
-        .eq('subject_id', subjectId);
-    if (error) return [];
-    return data || [];
-}
-
-async function addSubjectToClass(classId, subjectId) {
-    const { error } = await sb
-        .from('class_subjects')
-        .insert({ class_id: classId, subject_id: subjectId });
-    return !error;
-}
-
-async function removeSubjectFromClass(classSubjectId) {
-    const { error } = await sb
-        .from('class_subjects')
-        .delete()
-        .eq('id', classSubjectId);
-    return !error;
-}
 
 console.log('✅ supabase-config.js loaded successfully');
-console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, etc.');
+console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, createGroup, createExam, createQuestion, etc.');
