@@ -86,7 +86,8 @@
         .badge-warning { background: #fef3c7; color: #d97706; }
         .empty-state { text-align: center; padding: 40px; color: #64748b; }
         .return-bar {
-            background: #e0e7ff;
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 1px solid #f59e0b;
             border-radius: 16px;
             padding: 12px 20px;
             margin-bottom: 20px;
@@ -103,10 +104,10 @@
     <div class="container">
         <!-- شريط العودة للأدمن (يظهر فقط عند الدخول كأدمن) -->
         <div id="returnBar" class="return-bar" style="display: none;">
-            <div><span style="font-size:18px;">👑</span> أنت تتصفح كـ <strong><span id="currentUserName"></span></strong> (طالب)</div>
+            <div><span style="font-size:18px;">👑</span> أنت تتصفح كـ <strong><span id="currentUserName"></span></strong> (طالب) - وضع المشاهدة</div>
             <div>
                 <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
-                <button class="btn btn-outline btn-sm" onclick="goToOwnDashboard()">🏠 لوحة تحكمي</button>
+                <button class="btn btn-outline btn-sm" onclick="goToOwnDashboard()">🏠 لوحة تحكمي الحقيقية</button>
             </div>
         </div>
 
@@ -136,42 +137,71 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
-        const user = getUser();
-        if (!user || (user.role !== 'student' && user.role !== 'admin')) {
+        // التحقق من صلاحية الدخول
+        const currentUser = getUser();
+        
+        // التحقق من وجود originalUser في localStorage (الدخول بواسطة الأدمن)
+        let originalUser = null;
+        let isImpersonating = false;
+        
+        try {
+            const storedOriginal = localStorage.getItem('originalUser');
+            if (storedOriginal && storedOriginal !== 'undefined') {
+                originalUser = JSON.parse(storedOriginal);
+                isImpersonating = currentUser && currentUser.isImpersonating === true;
+            }
+        } catch(e) {
+            console.log('خطأ في قراءة originalUser', e);
+        }
+        
+        // التحقق من صلاحيات الدخول
+        if (!currentUser) {
             window.location.href = 'index.html';
         }
         
-        document.getElementById('studentName').innerHTML = user.name;
-        
-        // التحقق إذا كان الدخول بواسطة الأدمن
-        const originalUser = localStorage.getItem('originalUser');
-        const isImpersonating = user.isImpersonating === true;
-        
-        if (isImpersonating && originalUser) {
-            const returnBar = document.getElementById('returnBar');
-            returnBar.style.display = 'flex';
-            document.getElementById('currentUserName').innerHTML = user.name;
+        // إذا كان المستخدم الحالي طالب أو أدمن (في حالة التقليد)
+        const allowedRoles = ['student', 'admin'];
+        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) {
+            window.location.href = 'index.html';
         }
         
-        // العودة للوحة الأدمن
+        // عرض اسم المستخدم الحالي
+        document.getElementById('studentName').innerHTML = currentUser.name || currentUser.username || 'طالب';
+        
+        // إظهار شريط العودة إذا كان الدخول بواسطة الأدمن
+        if (isImpersonating && originalUser && originalUser.role === 'admin') {
+            const returnBar = document.getElementById('returnBar');
+            returnBar.style.display = 'flex';
+            document.getElementById('currentUserName').innerHTML = currentUser.name || currentUser.username;
+            console.log('تم إظهار شريط العودة - الدخول كأدمن');
+        } else {
+            console.log('لا يوجد شريط عودة - الدخول عادي');
+        }
+        
+        // ==================== دوال العودة ====================
         window.returnToAdmin = function() {
-            const original = JSON.parse(localStorage.getItem('originalUser'));
-            if (original) {
-                localStorage.setItem('user', JSON.stringify(original));
-                localStorage.removeItem('originalUser');
-                window.location.href = 'admin-dashboard.html';
-            } else {
+            try {
+                const original = JSON.parse(localStorage.getItem('originalUser'));
+                if (original && original.role === 'admin') {
+                    localStorage.setItem('user', JSON.stringify(original));
+                    localStorage.removeItem('originalUser');
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    window.location.href = 'admin-dashboard.html';
+                }
+            } catch(e) {
+                console.log('خطأ في العودة للأدمن', e);
                 window.location.href = 'admin-dashboard.html';
             }
         };
         
-        // الذهاب للوحة تحكم الطالب الأصلية
         window.goToOwnDashboard = function() {
             window.location.href = 'student-dashboard.html';
         };
         
+        // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
-            const stats = await fetchStudentStats(user.id);
+            const stats = await fetchStudentStats(currentUser.id);
             document.getElementById('statsArea').innerHTML = `
                 <div class="stat-card"><div class="stat-number">${stats.totalAttempts}</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
                 <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
@@ -180,8 +210,8 @@
         }
         
         async function loadAvailableExams() {
-            let exams = await fetchExams({ status: 'published' }, 'student', user.id);
-            const requests = await fetchExamRequests({}, 'student', user.id);
+            let exams = await fetchExams({ status: 'published' }, 'student', currentUser.id);
+            const requests = await fetchExamRequests({}, 'student', currentUser.id);
             const requestedExamIds = new Set(requests.map(r => r.exam_id));
             const availableExams = exams.filter(e => !requestedExamIds.has(e.id));
             const container = document.getElementById('availableExamsList');
@@ -205,7 +235,7 @@
         }
         
         window.subscribeToExam = async (examId) => {
-            const result = await createExamRequest(user.id, examId);
+            const result = await createExamRequest(currentUser.id, examId);
             if (result) {
                 showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
                 loadAvailableExams();
