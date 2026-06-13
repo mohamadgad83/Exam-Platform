@@ -10,8 +10,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> إدارة المستخدمين - <span id="adminName"></span></div>
             <div>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
@@ -20,7 +20,7 @@
 
         <div class="card header">
             <h1>👥 إدارة المستخدمين</h1>
-            <p>إدارة حسابات المديرين والمعلمين والطلاب</p>
+            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات والتعيينات</p>
         </div>
 
         <div class="card">
@@ -44,7 +44,7 @@
             <div class="table-wrapper">
                 <table>
                     <thead>
-                        <tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد الإلكتروني</th><th>الدور</th><th>الحالة</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
+                        <tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>التسجيل</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
@@ -52,13 +52,13 @@
         </div>
     </div>
 
-    <!-- مودال إضافة/تعديل مستخدم -->
+    <!-- مودال إضافة مستخدم -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
             <input type="text" id="userName" placeholder="الاسم الكامل">
             <input type="tel" id="userPhone" placeholder="رقم الهاتف">
-            <input type="email" id="userEmail" placeholder="البريد الإلكتروني">
+            <input type="email" id="userEmail" placeholder="البريد الإلكتروني (اختياري)">
             <select id="userRole">
                 <option value="student">طالب</option>
                 <option value="teacher">معلم</option>
@@ -68,9 +68,30 @@
                 <option value="">-- اختر الصف (للطلاب) --</option>
             </select>
             <input type="password" id="userPassword" placeholder="كلمة السر">
+            
+            <!-- قسم تعيينات المعلم (يظهر فقط عند اختيار معلم) -->
+            <div id="teacherAssignmentsSection" style="display:none; margin-top: 15px;">
+                <h4>📚 تعيين المواد والصفوف للمعلم</h4>
+                <div id="assignmentsList"></div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addAssignmentRow()">+ إضافة تعيين</button>
+            </div>
+            
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeModal('userModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعيينات المعلم (للتعديل) -->
+    <div id="assignmentsModal" class="modal">
+        <div class="modal-content">
+            <h3>📚 تعيين المواد والصفوف للمعلم</h3>
+            <div id="editAssignmentsList"></div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="addEditAssignmentRow()">+ إضافة تعيين</button>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveAssignments()">💾 حفظ التعيينات</button>
+                <button class="btn btn-outline" onclick="closeModal('assignmentsModal')">إلغاء</button>
             </div>
         </div>
     </div>
@@ -94,6 +115,10 @@
         
         let currentUserId = null;
         let currentResetUserId = null;
+        let currentTeacherId = null;
+        let tempAssignments = [];
+        let editAssignments = [];
+        
         document.getElementById('adminName').innerHTML = getUser().name;
         
         async function loadUsers() {
@@ -115,12 +140,13 @@
                     <td><strong>${u.name}</strong></td>
                     <td>${u.phone || '-'}</td>
                     <td>${u.email || '-'}</td>
-                    <td>${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'badge-primary' : u.role === 'teacher' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</span></td>
                     <td><span class="badge ${u.status === 'active' ? 'badge-success' : u.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${u.status === 'active' ? 'نشط' : u.status === 'pending' ? 'قيد الانتظار' : 'موقوف'}</span></td>
                     <td>${formatDate(u.created_at)}</td>
                     <td>
                         <div class="action-buttons">
                             ${u.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${u.id})">✅ تفعيل</button>` : ''}
+                            ${u.role === 'teacher' ? `<button class="btn btn-info btn-sm" onclick="manageAssignments(${u.id})">📚 تعيينات</button>` : ''}
                             <button class="btn btn-warning btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
                         </div>
@@ -129,13 +155,75 @@
             `).join('');
         }
         
+        async function loadClassesAndSubjects() {
+            const [classes, subjects] = await Promise.all([
+                fetchClasses(), fetchSubjects()
+            ]);
+            return { classes, subjects };
+        }
+        
+        function addAssignmentRow() {
+            const container = document.getElementById('assignmentsList');
+            const rowId = Date.now();
+            container.innerHTML += `
+                <div id="assign-row-${rowId}" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select id="class-${rowId}" class="class-select" style="flex:1;">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                    <select id="subject-${rowId}" class="subject-select" style="flex:1;">
+                        <option value="">-- اختر المادة --</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeAssignmentRow(${rowId})">🗑️</button>
+                </div>
+            `;
+            loadSelectOptions(rowId);
+        }
+        
+        function addEditAssignmentRow() {
+            const container = document.getElementById('editAssignmentsList');
+            const rowId = Date.now();
+            container.innerHTML += `
+                <div id="edit-assign-row-${rowId}" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select id="edit-class-${rowId}" class="class-select" style="flex:1;">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                    <select id="edit-subject-${rowId}" class="subject-select" style="flex:1;">
+                        <option value="">-- اختر المادة --</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRow(${rowId})">🗑️</button>
+                </div>
+            `;
+            loadSelectOptions(rowId, 'edit');
+        }
+        
+        async function loadSelectOptions(rowId, prefix = '') {
+            const { classes, subjects } = await loadClassesAndSubjects();
+            const classSelect = document.getElementById(`${prefix}class-${rowId}`);
+            const subjectSelect = document.getElementById(`${prefix}subject-${rowId}`);
+            
+            if (classSelect) {
+                classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+                classes.forEach(c => classSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            }
+            if (subjectSelect) {
+                subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+                subjects.forEach(s => subjectSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            }
+        }
+        
+        function removeAssignmentRow(rowId) {
+            document.getElementById(`assign-row-${rowId}`)?.remove();
+        }
+        
+        function removeEditAssignmentRow(rowId) {
+            document.getElementById(`edit-assign-row-${rowId}`)?.remove();
+        }
+        
         async function loadClassesForSelect() {
             const classes = await fetchClasses();
             const select = document.getElementById('userClassId');
             select.innerHTML = '<option value="">-- اختر الصف --</option>';
-            classes.forEach(c => {
-                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-            });
+            classes.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
         }
         
         function openAddUserModal() {
@@ -147,8 +235,19 @@
             document.getElementById('userRole').value = 'student';
             document.getElementById('userClassId').value = '';
             document.getElementById('userPassword').value = '';
+            document.getElementById('teacherAssignmentsSection').style.display = 'none';
+            document.getElementById('assignmentsList').innerHTML = '';
+            tempAssignments = [];
             loadClassesForSelect();
             document.getElementById('userModal').style.display = 'flex';
+            
+            document.getElementById('userRole').onchange = function() {
+                const section = document.getElementById('teacherAssignmentsSection');
+                section.style.display = this.value === 'teacher' ? 'block' : 'none';
+                if (this.value === 'teacher') {
+                    addAssignmentRow();
+                }
+            };
         }
         
         async function saveUser() {
@@ -164,20 +263,87 @@
                 return;
             }
             
-            const hashedPassword = await hashPassword(password);
+            // جمع التعيينات للمعلم
+            let assignments = [];
+            if (role === 'teacher') {
+                const rows = document.querySelectorAll('#assignmentsList [id^="assign-row-"]');
+                for (const row of rows) {
+                    const classSelect = row.querySelector('.class-select');
+                    const subjectSelect = row.querySelector('.subject-select');
+                    if (classSelect?.value && subjectSelect?.value) {
+                        assignments.push({
+                            class_id: parseInt(classSelect.value),
+                            subject_id: parseInt(subjectSelect.value)
+                        });
+                    }
+                }
+            }
             
-            const { error } = await sb.from('users').insert({
-                name, phone, email: email || null, password_hash: hashedPassword,
-                role, class_id: classId || null, status: 'active'
-            });
+            const userData = {
+                name, phone, email: email || null, password,
+                role, class_id: classId || null, assignments
+            };
             
-            if (error) {
-                showToast('خطأ: ' + error.message, 'error');
-            } else {
+            const result = await createUser(userData);
+            
+            if (result) {
                 showToast('تم إضافة المستخدم', 'success');
                 closeModal('userModal');
                 loadUsers();
+            } else {
+                showToast('حدث خطأ', 'error');
             }
+        }
+        
+        async function manageAssignments(teacherId) {
+            currentTeacherId = teacherId;
+            const assignments = await fetchTeacherAssignments(teacherId);
+            editAssignments = assignments.map(a => ({ class_id: a.class_id, subject_id: a.subject_id }));
+            
+            const container = document.getElementById('editAssignmentsList');
+            container.innerHTML = '';
+            
+            for (const a of editAssignments) {
+                const rowId = Date.now() + Math.random();
+                container.innerHTML += `
+                    <div id="edit-assign-row-${rowId}" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <select id="edit-class-${rowId}" class="class-select" style="flex:1;">
+                            <option value="">-- اختر الصف --</option>
+                        </select>
+                        <select id="edit-subject-${rowId}" class="subject-select" style="flex:1;">
+                            <option value="">-- اختر المادة --</option>
+                        </select>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRow(${rowId})">🗑️</button>
+                    </div>
+                `;
+                await loadSelectOptions(rowId, 'edit');
+                document.getElementById(`edit-class-${rowId}`).value = a.class_id;
+                document.getElementById(`edit-subject-${rowId}`).value = a.subject_id;
+            }
+            
+            document.getElementById('assignmentsModal').style.display = 'flex';
+        }
+        
+        async function saveAssignments() {
+            // حذف التعيينات القديمة
+            const oldAssignments = await fetchTeacherAssignments(currentTeacherId);
+            for (const a of oldAssignments) {
+                await removeTeacherAssignment(a.id);
+            }
+            
+            // إضافة التعيينات الجديدة
+            const rows = document.querySelectorAll('#editAssignmentsList [id^="edit-assign-row-"]');
+            for (const row of rows) {
+                const classSelect = row.querySelector('.class-select');
+                const subjectSelect = row.querySelector('.subject-select');
+                if (classSelect?.value && subjectSelect?.value) {
+                    await addTeacherAssignment(currentTeacherId, parseInt(classSelect.value), parseInt(subjectSelect.value));
+                }
+            }
+            
+            showToast('تم حفظ التعيينات', 'success');
+            closeModal('assignmentsModal');
+            loadUsers();
         }
         
         async function approveUser(id) {
