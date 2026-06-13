@@ -72,20 +72,23 @@
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         
-        /* منطقة رفع الصور */
-        .image-upload-area {
-            border: 2px dashed #e2e8f0;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #f8fafc;
+        /* منطقة لصق الصور */
+        .paste-hint {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 8px 15px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .image-upload-area:hover {
-            border-color: #6366f1;
-            background: #f1f5f9;
+        .paste-hint span:first-child {
+            font-size: 16px;
         }
+        
         .image-preview {
             margin-top: 10px;
             position: relative;
@@ -111,6 +114,11 @@
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
+            transition: all 0.2s;
+        }
+        .remove-image:hover {
+            background: #dc2626;
+            transform: scale(1.1);
         }
         
         /* منطقة الاختيارات */
@@ -154,33 +162,15 @@
             border-radius: 12px;
             font-size: 14px;
             font-family: inherit;
+            transition: all 0.2s;
         }
         .choice-text input:focus {
             outline: none;
             border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.1);
         }
-        .choice-image-area {
-            margin-right: 30px;
-        }
-        .choice-image-upload {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 10px;
-            background: #f1f5f9;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .choice-image-upload:hover {
-            background: #e2e8f0;
-        }
-        .choice-image-preview {
-            margin-top: 5px;
-        }
-        .choice-image-preview img {
-            max-width: 80px;
-            border-radius: 8px;
+        .choice-text input:focus-visible {
+            outline: none;
         }
         .choice-actions {
             display: flex;
@@ -195,6 +185,10 @@
             padding: 5px 10px;
             border-radius: 20px;
             background: #f1f5f9;
+            transition: all 0.2s;
+        }
+        .choice-correct:hover {
+            background: #e2e8f0;
         }
         .choice-correct input {
             width: 18px;
@@ -210,7 +204,6 @@
         
         .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         
         .badge {
             display: inline-flex;
@@ -289,8 +282,14 @@
             overflow-y: auto;
         }
         
+        /* مؤشر التركيز */
+        .focused {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.2) !important;
+        }
+        
         @media (max-width: 768px) {
-            .row-2, .row-3, .row-4 { grid-template-columns: 1fr; gap: 12px; }
+            .row-2, .row-3 { grid-template-columns: 1fr; gap: 12px; }
             .choice-item { flex-direction: column; align-items: stretch; }
             .choice-actions { justify-content: flex-end; }
         }
@@ -351,22 +350,22 @@
                 </div>
             </div>
 
-            <!-- نص السؤال (مع إمكانية إضافة صورة) -->
+            <!-- نص السؤال - يدعم اللصق المباشر -->
             <div class="form-group">
                 <label>❓ نص السؤال</label>
-                <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا..."></textarea>
-                <div class="image-upload-area" onclick="document.getElementById('questionImageUpload').click()" style="margin-top: 10px;">
-                    📸 إضافة صورة للسؤال (اختياري)
-                    <input type="file" id="questionImageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this, 'question')">
+                <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا... (يمكنك لصق صورة بـ Ctrl+V)"></textarea>
+                <div class="paste-hint">
+                    <span>📸</span>
+                    <span>💡 <strong>نصيحة:</strong> يمكنك لصق صورة مباشرة بـ (Ctrl+V) بعد أخذ لقطة شاشة</span>
                 </div>
                 <div id="questionImagePreview" class="image-preview"></div>
             </div>
 
-            <!-- قسم الاختيارات (لنوع MCQ و Multi-Select) -->
+            <!-- قسم الاختيارات (5 اختيارات افتراضية) -->
             <div id="choicesSection" class="choices-area">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <label>🔘 الاختيارات (4 اختيارات)</label>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="addChoice()">+ إضافة اختيار إضافي (اختياري)</button>
+                    <label>🔘 الاختيارات (5 اختيارات أساسية)</label>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="addChoice()">+ إضافة اختيار إضافي</button>
                 </div>
                 <div id="choicesList"></div>
                 <div id="multiSelectNote" class="info-note" style="display: none;">
@@ -389,10 +388,10 @@
             <div id="essaySection" style="display: none;">
                 <div class="form-group">
                     <label>📝 نموذج الإجابة المتوقعة (اختياري)</label>
-                    <textarea id="modelAnswer" rows="4" placeholder="اكتب نموذج الإجابة المتوقع للطلاب..."></textarea>
-                    <div class="image-upload-area" onclick="document.getElementById('modelAnswerImageUpload').click()" style="margin-top: 10px;">
-                        📸 إضافة صورة لنموذج الإجابة (اختياري)
-                        <input type="file" id="modelAnswerImageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this, 'model')">
+                    <textarea id="modelAnswer" rows="4" placeholder="اكتب نموذج الإجابة المتوقع للطلاب... (يمكنك لصق صورة بـ Ctrl+V)"></textarea>
+                    <div class="paste-hint">
+                        <span>📸</span>
+                        <span>💡 يمكنك لصق صورة لنموذج الإجابة بـ (Ctrl+V)</span>
                     </div>
                     <div id="modelAnswerImagePreview" class="image-preview"></div>
                 </div>
@@ -421,14 +420,143 @@
     <script src="js/supabase-config.js"></script>
     <script>
         // ==================== البيانات الأساسية ====================
+        let currentFocusedElement = null; // تتبع الحقل النشط
         let questionImageUrl = null;
         let modelAnswerImageUrl = null;
-        let choices = [
-            { text: '', isCorrect: false, imageUrl: null },
-            { text: '', isCorrect: false, imageUrl: null },
-            { text: '', isCorrect: false, imageUrl: null },
-            { text: '', isCorrect: false, imageUrl: null }
-        ];
+        let choices = [];
+        
+        // تهيئة 5 اختيارات افتراضية
+        function initChoices() {
+            choices = [];
+            for (let i = 0; i < 5; i++) {
+                choices.push({ text: '', isCorrect: false, imageUrl: null });
+            }
+        }
+        initChoices();
+        
+        // ==================== تتبع الحقل النشط ====================
+        function setupFocusTracking() {
+            const elements = [
+                document.getElementById('questionText'),
+                document.getElementById('modelAnswer')
+            ];
+            
+            // إضافة مستمعي التركيز لنص السؤال ونموذج الإجابة
+            elements.forEach(el => {
+                if (el) {
+                    el.addEventListener('focus', () => {
+                        currentFocusedElement = el.id;
+                        removeFocusHighlights();
+                        el.classList.add('focused');
+                    });
+                    el.addEventListener('blur', () => {
+                        el.classList.remove('focused');
+                    });
+                }
+            });
+            
+            // إضافة مستمعي التركيز لجميع حقول الاختيارات (ديناميكياً)
+            updateChoiceFocusTracking();
+        }
+        
+        function updateChoiceFocusTracking() {
+            const choiceInputs = document.querySelectorAll('.choice-text input');
+            choiceInputs.forEach(input => {
+                input.removeEventListener('focus', handleChoiceFocus);
+                input.removeEventListener('blur', handleChoiceBlur);
+                input.addEventListener('focus', handleChoiceFocus);
+                input.addEventListener('blur', handleChoiceBlur);
+            });
+        }
+        
+        function handleChoiceFocus(e) {
+            currentFocusedElement = e.target.id;
+            removeFocusHighlights();
+            e.target.classList.add('focused');
+        }
+        
+        function handleChoiceBlur(e) {
+            e.target.classList.remove('focused');
+        }
+        
+        function removeFocusHighlights() {
+            document.querySelectorAll('.focused').forEach(el => {
+                el.classList.remove('focused');
+            });
+        }
+        
+        // ==================== لصق الصور مباشرة في الحقل النشط ====================
+        async function handlePaste(e) {
+            // تحديد الحقل النشط حالياً
+            let activeElement = document.activeElement;
+            let targetId = activeElement.id;
+            
+            // إذا كان الحقل النشط هو أحد حقول النص أو الاختيارات
+            const isTextArea = activeElement.tagName === 'TEXTAREA';
+            const isInput = activeElement.tagName === 'INPUT';
+            
+            if (!isTextArea && !isInput) return;
+            
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const blob = items[i].getAsFile();
+                    const fileName = `pasted/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+                    
+                    showToast('جاري رفع الصورة الملصوقة...', 'info');
+                    
+                    const { error } = await sb.storage
+                        .from('exam-images')
+                        .upload(fileName, blob);
+                    
+                    if (error) {
+                        showToast('خطأ في رفع الصورة', 'error');
+                        return;
+                    }
+                    
+                    const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
+                    
+                    // تحديد مكان عرض الصورة بناءً على الحقل النشط
+                    if (targetId === 'questionText') {
+                        questionImageUrl = data.publicUrl;
+                        showImagePreview('questionImagePreview', questionImageUrl, 'question');
+                    } else if (targetId === 'modelAnswer') {
+                        modelAnswerImageUrl = data.publicUrl;
+                        showImagePreview('modelAnswerImagePreview', modelAnswerImageUrl, 'model');
+                    } else if (targetId.startsWith('choice_')) {
+                        const index = parseInt(targetId.split('_')[1]);
+                        if (!isNaN(index)) {
+                            choices[index].imageUrl = data.publicUrl;
+                            renderChoices();
+                        }
+                    }
+                    
+                    showToast('✅ تم لصق الصورة بنجاح', 'success');
+                    break;
+                }
+            }
+        }
+        
+        function showImagePreview(previewId, imageUrl, type) {
+            const previewDiv = document.getElementById(previewId);
+            previewDiv.innerHTML = `
+                <div style="position: relative; display: inline-block;">
+                    <img src="${imageUrl}" style="max-width: 150px; border-radius: 12px;">
+                    <div class="remove-image" onclick="removeImage('${type}')">✖</div>
+                </div>
+            `;
+        }
+        
+        function removeImage(type) {
+            if (type === 'question') {
+                questionImageUrl = null;
+                document.getElementById('questionImagePreview').innerHTML = '';
+            } else if (type === 'model') {
+                modelAnswerImageUrl = null;
+                document.getElementById('modelAnswerImagePreview').innerHTML = '';
+            }
+        }
         
         // ==================== تحميل المعلمين والصفوف ====================
         async function loadTeachers() {
@@ -482,10 +610,9 @@
             essaySection.style.display = (type === 'essay') ? 'block' : 'none';
             multiSelectNote.style.display = (type === 'multi_select') ? 'block' : 'none';
             
-            // إذا كان نوع السؤال MCQ أو Multi-Select، نعرض 4 اختيارات أساسية
             if (type === 'mcq' || type === 'multi_select') {
-                if (choices.length < 4) {
-                    while (choices.length < 4) {
+                if (choices.length < 5) {
+                    while (choices.length < 5) {
                         choices.push({ text: '', isCorrect: false, imageUrl: null });
                     }
                 }
@@ -495,23 +622,22 @@
         
         // ==================== إدارة الاختيارات ====================
         function addChoice() {
-            if (choices.length < 10) {
+            if (choices.length < 15) {
                 choices.push({ text: '', isCorrect: false, imageUrl: null });
                 renderChoices();
+                showToast('تم إضافة اختيار جديد', 'success');
             } else {
-                showToast('لا يمكن إضافة أكثر من 10 اختيارات', 'error');
+                showToast('لا يمكن إضافة أكثر من 15 اختياراً', 'error');
             }
         }
         
         function removeChoice(index) {
-            const type = document.getElementById('questionType').value;
-            const minChoices = (type === 'mcq' || type === 'multi_select') ? 4 : 2;
-            
-            if (choices.length > minChoices) {
+            if (choices.length > 5) {
                 choices.splice(index, 1);
                 renderChoices();
+                showToast('تم حذف الاختيار', 'success');
             } else {
-                showToast(`يجب أن يكون هناك ${minChoices} اختيارات على الأقل`, 'error');
+                showToast('يجب أن يكون هناك 5 اختيارات على الأقل', 'error');
             }
         }
         
@@ -523,50 +649,13 @@
             const type = document.getElementById('questionType').value;
             
             if (type === 'mcq') {
-                // اختيار واحد فقط صحيح
                 for (let i = 0; i < choices.length; i++) {
                     choices[i].isCorrect = (i === index);
                 }
             } else if (type === 'multi_select') {
-                // يمكن اختيار أكثر من إجابة صحيحة
                 choices[index].isCorrect = !choices[index].isCorrect;
             }
             
-            renderChoices();
-        }
-        
-        // ==================== رفع صورة للاختيار ====================
-        async function uploadChoiceImage(index) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const fileName = `choices/${Date.now()}_${index}_${Math.random().toString(36).substring(7)}.png`;
-                
-                showToast('جاري رفع الصورة...', 'info');
-                
-                const { error } = await sb.storage
-                    .from('exam-images')
-                    .upload(fileName, file);
-                
-                if (error) {
-                    showToast('خطأ في رفع الصورة', 'error');
-                    return;
-                }
-                
-                const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
-                choices[index].imageUrl = data.publicUrl;
-                renderChoices();
-                showToast('✅ تم رفع الصورة', 'success');
-            };
-            input.click();
-        }
-        
-        function removeChoiceImage(index) {
-            choices[index].imageUrl = null;
             renderChoices();
         }
         
@@ -586,16 +675,8 @@
                 div.innerHTML = `
                     <div class="choice-content">
                         <div class="choice-text">
-                            <span style="font-weight: bold; min-width: 30px;">${String.fromCharCode(65 + i)}.</span>
-                            <input type="text" placeholder="نص الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" oninput="updateChoiceText(${i}, this.value)">
-                        </div>
-                        <div class="choice-image-area">
-                            <div class="choice-image-upload" onclick="uploadChoiceImage(${i})">
-                                📸 ${choice.imageUrl ? 'تغيير الصورة' : 'إضافة صورة'}
-                            </div>
-                            <div id="choiceImagePreview-${i}" class="choice-image-preview">
-                                ${choice.imageUrl ? `<div style="position: relative; display: inline-block;"><img src="${choice.imageUrl}" style="max-width: 80px;"><span class="remove-image" onclick="removeChoiceImage(${i})" style="position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; font-size: 10px;">✖</span></div>` : ''}
-                            </div>
+                            <span style="font-weight: bold; min-width: 35px;">${String.fromCharCode(65 + i)}.</span>
+                            <input type="text" id="choice_${i}" placeholder="نص الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" oninput="updateChoiceText(${i}, this.value)">
                         </div>
                     </div>
                     <div class="choice-actions">
@@ -603,66 +684,16 @@
                             <input type="${isMultiSelect ? 'checkbox' : 'radio'}" name="correctChoice" ${choice.isCorrect ? 'checked' : ''}>
                             <label>صحيح</label>
                         </div>
-                        <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 4 ? 'disabled' : ''}>🗑️</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 5 ? 'disabled' : ''}>🗑️</button>
                     </div>
                 `;
                 container.appendChild(div);
             }
-        }
-        
-        // ==================== رفع صورة عامة ====================
-        async function uploadImage(input, type) {
-            const file = input.files[0];
-            if (!file) return;
             
-            const fileName = `${type}/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
-            
-            showToast('جاري رفع الصورة...', 'info');
-            
-            const { error } = await sb.storage
-                .from('exam-images')
-                .upload(fileName, file);
-            
-            if (error) {
-                showToast('خطأ في رفع الصورة', 'error');
-                return;
-            }
-            
-            const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
-            
-            if (type === 'question') {
-                questionImageUrl = data.publicUrl;
-                const previewDiv = document.getElementById('questionImagePreview');
-                previewDiv.innerHTML = `
-                    <div style="position: relative; display: inline-block;">
-                        <img src="${questionImageUrl}" style="max-width: 150px; border-radius: 12px;">
-                        <div class="remove-image" onclick="removeQuestionImage()">✖</div>
-                    </div>
-                `;
-            } else if (type === 'model') {
-                modelAnswerImageUrl = data.publicUrl;
-                const previewDiv = document.getElementById('modelAnswerImagePreview');
-                previewDiv.innerHTML = `
-                    <div style="position: relative; display: inline-block;">
-                        <img src="${modelAnswerImageUrl}" style="max-width: 150px; border-radius: 12px;">
-                        <div class="remove-image" onclick="removeModelImage()">✖</div>
-                    </div>
-                `;
-            }
-            
-            showToast('✅ تم رفع الصورة بنجاح', 'success');
-        }
-        
-        function removeQuestionImage() {
-            questionImageUrl = null;
-            document.getElementById('questionImagePreview').innerHTML = '';
-            document.getElementById('questionImageUpload').value = '';
-        }
-        
-        function removeModelImage() {
-            modelAnswerImageUrl = null;
-            document.getElementById('modelAnswerImagePreview').innerHTML = '';
-            document.getElementById('modelAnswerImageUpload').value = '';
+            // إعادة ربط أحداث التركيز للاختيارات الجديدة
+            setTimeout(() => {
+                updateChoiceFocusTracking();
+            }, 100);
         }
         
         // ==================== معاينة السؤال ====================
@@ -681,16 +712,17 @@
                 html += `<div class="badge badge-success">✅ الإجابة الصحيحة: ${answer === 'true' ? 'صحيح' : 'خطأ'}</div>`;
             } else if (type === 'essay') {
                 html += `<div class="badge badge-info">📝 سؤال مقالي - ينتظر تصحيح المعلم</div>`;
+                if (modelAnswerImageUrl) {
+                    html += `<div style="margin-top: 10px;"><img src="${modelAnswerImageUrl}" style="max-width: 150px; border-radius: 12px;"></div>`;
+                }
             } else {
                 const validChoices = choices.filter(c => c.text.trim());
                 if (validChoices.length > 0) {
                     html += `<div style="margin-top: 15px;"><strong>🔘 الاختيارات:</strong></div>`;
                     for (let i = 0; i < validChoices.length; i++) {
                         const c = validChoices[i];
-                        html += `<div style="padding: 8px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
-                            ${String.fromCharCode(65 + i)}. 
-                            ${c.imageUrl ? `<img src="${c.imageUrl}" style="max-width: 40px; border-radius: 6px;">` : ''}
-                            ${escapeHtml(c.text)} 
+                        html += `<div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                            ${String.fromCharCode(65 + i)}. ${escapeHtml(c.text)} 
                             ${c.isCorrect ? '<span style="color: #10b981;"> ✓</span>' : ''}
                         </div>`;
                     }
@@ -746,13 +778,14 @@
                     return;
                 }
                 
-                const emptyChoices = choices.slice(0, 4).filter(c => !c.text.trim());
-                if (emptyChoices.length > 0) {
-                    showToast('الاختيارات الأربعة الأولى مطلوبة', 'error');
+                const firstFiveChoices = choices.slice(0, 5);
+                const emptyFirstFive = firstFiveChoices.filter(c => !c.text.trim());
+                if (emptyFirstFive.length > 0) {
+                    showToast('الاختيارات الخمسة الأولى مطلوبة', 'error');
                     return;
                 }
                 
-                questionData.options = JSON.stringify(choices.map(c => ({ text: c.text, image: c.imageUrl })));
+                questionData.options = JSON.stringify(choices.map(c => c.text));
                 questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
                 questionData.is_multi_select = (type === 'multi_select');
             }
@@ -782,17 +815,11 @@
             modelAnswerImageUrl = null;
             document.getElementById('questionImagePreview').innerHTML = '';
             document.getElementById('modelAnswerImagePreview').innerHTML = '';
-            document.getElementById('questionImageUpload').value = '';
-            document.getElementById('modelAnswerImageUpload').value = '';
             
-            choices = [
-                { text: '', isCorrect: false, imageUrl: null },
-                { text: '', isCorrect: false, imageUrl: null },
-                { text: '', isCorrect: false, imageUrl: null },
-                { text: '', isCorrect: false, imageUrl: null }
-            ];
+            initChoices();
             renderChoices();
             toggleQuestionType();
+            showToast('تم مسح جميع الحقول', 'success');
         }
         
         function escapeHtml(str) {
@@ -810,6 +837,10 @@
             await loadTeachers();
             await loadClasses();
             renderChoices();
+            setupFocusTracking();
+            
+            // إضافة مستمع اللصق على مستوى الصفحة
+            document.addEventListener('paste', handlePaste);
         }
         
         init();
