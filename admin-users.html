@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>👥 إدارة المستخدمين</h1>
+            <p>إدارة حسابات المديرين والمعلمين والطلاب</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث بالاسم أو الهاتف أو البريد...">
+                <select id="roleFilter" class="filter-select">
+                    <option value="all">كل الأدوار</option>
+                    <option value="admin">مدير</option>
+                    <option value="teacher">معلم</option>
+                    <option value="student">طالب</option>
+                </select>
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">كل الحالات</option>
+                    <option value="active">نشط</option>
+                    <option value="pending">قيد الانتظار</option>
+                    <option value="suspended">موقوف</option>
+                </select>
+                <button class="btn btn-primary" onclick="openAddUserModal()">➕ إضافة مستخدم</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد الإلكتروني</th><th>الدور</th><th>الحالة</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة/تعديل مستخدم -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
+            <input type="text" id="userName" placeholder="الاسم الكامل">
+            <input type="tel" id="userPhone" placeholder="رقم الهاتف">
+            <input type="email" id="userEmail" placeholder="البريد الإلكتروني">
+            <select id="userRole">
+                <option value="student">طالب</option>
+                <option value="teacher">معلم</option>
+                <option value="admin">مدير</option>
+            </select>
+            <select id="userClassId">
+                <option value="">-- اختر الصف (للطلاب) --</option>
+            </select>
+            <input type="password" id="userPassword" placeholder="كلمة السر">
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeModal('userModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إعادة تعيين كلمة المرور -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content">
+            <h3>🔑 إعادة تعيين كلمة المرور</h3>
+            <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة">
+            <input type="password" id="confirmNewPassword" placeholder="تأكيد كلمة المرور">
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="confirmResetPassword()">تأكيد</button>
+                <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['admin'])) return;
+        
+        let currentUserId = null;
+        let currentResetUserId = null;
+        document.getElementById('adminName').innerHTML = getUser().name;
+        
+        async function loadUsers() {
+            const search = document.getElementById('searchInput').value;
+            const role = document.getElementById('roleFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const users = await fetchUsers({ search, role, status });
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = users.map((u, i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.phone || '-'}</td>
+                    <td>${u.email || '-'}</td>
+                    <td>${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</td>
+                    <td><span class="badge ${u.status === 'active' ? 'badge-success' : u.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${u.status === 'active' ? 'نشط' : u.status === 'pending' ? 'قيد الانتظار' : 'موقوف'}</span></td>
+                    <td>${formatDate(u.created_at)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${u.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${u.id})">✅ تفعيل</button>` : ''}
+                            <button class="btn btn-warning btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function loadClassesForSelect() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('userClassId');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>';
+            classes.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+        }
+        
+        function openAddUserModal() {
+            currentUserId = null;
+            document.getElementById('modalTitle').innerHTML = '➕ إضافة مستخدم جديد';
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userRole').value = 'student';
+            document.getElementById('userClassId').value = '';
+            document.getElementById('userPassword').value = '';
+            loadClassesForSelect();
+            document.getElementById('userModal').style.display = 'flex';
+        }
+        
+        async function saveUser() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const email = document.getElementById('userEmail').value;
+            const role = document.getElementById('userRole').value;
+            const classId = document.getElementById('userClassId').value;
+            const password = document.getElementById('userPassword').value;
+            
+            if (!name || !phone || !password) {
+                showToast('الاسم ورقم الهاتف وكلمة السر مطلوبة', 'error');
+                return;
+            }
+            
+            const hashedPassword = await hashPassword(password);
+            
+            const { error } = await sb.from('users').insert({
+                name, phone, email: email || null, password_hash: hashedPassword,
+                role, class_id: classId || null, status: 'active'
+            });
+            
+            if (error) {
+                showToast('خطأ: ' + error.message, 'error');
+            } else {
+                showToast('تم إضافة المستخدم', 'success');
+                closeModal('userModal');
+                loadUsers();
+            }
+        }
+        
+        async function approveUser(id) {
+            await updateUserStatus(id, 'active');
+            loadUsers();
+        }
+        
+        function openResetPassword(id) {
+            currentResetUserId = id;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            document.getElementById('resetPasswordModal').style.display = 'flex';
+        }
+        
+        async function confirmResetPassword() {
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+            
+            if (!newPass || newPass.length < 6) {
+                showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                showToast('كلمة السر غير متطابقة', 'error');
+                return;
+            }
+            
+            await resetUserPassword(currentResetUserId, newPass);
+            closeModal('resetPasswordModal');
+        }
+        
+        function deleteUserConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذا المستخدم؟', async () => {
+                await deleteUser(id);
+                loadUsers();
+            });
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadUsers());
+        document.getElementById('roleFilter').addEventListener('change', () => loadUsers());
+        document.getElementById('statusFilter').addEventListener('change', () => loadUsers());
+        
+        loadUsers();
+    </script>
+</body>
+</html>
