@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📊 التقارير والإحصائيات</h1>
+            <p>تحليلات شاملة للمنصة</p>
+        </div>
+
+        <div class="stats-grid" id="statsArea"></div>
+
+        <div class="card">
+            <h3>📈 توزيع المستخدمين</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>الدور</th><th>العدد</th><th>النسبة</th></tr></thead>
+                    <tbody id="userDistribution"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📝 توزيع الامتحانات</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>الحالة</th><th>العدد</th></tr></thead>
+                    <tbody id="examDistribution"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>👨‍🏫 أفضل المعلمين (حسب عدد الأسئلة)</h3>
+            <div id="topTeachersList"></div>
+        </div>
+
+        <div class="card">
+            <h3>👨‍🎓 أفضل الطلاب (حسب نتائج الامتحانات)</h3>
+            <div id="topStudentsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['admin'])) return;
+        
+        document.getElementById('adminName').innerHTML = getUser().name;
+        
+        async function loadReports() {
+            const [users, exams, questions, attempts] = await Promise.all([
+                sb.from('users').select('role'),
+                sb.from('exams').select('status'),
+                sb.from('questions').select('teacher_id, users!questions_teacher_id_fkey(name)'),
+                sb.from('exam_attempts').select('student_id, score, total_points, users!exam_attempts_student_id_fkey(name)')
+            ]);
+            
+            // إحصائيات المستخدمين
+            const userStats = { admin: 0, teacher: 0, student: 0 };
+            users.data?.forEach(u => userStats[u.role]++);
+            const total = users.data?.length || 1;
+            
+            document.getElementById('userDistribution').innerHTML = `
+                <tr><td>مدير</td><td>${userStats.admin}</td><td>${Math.round(userStats.admin/total*100)}%</td></tr>
+                <tr><td>معلم</td><td>${userStats.teacher}</td><td>${Math.round(userStats.teacher/total*100)}%</td></tr>
+                <tr><td>طالب</td><td>${userStats.student}</td><td>${Math.round(userStats.student/total*100)}%</td></tr>
+            `;
+            
+            // إحصائيات الامتحانات
+            const examStats = { draft: 0, published: 0, closed: 0 };
+            exams.data?.forEach(e => examStats[e.status]++);
+            document.getElementById('examDistribution').innerHTML = `
+                <tr><td>مسودة</td><td>${examStats.draft}</td></tr>
+                <tr><td>منشور</td><td>${examStats.published}</td></tr>
+                <tr><td>مغلق</td><td>${examStats.closed}</td></tr>
+            `;
+            
+            // أفضل المعلمين
+            const teacherQuestions = {};
+            questions.data?.forEach(q => {
+                if (q.teacher_id) teacherQuestions[q.teacher_id] = (teacherQuestions[q.teacher_id] || 0) + 1;
+            });
+            const topTeachers = Object.entries(teacherQuestions).sort((a,b) => b[1] - a[1]).slice(0,5);
+            const teachersList = await fetchUsers({ role: 'teacher' });
+            const teacherMap = {};
+            teachersList.forEach(t => teacherMap[t.id] = t.name);
+            
+            document.getElementById('topTeachersList').innerHTML = topTeachers.length ? 
+                topTeachers.map(([id, count], i) => `<div class="exam-card">${i+1}. ${teacherMap[id]} - ${count} سؤال</div>`).join('') :
+                '<div style="text-align:center;">لا توجد بيانات</div>';
+            
+            // أفضل الطلاب
+            const studentScores = {};
+            attempts.data?.forEach(a => {
+                if (!studentScores[a.student_id]) studentScores[a.student_id] = { total: 0, count: 0 };
+                studentScores[a.student_id].total += (a.score / a.total_points) * 100;
+                studentScores[a.student_id].count++;
+            });
+            const topStudents = Object.entries(studentScores).map(([id, data]) => [id, data.total / data.count]).sort((a,b) => b[1] - a[1]).slice(0,5);
+            const studentsList = await fetchUsers({ role: 'student' });
+            const studentMap = {};
+            studentsList.forEach(s => studentMap[s.id] = s.name);
+            
+            document.getElementById('topStudentsList').innerHTML = topStudents.length ?
+                topStudents.map(([id, avg], i) => `<div class="exam-card">${i+1}. ${studentMap[id]} - ${Math.round(avg)}% متوسط</div>`).join('') :
+                '<div style="text-align:center;">لا توجد بيانات</div>';
+        }
+        
+        loadReports();
+    </script>
+</body>
+</html>
