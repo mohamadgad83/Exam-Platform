@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>طلابي - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>👨‍🎓 طلابي</h1>
+            <p>قائمة الطلاب المسجلين في صفوفك وموادك</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم الطالب أو رقم الهاتف...">
+                <select id="classFilter" class="filter-select">
+                    <option value="all">كل الصفوف</option>
+                </select>
+                <select id="subjectFilter" class="filter-select">
+                    <option value="all">كل المواد</option>
+                </select>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>الصف</th><th>المادة</th><th>عدد الامتحانات</th><th>متوسط الدرجات</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['teacher'])) return;
+        
+        const user = getUser();
+        let allStudents = [];
+        let classesList = [];
+        let subjectsList = [];
+        
+        document.getElementById('teacherName').innerHTML = user.name;
+        
+        async function loadFilters() {
+            const classes = await fetchClasses('teacher', user.id);
+            const subjects = await fetchSubjects('teacher', user.id);
+            classesList = classes;
+            subjectsList = subjects;
+            
+            const classFilter = document.getElementById('classFilter');
+            classFilter.innerHTML = '<option value="all">كل الصفوف</option>';
+            classes.forEach(c => classFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            const subjectFilter = document.getElementById('subjectFilter');
+            subjectFilter.innerHTML = '<option value="all">كل المواد</option>';
+            subjects.forEach(s => subjectFilter.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        }
+        
+        async function loadStudents() {
+            // جلب الطلاب من خلال تعيينات المعلم
+            const assignments = await fetchTeacherAssignments(user.id);
+            const classIds = assignments.map(a => a.class_id);
+            
+            if (classIds.length === 0) {
+                document.getElementById('studentsTableBody').innerHTML = '<tr><td colspan="8" class="empty-state">لا يوجد طلاب مسجلين في صفوفك</td></tr>';
+                return;
+            }
+            
+            // جلب الطلاب المسجلين في هذه الصفوف
+            const { data: studentClasses } = await sb
+                .from('student_classes')
+                .select('*, users!student_classes_student_id_fkey(id, name, phone), classes!inner(id, name)')
+                .in('class_id', classIds);
+            
+            const studentsMap = new Map();
+            (studentClasses || []).forEach(sc => {
+                if (!studentsMap.has(sc.student_id)) {
+                    studentsMap.set(sc.student_id, {
+                        id: sc.student_id,
+                        name: sc.users?.name,
+                        phone: sc.users?.phone,
+                        classes: [],
+                        subjects: []
+                    });
+                }
+                const student = studentsMap.get(sc.student_id);
+                student.classes.push(sc.classes?.name);
+                
+                // جلب المواد المرتبطة بهذا الصف للمعلم
+                const subjectAssignments = assignments.filter(a => a.class_id === sc.class_id);
+                subjectAssignments.forEach(sa => {
+                    const subject = subjectsList.find(s => s.id === sa.subject_id);
+                    if (subject && !student.subjects.includes(subject.name)) {
+                        student.subjects.push(subject.name);
+                    }
+                });
+            });
+            
+            allStudents = Array.from(studentsMap.values());
+            
+            // تطبيق الفلاتر
+            const classFilter = document.getElementById('classFilter').value;
+            const subjectFilter = document.getElementById('subjectFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = allStudents;
+            if (classFilter !== 'all') {
+                filtered = filtered.filter(s => s.classes.some(c => c == classFilter));
+            }
+            if (subjectFilter !== 'all') {
+                const subjectName = subjectsList.find(s => s.id == subjectFilter)?.name;
+                if (subjectName) {
+                    filtered = filtered.filter(s => s.subjects.includes(subjectName));
+                }
+            }
+            if (searchTerm) {
+                filtered = filtered.filter(s => s.name.toLowerCase().includes(searchTerm) || s.phone.includes(searchTerm));
+            }
+            
+            renderStudentsTable(filtered);
+        }
+        
+        async function renderStudentsTable(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">لا توجد نتائج</td></tr>';
+                return;
+            }
+            
+            // جلب إحصائيات كل طالب
+            let html = '';
+            for (let i = 0; i < students.length; i++) {
+                const s = students[i];
+                const attempts = await fetchExamAttempts({ studentId: s.id }, 'teacher', user.id);
+                const examCount = attempts.length;
+                
+                let avgScore = 0;
+                if (attempts.length > 0) {
+                    const total = attempts.reduce((sum, a) => sum + ((a.score / a.total_points) * 100), 0);
+                    avgScore = Math.round(total / attempts.length);
+                }
+                
+                html += `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.phone || '-'}</td>
+                        <td>${s.classes.join(', ')}</td>
+                        <td>${s.subjects.join(', ')}</td>
+                        <td>${examCount}</td>
+                        <td><span class="badge ${avgScore >= 70 ? 'badge-success' : avgScore >= 50 ? 'badge-warning' : 'badge-danger'}">${avgScore}%</span></td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="viewStudentResults(${s.id}, '${s.name}')">📊 النتائج</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+        
+        async function viewStudentResults(studentId, studentName) {
+            const attempts = await fetchExamAttempts({ studentId: studentId }, 'teacher', user.id);
+            
+            if (attempts.length === 0) {
+                showToast(`لا توجد نتائج مسجلة للطالب ${studentName}`, 'warning');
+                return;
+            }
+            
+            let message = `📊 نتائج الطالب ${studentName}:\n\n`;
+            attempts.forEach(a => {
+                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
+                message += `📝 ${a.exams?.title}: ${a.score}/${a.total_points} (${percentage}%)\n`;
+            });
+            alert(message);
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadStudents());
+        document.getElementById('classFilter').addEventListener('change', () => loadStudents());
+        document.getElementById('subjectFilter').addEventListener('change', () => loadStudents());
+        
+        loadFilters();
+        loadStudents();
+    </script>
+</body>
+</html>
