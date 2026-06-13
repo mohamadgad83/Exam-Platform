@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الامتحانات المتاحة - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📝 الامتحانات المتاحة</h1>
+            <p>قائمة بجميع الامتحانات التي يمكنك الاشتراك فيها</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
+                <button class="btn btn-outline" onclick="loadExams()">🔄 تحديث</button>
+            </div>
+            <div id="examsList"></div>
+        </div>
+
+        <!-- تبويب طلباتي -->
+        <div class="card">
+            <h3>📋 طلبات الاشتراك الخاصة بي</h3>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="loadMyRequests('pending')">⏳ قيد المراجعة</button>
+                <button class="tab-btn" onclick="loadMyRequests('approved')">✅ مقبولة</button>
+                <button class="tab-btn" onclick="loadMyRequests('rejected')">❌ مرفوضة</button>
+            </div>
+            <div id="myRequestsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['student'])) return;
+        
+        const user = getUser();
+        let allExams = [];
+        document.getElementById('studentName').innerHTML = user.name;
+        
+        async function loadExams() {
+            const search = document.getElementById('searchInput').value;
+            let exams = await fetchExams({ status: 'published' }, 'student', user.id);
+            
+            // جلب طلبات الطالب
+            const requests = await fetchExamRequests({}, 'student', user.id);
+            const requestedExamIds = new Set(requests.map(r => r.exam_id));
+            
+            // عرض فقط الامتحانات التي لم يطلبها الطالب بعد
+            allExams = exams.filter(e => !requestedExamIds.has(e.id));
+            
+            if (search) {
+                allExams = allExams.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('examsList');
+            if (allExams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات متاحة حالياً<br><button class="btn btn-primary mt-3" onclick="loadExams()">🔄 تحديث</button></div>';
+                return;
+            }
+            
+            container.innerHTML = allExams.map(e => `
+                <div class="exam-card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <div class="exam-title">${e.title}</div>
+                            <p style="color: var(--gray); margin: 8px 0;">${e.description || 'لا يوجد وصف'}</p>
+                            <div class="exam-info">
+                                <span>📖 ${e.subjects?.name || '-'}</span>
+                                <span>👨‍🏫 ${e.users?.name || '-'}</span>
+                                <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                                <span>⭐ درجة النجاح: ${e.passing_score}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" onclick="subscribeToExam(${e.id})">➕ اشتراك</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadMyRequests(status) {
+            // تحديث التبويبات
+            document.querySelectorAll('#myRequestsList .tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            
+            const requests = await fetchExamRequests({ status }, 'student', user.id);
+            const container = document.getElementById('myRequestsList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد طلبات</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'approved': { text: '✅ مقبول', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            
+            container.innerHTML = requests.map(r => `
+                <div class="exam-card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div class="exam-title">${r.exams?.title || '-'}</div>
+                            <div class="exam-info">
+                                <span>📅 ${formatDate(r.created_at)}</span>
+                                <span class="badge ${statusMap[r.status]?.class || 'badge-warning'}">${statusMap[r.status]?.text || r.status}</span>
+                            </div>
+                        </div>
+                        ${r.status === 'approved' ? `
+                            <div>
+                                <button class="btn btn-success" onclick="startExam(${r.exam_id})">🚀 بدء الامتحان</button>
+                            </div>
+                        ` : ''}
+                        ${r.status === 'rejected' && r.rejection_reason ? `
+                            <div class="badge badge-danger">سبب الرفض: ${r.rejection_reason}</div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        window.subscribeToExam = async (examId) => {
+            const result = await createExamRequest(user.id, examId);
+            if (result) {
+                showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
+                loadExams();
+                loadMyRequests('pending');
+            }
+        };
+        
+        window.startExam = (examId) => {
+            localStorage.setItem('currentExamId', examId);
+            window.location.href = 'student-exam-attempt.html';
+        };
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadExams());
+        
+        loadExams();
+        loadMyRequests('pending');
+    </script>
+</body>
+</html>
