@@ -10,8 +10,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> إدارة الامتحانات - <span id="adminName"></span></div>
             <div>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
@@ -20,12 +20,12 @@
 
         <div class="card header">
             <h1>📝 إدارة الامتحانات</h1>
-            <p>مراجعة ونشر الامتحانات</p>
+            <p>مراجعة ونشر وإدارة جميع الامتحانات</p>
         </div>
 
         <div class="card">
             <div class="filter-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث...">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث بالعنوان...">
                 <select id="statusFilter" class="filter-select">
                     <option value="all">كل الحالات</option>
                     <option value="draft">مسودة</option>
@@ -41,6 +41,34 @@
                     </thead>
                     <tbody id="examsTableBody"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- مودال إنشاء امتحان (للأدمن) -->
+        <div id="createExamModal" class="modal">
+            <div class="modal-content">
+                <h3>📝 إنشاء امتحان جديد</h3>
+                <input type="text" id="examTitle" placeholder="عنوان الامتحان">
+                <textarea id="examDesc" rows="3" placeholder="وصف الامتحان"></textarea>
+                <select id="examClass">
+                    <option value="">-- اختر الصف --</option>
+                </select>
+                <select id="examSubject">
+                    <option value="">-- اختر المادة --</option>
+                </select>
+                <select id="examTeacher">
+                    <option value="">-- اختر المعلم --</option>
+                </select>
+                <input type="number" id="examDuration" placeholder="المدة (دقائق)" value="60">
+                <input type="number" id="examPassingScore" placeholder="درجة النجاح (%)" value="50">
+                <select id="examStatus">
+                    <option value="draft">مسودة</option>
+                    <option value="published">منشور</option>
+                </select>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="createExam()">💾 إنشاء</button>
+                    <button class="btn btn-outline" onclick="closeModal('createExamModal')">إلغاء</button>
+                </div>
             </div>
         </div>
     </div>
@@ -86,8 +114,8 @@
         }
         
         async function updateExamStatus(id, status) {
-            await updateExamStatus(id, status);
-            loadExams();
+            const result = await updateExamStatus(id, status);
+            if (result) loadExams();
         }
         
         function deleteExamConfirm(id) {
@@ -97,8 +125,71 @@
             });
         }
         
+        function openCreateExamModal() {
+            loadExamSelects();
+            document.getElementById('createExamModal').style.display = 'flex';
+        }
+        
+        async function loadExamSelects() {
+            const [classes, subjects, teachers] = await Promise.all([
+                fetchClasses(), fetchSubjects(), fetchUsers({ role: 'teacher' })
+            ]);
+            
+            const classSelect = document.getElementById('examClass');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            classes.forEach(c => classSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            const subjectSelect = document.getElementById('examSubject');
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            subjects.forEach(s => subjectSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            
+            const teacherSelect = document.getElementById('examTeacher');
+            teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
+            teachers.forEach(t => teacherSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`);
+        }
+        
+        async function createExam() {
+            const title = document.getElementById('examTitle').value;
+            const description = document.getElementById('examDesc').value;
+            const classId = document.getElementById('examClass').value;
+            const subjectId = document.getElementById('examSubject').value;
+            const teacherId = document.getElementById('examTeacher').value;
+            const duration = document.getElementById('examDuration').value;
+            const passingScore = document.getElementById('examPassingScore').value;
+            const status = document.getElementById('examStatus').value;
+            
+            if (!title || !classId || !subjectId) {
+                showToast('العنوان والصف والمادة مطلوبة', 'error');
+                return;
+            }
+            
+            const examData = {
+                title, description: description || null,
+                class_id: parseInt(classId), subject_id: parseInt(subjectId),
+                teacher_id: teacherId ? parseInt(teacherId) : null,
+                duration_minutes: parseInt(duration), passing_score: parseInt(passingScore),
+                status: status
+            };
+            
+            const result = await createExam(examData);
+            if (result) {
+                closeModal('createExamModal');
+                loadExams();
+                document.getElementById('examTitle').value = '';
+                document.getElementById('examDesc').value = '';
+            }
+        }
+        
         document.getElementById('searchInput').addEventListener('input', () => loadExams());
         document.getElementById('statusFilter').addEventListener('change', () => loadExams());
+        
+        // إضافة زر إنشاء امتحان للشريط
+        const filterBar = document.querySelector('.filter-bar');
+        const createBtn = document.createElement('button');
+        createBtn.className = 'btn btn-primary';
+        createBtn.innerHTML = '➕ إنشاء امتحان';
+        createBtn.onclick = openCreateExamModal;
+        filterBar.appendChild(createBtn);
         
         loadExams();
     </script>
