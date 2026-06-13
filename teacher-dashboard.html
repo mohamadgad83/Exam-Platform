@@ -8,71 +8,215 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
+        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
-        .top-bar {
-            background: white;
+        
+        /* شريط العودة للأدمن */
+        .impersonate-banner {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 1px solid #f59e0b;
             border-radius: 20px;
-            padding: 12px 24px;
+            padding: 15px 25px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
         }
-        .logo { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .impersonate-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .impersonate-banner-left span:first-child {
+            font-size: 28px;
+        }
+        .impersonate-banner-left strong {
+            color: #d97706;
+            font-size: 16px;
+        }
+        .impersonate-banner-left .badge {
+            background: #f59e0b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+        }
+        
+        /* الشريط العلوي الرئيسي */
+        .main-header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            font-size: 32px;
+        }
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .user-name {
+            font-weight: 600;
+            color: #1e293b;
+            background: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 40px;
+        }
+        
+        /* البطاقات */
         .card {
             background: white;
             border-radius: 28px;
             padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
         }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .card-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        /* إحصائيات */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-bottom: 25px;
         }
         .stat-card {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border-radius: 24px;
-            padding: 22px;
+            padding: 25px;
             color: white;
             text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
         }
-        .stat-number { font-size: 42px; font-weight: 800; }
-        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(99,102,241,0.3);
+        }
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+        
+        /* الأزرار */
         .btn {
             padding: 10px 20px;
             border: none;
             border-radius: 14px;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.2s;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             font-family: inherit;
+            font-size: 14px;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
         .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); }
         .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-outline:hover { background: #6366f1; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; transform: translateY(-2px); }
         .btn-sm { padding: 6px 14px; font-size: 12px; }
-        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* بطاقات الامتحانات */
         .exam-card {
             background: #f8fafc;
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
             border: 1px solid #e2e8f0;
+            transition: all 0.2s;
         }
-        .exam-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
-        .exam-info { display: flex; gap: 15px; flex-wrap: wrap; margin: 10px 0; color: #64748b; font-size: 13px; }
+        .exam-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        .exam-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .exam-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+        .exam-info span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
         .badge {
             display: inline-flex;
             align-items: center;
@@ -84,73 +228,105 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
-        .empty-state { text-align: center; padding: 40px; color: #64748b; }
-        .return-bar {
-            background: linear-gradient(135deg, #fef3c7, #fffbeb);
-            border: 1px solid #f59e0b;
-            border-radius: 16px;
-            padding: 12px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #64748b;
         }
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* أزرار التنقل السريع */
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-number { font-size: 28px; }
+            .main-header { flex-direction: column; text-align: center; }
+            .action-buttons { justify-content: center; }
+            .card-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- شريط العودة للأدمن (يظهر فقط عند الدخول كأدمن) -->
-        <div id="returnBar" class="return-bar" style="display: none;">
-            <div><span style="font-size:18px;">👑</span> أنت تتصفح كـ <strong><span id="currentUserName"></span></strong> (معلم) - وضع المشاهدة</div>
-            <div>
-                <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
-                <button class="btn btn-outline btn-sm" onclick="goToOwnDashboard()">🏠 لوحة تحكمي الحقيقية</button>
+        <div id="impersonateBanner" class="impersonate-banner" style="display: none;">
+            <div class="impersonate-banner-left">
+                <span>👑</span>
+                <span>أنت تتصفح كـ <strong><span id="impersonateUserName"></span></strong></span>
+                <span class="badge">وضع المشاهدة</span>
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
+        </div>
+
+        <!-- الشريط العلوي الرئيسي -->
+        <div class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">📚</div>
+                <div class="logo-text">منصة الاختبارات</div>
+            </div>
+            <div class="user-area">
+                <span class="user-name">👋 مرحباً <span id="teacherName"></span></span>
+                <div class="nav-buttons">
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-exams.html'">📝 امتحاناتي</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-questions.html'">📚 أسئلتي</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-groups.html'">👥 مجموعاتي</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-students.html'">👨‍🎓 طلابي</button>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+                </div>
             </div>
         </div>
 
-        <div class="top-bar">
-            <div class="logo">📚 منصة الاختبارات</div>
-            <div>
-                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-exams.html'">📝 امتحاناتي</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-questions.html'">📚 أسئلتي</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-groups.html'">👥 مجموعاتي</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-students.html'">👨‍🎓 طلابي</button>
-                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
-            </div>
-        </div>
-
+        <!-- عنوان الصفحة -->
         <div class="card">
-            <h1>👨‍🏫 لوحة تحكم المعلم</h1>
-            <p>نظرة عامة على أدائك ومجموعاتك وامتحاناتك</p>
+            <div class="card-header">
+                <h2>👨‍🏫 لوحة تحكم المعلم</h2>
+                <p style="color: #64748b;">مرحباً بك، قم بإدارة امتحاناتك وأسئلتك ومجموعاتك من هنا</p>
+            </div>
         </div>
 
+        <!-- الإحصائيات -->
         <div class="stats-grid" id="statsArea"></div>
 
+        <!-- الإجراءات السريعة -->
         <div class="card">
-            <h3>⚡ إجراءات سريعة</h3>
+            <div class="card-header">
+                <h3>⚡ الإجراءات السريعة</h3>
+            </div>
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="window.location.href='teacher-create-exam.html'">➕ إنشاء امتحان جديد</button>
-                <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'">📚 إضافة سؤال</button>
-                <button class="btn btn-primary" onclick="window.location.href='teacher-groups.html'">👥 إنشاء مجموعة</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-create-exam.html'">📝 إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'">❓ إضافة سؤال جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-groups.html'">👥 إنشاء مجموعة جديدة</button>
+                <button class="btn btn-outline" onclick="window.location.href='teacher-submissions.html'">📋 تصحيح الامتحانات</button>
             </div>
         </div>
 
+        <!-- آخر الامتحانات -->
         <div class="card">
-            <h3>📝 امتحاناتي الأخيرة</h3>
+            <div class="card-header">
+                <h3>📝 آخر الامتحانات</h3>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-exams.html'">عرض الكل →</button>
+            </div>
             <div id="recentExamsList"></div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
-        // التحقق من صلاحية الدخول
+        // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
         
-        // التحقق من وجود originalUser في localStorage (الدخول بواسطة الأدمن)
         let originalUser = null;
         let isImpersonating = false;
         
@@ -164,36 +340,29 @@
             console.log('خطأ في قراءة originalUser', e);
         }
         
-        // التحقق من صلاحيات الدخول
         if (!currentUser) {
             window.location.href = 'index.html';
         }
         
-        // إذا كان المستخدم الحالي معلم أو أدمن (في حالة التقليد)
         const allowedRoles = ['teacher', 'admin'];
         if (!allowedRoles.includes(currentUser.role) && !isImpersonating) {
             window.location.href = 'index.html';
         }
         
-        // عرض اسم المستخدم الحالي
         document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
         
         // إظهار شريط العودة إذا كان الدخول بواسطة الأدمن
         if (isImpersonating && originalUser && originalUser.role === 'admin') {
-            const returnBar = document.getElementById('returnBar');
-            returnBar.style.display = 'flex';
-            document.getElementById('currentUserName').innerHTML = currentUser.name || currentUser.username;
-            console.log('تم إظهار شريط العودة - الدخول كأدمن');
-        } else {
-            console.log('لا يوجد شريط عودة - الدخول عادي');
+            const banner = document.getElementById('impersonateBanner');
+            banner.style.display = 'flex';
+            document.getElementById('impersonateUserName').innerHTML = currentUser.name || currentUser.username;
         }
         
-        // ==================== دوال العودة ====================
+        // ==================== العودة للأدمن ====================
         window.returnToAdmin = function() {
             try {
                 const original = JSON.parse(localStorage.getItem('originalUser'));
                 if (original && original.role === 'admin') {
-                    // حفظ المستخدم الأصلي (الأدمن) في localStorage
                     localStorage.setItem('user', JSON.stringify(original));
                     localStorage.removeItem('originalUser');
                     window.location.href = 'admin-dashboard.html';
@@ -201,23 +370,30 @@
                     window.location.href = 'admin-dashboard.html';
                 }
             } catch(e) {
-                console.log('خطأ في العودة للأدمن', e);
                 window.location.href = 'admin-dashboard.html';
             }
-        };
-        
-        window.goToOwnDashboard = function() {
-            window.location.href = 'teacher-dashboard.html';
         };
         
         // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
             const stats = await fetchTeacherStats(currentUser.id);
             document.getElementById('statsArea').innerHTML = `
-                <div class="stat-card"><div class="stat-number">${stats.totalExams}</div><div class="stat-label">📝 الامتحانات</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalQuestions}</div><div class="stat-label">📚 الأسئلة</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalStudents}</div><div class="stat-label">👨‍🎓 الطلاب</div></div>
+                <div class="stat-card" onclick="window.location.href='teacher-exams.html'">
+                    <div class="stat-number">${stats.totalExams}</div>
+                    <div class="stat-label">📝 الامتحانات</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='teacher-questions.html'">
+                    <div class="stat-number">${stats.totalQuestions}</div>
+                    <div class="stat-label">📚 الأسئلة</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='teacher-groups.html'">
+                    <div class="stat-number">${stats.totalGroups}</div>
+                    <div class="stat-label">👥 المجموعات</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='teacher-students.html'">
+                    <div class="stat-number">${stats.totalStudents}</div>
+                    <div class="stat-label">👨‍🎓 الطلاب</div>
+                </div>
             `;
         }
         
@@ -227,16 +403,22 @@
             const container = document.getElementById('recentExamsList');
             
             if (recentExams.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات</div>';
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>لا توجد امتحانات</p>
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='teacher-create-exam.html'" style="margin-top: 15px;">➕ إنشاء أول امتحان</button>
+                    </div>
+                `;
                 return;
             }
             
             container.innerHTML = recentExams.map(e => `
-                <div class="exam-card">
+                <div class="exam-card" onclick="window.location.href='teacher-exams.html'">
                     <div class="exam-title">${e.title}</div>
                     <div class="exam-info">
-                        <span>📖 ${e.subjects?.name || '-'}</span>
-                        <span>🎓 ${e.classes?.name || '-'}</span>
+                        <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
+                        <span>🎓 ${e.classes?.name || 'بدون صف'}</span>
                         <span>⏱️ ${e.duration_minutes} دقيقة</span>
                         <span class="badge ${e.status === 'published' ? 'badge-success' : 'badge-warning'}">${e.status === 'published' ? 'منشور' : 'مسودة'}</span>
                     </div>
