@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نتائجي - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📊 نتائجي</h1>
+            <p>قائمة بجميع الامتحانات التي أديتها ونتائجها</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
+            </div>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['student'])) return;
+        
+        const user = getUser();
+        document.getElementById('studentName').innerHTML = user.name;
+        
+        async function loadResults() {
+            const search = document.getElementById('searchInput').value;
+            let attempts = await fetchExamAttempts({}, 'student', user.id);
+            
+            // فلترة المحاولات المكتملة فقط
+            let completed = attempts.filter(a => a.status === 'submitted' || a.status === 'graded');
+            
+            if (search) {
+                completed = completed.filter(a => a.exams?.title.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('resultsList');
+            if (completed.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد نتائج بعد</div>';
+                return;
+            }
+            
+            container.innerHTML = completed.map(a => {
+                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
+                const passed = percentage >= (a.exams?.passing_score || 50);
+                
+                return `
+                    <div class="exam-card">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                            <div style="flex: 1;">
+                                <div class="exam-title">${a.exams?.title || '-'}</div>
+                                <div class="exam-info">
+                                    <span>📅 ${formatDateTime(a.submitted_at)}</span>
+                                    <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
+                                    <span class="badge ${passed ? 'badge-success' : 'badge-danger'}">${passed ? 'ناجح' : 'راسب'}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        window.viewResult = (attemptId) => {
+            window.location.href = `student-result.html?id=${attemptId}`;
+        };
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadResults());
+        
+        loadResults();
+    </script>
+</body>
+</html>
