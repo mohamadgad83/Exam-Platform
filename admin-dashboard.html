@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
+        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%); padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         .admin-bar {
             background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -67,7 +67,7 @@
             gap: 8px;
             font-family: inherit;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
@@ -112,6 +112,35 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .table-wrapper { overflow-x: auto; border-radius: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+        th { background: #f8fafc; font-weight: 700; }
+        
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            width: 260px;
+            font-family: inherit;
+        }
+        .filter-select {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            min-width: 150px;
+            font-family: inherit;
+        }
         
         .modal {
             display: none;
@@ -177,6 +206,8 @@
         
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-input, .filter-select { width: 100%; }
             .action-buttons { flex-direction: column; }
             .btn { width: 100%; justify-content: center; }
         }
@@ -191,7 +222,7 @@
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-classes.html'">📚 الصفوف والمواد</button>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-exams.html'">📝 الامتحانات</button>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-groups.html'">👥 المجموعات</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-questions.html'">❓ الأسئلة</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-questions.html'">❓ مراجعة الأسئلة</button>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-reports.html'">📊 التقارير</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
@@ -218,14 +249,14 @@
             <div class="action-buttons">
                 <button class="btn btn-primary" onclick="window.location.href='admin-users.html'">➕ إضافة مستخدم</button>
                 <button class="btn btn-primary" onclick="window.location.href='admin-classes.html'">📚 إدارة الصفوف والمواد</button>
-                <button class="btn btn-primary" onclick="openAddExamModal()">📝 إنشاء امتحان جديد</button>
-                <button class="btn btn-primary" onclick="openAddQuestionModal()">❓ إضافة سؤال جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='admin-exams.html'">📝 إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='add-question.html'">❓ إضافة سؤال جديد</button>
                 <button class="btn btn-primary" onclick="window.location.href='admin-groups.html'">👥 إنشاء مجموعة جديدة</button>
                 <button class="btn btn-primary" onclick="window.location.href='admin-questions.html'">✅ مراجعة الأسئلة</button>
             </div>
         </div>
 
-        <!-- تعيين مواد وصفوف للمعلم -->
+        <!-- تعيين مواد وصفوف للمعلم (مبسط) -->
         <div class="card">
             <h3>📚 تعيين المواد والصفوف للمعلمين</h3>
             <div class="action-section">
@@ -257,13 +288,16 @@
             </div>
         </div>
 
-        <!-- آخر المستخدمين المسجلين -->
+        <!-- آخر المستخدمين المسجلين مع زر الدخول للوحة -->
         <div class="card">
             <h3>👤 آخر المستخدمين المسجلين</h3>
+            <div class="filter-bar">
+                <input type="text" id="userSearch" class="search-input" placeholder="🔍 بحث باسم المستخدم...">
+            </div>
             <div class="table-wrapper">
-                <table style="width: 100%; border-collapse: collapse;">
+                <table>
                     <thead>
-                        <tr><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الدور</th><th>الحالة</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
+                        <tr><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الدور</th><th>الحالة</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="recentUsersTable"></tbody>
                 </table>
@@ -271,73 +305,9 @@
         </div>
     </div>
 
-    <!-- مودال إضافة امتحان -->
-    <div id="addExamModal" class="modal">
-        <div class="modal-content">
-            <h3>📝 إنشاء امتحان جديد</h3>
-            <input type="text" id="examTitle" placeholder="عنوان الامتحان">
-            <textarea id="examDesc" rows="3" placeholder="وصف الامتحان"></textarea>
-            <select id="examClass">
-                <option value="">-- اختر الصف --</option>
-            </select>
-            <select id="examSubject">
-                <option value="">-- اختر المادة --</option>
-            </select>
-            <select id="examTeacher">
-                <option value="">-- اختر المعلم --</option>
-            </select>
-            <input type="number" id="examDuration" placeholder="المدة (دقائق)" value="60">
-            <input type="number" id="examPassingScore" placeholder="درجة النجاح (%)" value="50">
-            <select id="examStatus">
-                <option value="draft">مسودة</option>
-                <option value="published">منشور</option>
-            </select>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="createExam()">💾 إنشاء</button>
-                <button class="btn btn-outline" onclick="closeModal('addExamModal')">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال إضافة سؤال -->
-    <div id="addQuestionModal" class="modal">
-        <div class="modal-content">
-            <h3>❓ إضافة سؤال جديد (كأدمن)</h3>
-            <select id="questionTeacher">
-                <option value="">-- اختر المعلم صاحب السؤال --</option>
-            </select>
-            <select id="questionType" onchange="toggleQuestionFields()">
-                <option value="mcq">اختيار من متعدد</option>
-                <option value="true_false">صح/خطأ</option>
-                <option value="essay">مقالي</option>
-            </select>
-            <textarea id="questionText" rows="3" placeholder="نص السؤال"></textarea>
-            <div id="mcqFields">
-                <textarea id="options" rows="4" placeholder="الخيارات (سطر لكل خيار)"></textarea>
-            </div>
-            <div id="trueFalseFields" style="display:none;">
-                <select id="trueFalseAnswer">
-                    <option value="true">صحيح</option>
-                    <option value="false">خطأ</option>
-                </select>
-            </div>
-            <input type="number" id="questionPoints" placeholder="الدرجة" value="5">
-            <input type="text" id="questionSubject" placeholder="المادة">
-            <select id="questionDifficulty">
-                <option value="easy">🟢 سهل</option>
-                <option value="medium">🟡 متوسط</option>
-                <option value="hard">🔴 صعب</option>
-            </select>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="createQuestion()">💾 حفظ</button>
-                <button class="btn btn-outline" onclick="closeModal('addQuestionModal')">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
     <script src="js/supabase-config.js"></script>
     <script>
-        // التحقق من صلاحية الدخول
+        // ==================== التحقق من صلاحية الدخول ====================
         (function() {
             const user = getUser();
             if (!user || user.role !== 'admin') {
@@ -362,12 +332,13 @@
         
         // ==================== آخر المستخدمين ====================
         async function loadRecentUsers() {
-            const users = await fetchUsers({});
-            const recentUsers = users.slice(0, 5);
+            const search = document.getElementById('userSearch').value;
+            const users = await fetchUsers({ search });
+            const recentUsers = users.slice(0, 10);
             const tbody = document.getElementById('recentUsersTable');
             
             if (!recentUsers || recentUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">لا يوجد مستخدمين</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا يوجد مستخدمين</td></tr>';
                 return;
             }
             
@@ -386,14 +357,43 @@
                     <td>${u.phone || '-'}</td>
                     <td><span class="badge ${roleClass}">${roleText}</span></td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
-                    <td>${formatDate(u.created_at)}</td>
-                    <td><button class="btn btn-primary btn-sm" onclick="window.location.href='admin-users.html'">إدارة</button></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="goToUserDashboard(${u.id}, '${u.role}', '${u.name.replace(/'/g, "\\'")}')">🚪 دخول للوحة</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(row);
             }
         }
         
-        // ==================== تحميل المعلمين للتعيينات ====================
+        // ==================== الدخول للوحة تحكم المستخدم ====================
+        window.goToUserDashboard = async function(userId, role, userName) {
+            const users = await fetchUsers({});
+            const targetUser = users.find(u => u.id == userId);
+            if (!targetUser) return;
+            
+            const adminUser = getUser();
+            localStorage.setItem('originalUser', JSON.stringify(adminUser));
+            localStorage.setItem('user', JSON.stringify({
+                id: targetUser.id,
+                name: targetUser.name,
+                role: targetUser.role,
+                username: targetUser.username,
+                phone: targetUser.phone,
+                class_id: targetUser.class_id,
+                isImpersonating: true
+            }));
+            
+            showToast(`جاري الدخول كـ ${userName}...`, 'success');
+            setTimeout(() => {
+                if (targetUser.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else if (targetUser.role === 'teacher') window.location.href = 'teacher-dashboard.html';
+                else window.location.href = 'student-dashboard.html';
+            }, 1000);
+        };
+        
+        // ==================== تعيينات المعلم ====================
         async function loadTeachersForAssignments() {
             const teachers = await fetchUsers({ role: 'teacher' });
             const classes = await fetchClasses();
@@ -426,7 +426,6 @@
                 subjectSelect.appendChild(option);
             }
             
-            // تحميل التعيينات الحالية عند تغيير المعلم
             teacherSelect.onchange = function() {
                 loadTeacherAssignments(this.value);
             };
@@ -487,7 +486,7 @@
             showToast('تم إضافة التعيين', 'success');
         };
         
-        // ==================== تحميل المستخدمين للدخول كـ ====================
+        // ==================== الدخول كـ مستخدم آخر ====================
         async function loadUsersForImpersonate() {
             const users = await fetchUsers({});
             const select = document.getElementById('impersonateUserSelect');
@@ -513,7 +512,6 @@
             const user = users.find(u => u.id == userId);
             if (!user) return;
             
-            // حفظ بيانات الدخول المؤقتة
             const adminUser = getUser();
             localStorage.setItem('originalUser', JSON.stringify(adminUser));
             localStorage.setItem('user', JSON.stringify({
@@ -522,6 +520,7 @@
                 role: user.role,
                 username: user.username,
                 phone: user.phone,
+                class_id: user.class_id,
                 isImpersonating: true
             }));
             
@@ -533,145 +532,8 @@
             }, 1000);
         };
         
-        // ==================== إنشاء امتحان من الأدمن ====================
-        async function loadExamSelects() {
-            const classes = await fetchClasses();
-            const subjects = await fetchSubjects();
-            const teachers = await fetchUsers({ role: 'teacher' });
-            
-            const classSelect = document.getElementById('examClass');
-            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-            for (let i = 0; i < classes.length; i++) {
-                classSelect.innerHTML += `<option value="${classes[i].id}">${classes[i].name}</option>`;
-            }
-            
-            const subjectSelect = document.getElementById('examSubject');
-            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            for (let i = 0; i < subjects.length; i++) {
-                subjectSelect.innerHTML += `<option value="${subjects[i].id}">${subjects[i].name}</option>`;
-            }
-            
-            const teacherSelect = document.getElementById('examTeacher');
-            teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
-            for (let i = 0; i < teachers.length; i++) {
-                teacherSelect.innerHTML += `<option value="${teachers[i].id}">${teachers[i].name}</option>`;
-            }
-        }
-        
-        window.openAddExamModal = async function() {
-            await loadExamSelects();
-            document.getElementById('addExamModal').style.display = 'flex';
-        };
-        
-        window.createExam = async function() {
-            const title = document.getElementById('examTitle').value;
-            const description = document.getElementById('examDesc').value;
-            const classId = document.getElementById('examClass').value;
-            const subjectId = document.getElementById('examSubject').value;
-            const teacherId = document.getElementById('examTeacher').value;
-            const duration = document.getElementById('examDuration').value;
-            const passingScore = document.getElementById('examPassingScore').value;
-            const status = document.getElementById('examStatus').value;
-            
-            if (!title || !classId || !subjectId) {
-                showToast('العنوان والصف والمادة مطلوبة', 'error');
-                return;
-            }
-            
-            const examData = {
-                title: title,
-                description: description || null,
-                class_id: parseInt(classId),
-                subject_id: parseInt(subjectId),
-                teacher_id: teacherId ? parseInt(teacherId) : null,
-                duration_minutes: parseInt(duration),
-                passing_score: parseInt(passingScore),
-                status: status
-            };
-            
-            const result = await createExam(examData);
-            if (result) {
-                closeModal('addExamModal');
-                showToast('تم إنشاء الامتحان', 'success');
-                document.getElementById('examTitle').value = '';
-                document.getElementById('examDesc').value = '';
-            } else {
-                showToast('حدث خطأ', 'error');
-            }
-        };
-        
-        // ==================== إنشاء سؤال من الأدمن ====================
-        window.toggleQuestionFields = function() {
-            const type = document.getElementById('questionType').value;
-            document.getElementById('mcqFields').style.display = type === 'mcq' ? 'block' : 'none';
-            document.getElementById('trueFalseFields').style.display = type === 'true_false' ? 'block' : 'none';
-        };
-        
-        window.openAddQuestionModal = async function() {
-            const teachers = await fetchUsers({ role: 'teacher' });
-            const teacherSelect = document.getElementById('questionTeacher');
-            teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
-            for (let i = 0; i < teachers.length; i++) {
-                teacherSelect.innerHTML += `<option value="${teachers[i].id}">${teachers[i].name}</option>`;
-            }
-            document.getElementById('questionText').value = '';
-            document.getElementById('options').value = '';
-            document.getElementById('questionPoints').value = '5';
-            document.getElementById('questionSubject').value = '';
-            document.getElementById('questionDifficulty').value = 'medium';
-            document.getElementById('addQuestionModal').style.display = 'flex';
-        };
-        
-        window.createQuestion = async function() {
-            const teacherId = document.getElementById('questionTeacher').value;
-            const type = document.getElementById('questionType').value;
-            const text = document.getElementById('questionText').value;
-            const points = parseInt(document.getElementById('questionPoints').value);
-            const subject = document.getElementById('questionSubject').value;
-            const difficulty = document.getElementById('questionDifficulty').value;
-            
-            if (!teacherId || !text) {
-                showToast('المعلم ونص السؤال مطلوبان', 'error');
-                return;
-            }
-            
-            const questionData = {
-                teacher_id: parseInt(teacherId),
-                text: text,
-                type: type,
-                points: points,
-                subject: subject || null,
-                difficulty: difficulty,
-                status: 'approved'
-            };
-            
-            if (type === 'mcq') {
-                const optionsText = document.getElementById('options').value;
-                const options = optionsText.split('\n').filter(opt => opt.trim());
-                if (options.length < 2) {
-                    showToast('يجب إدخال خيارين على الأقل', 'error');
-                    return;
-                }
-                questionData.options = options;
-                questionData.correct_answer = '';
-            } else if (type === 'true_false') {
-                const answer = document.getElementById('trueFalseAnswer').value;
-                questionData.correct_answer = answer === 'true' ? 'صحيح' : 'خطأ';
-            }
-            
-            const result = await createQuestion(questionData);
-            if (result) {
-                closeModal('addQuestionModal');
-                showToast('تم إضافة السؤال', 'success');
-            } else {
-                showToast('حدث خطأ', 'error');
-            }
-        };
-        
-        // ==================== إغلاق المودال ====================
-        window.closeModal = function(id) {
-            document.getElementById(id).style.display = 'none';
-        };
+        // ==================== أحداث البحث ====================
+        document.getElementById('userSearch').addEventListener('input', () => loadRecentUsers());
         
         // ==================== تحميل أولي ====================
         loadStats();
