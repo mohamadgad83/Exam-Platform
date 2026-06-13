@@ -147,4 +147,73 @@
         const originalUser = localStorage.getItem('originalUser');
         const isImpersonating = user.isImpersonating === true;
         
-        if (isImpersonating
+        if (isImpersonating && originalUser) {
+            const returnBar = document.getElementById('returnBar');
+            returnBar.style.display = 'flex';
+            document.getElementById('currentUserName').innerHTML = user.name;
+        }
+        
+        // العودة للوحة الأدمن
+        window.returnToAdmin = function() {
+            const original = JSON.parse(localStorage.getItem('originalUser'));
+            if (original) {
+                localStorage.setItem('user', JSON.stringify(original));
+                localStorage.removeItem('originalUser');
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                window.location.href = 'admin-dashboard.html';
+            }
+        };
+        
+        // الذهاب للوحة تحكم الطالب الأصلية
+        window.goToOwnDashboard = function() {
+            window.location.href = 'student-dashboard.html';
+        };
+        
+        async function loadStats() {
+            const stats = await fetchStudentStats(user.id);
+            document.getElementById('statsArea').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${stats.totalAttempts}</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.avgScore}%</div><div class="stat-label">⭐ متوسط الدرجات</div></div>
+            `;
+        }
+        
+        async function loadAvailableExams() {
+            let exams = await fetchExams({ status: 'published' }, 'student', user.id);
+            const requests = await fetchExamRequests({}, 'student', user.id);
+            const requestedExamIds = new Set(requests.map(r => r.exam_id));
+            const availableExams = exams.filter(e => !requestedExamIds.has(e.id));
+            const container = document.getElementById('availableExamsList');
+            
+            if (availableExams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات متاحة حالياً</div>';
+                return;
+            }
+            
+            container.innerHTML = availableExams.map(e => `
+                <div class="exam-card">
+                    <div class="exam-title">${e.title}</div>
+                    <div class="exam-info">
+                        <span>📖 ${e.subjects?.name || '-'}</span>
+                        <span>👨‍🏫 ${e.users?.name || '-'}</span>
+                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="subscribeToExam(${e.id})">➕ اشتراك</button>
+                </div>
+            `).join('');
+        }
+        
+        window.subscribeToExam = async (examId) => {
+            const result = await createExamRequest(user.id, examId);
+            if (result) {
+                showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
+                loadAvailableExams();
+            }
+        };
+        
+        loadStats();
+        loadAvailableExams();
+    </script>
+</body>
+</html>
