@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الامتحانات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📝 إدارة الامتحانات</h1>
+            <p>مراجعة ونشر الامتحانات</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث...">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">كل الحالات</option>
+                    <option value="draft">مسودة</option>
+                    <option value="published">منشور</option>
+                    <option value="closed">مغلق</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>العنوان</th><th>المادة</th><th>المعلم</th><th>المدة</th><th>الحالة</th><th>تاريخ الإنشاء</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="examsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['admin'])) return;
+        
+        document.getElementById('adminName').innerHTML = getUser().name;
+        
+        async function loadExams() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let exams = await fetchExams({ status });
+            if (search) {
+                exams = exams.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const tbody = document.getElementById('examsTableBody');
+            if (exams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">لا توجد امتحانات</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = exams.map(e => `
+                <tr>
+                    <td><strong>${e.title}</strong><br><small>${e.description || ''}</small></td>
+                    <td>${e.subjects?.name || '-'}</td>
+                    <td>${e.users?.name || '-'}</td>
+                    <td>${e.duration_minutes} دقيقة</td>
+                    <td><span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'draft' ? 'badge-warning' : 'badge-danger'}">${e.status === 'published' ? 'منشور' : e.status === 'draft' ? 'مسودة' : 'مغلق'}</span></td>
+                    <td>${formatDate(e.created_at)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${e.status !== 'published' ? `<button class="btn btn-success btn-sm" onclick="updateExamStatus(${e.id}, 'published')">✅ نشر</button>` : ''}
+                            ${e.status !== 'closed' ? `<button class="btn btn-warning btn-sm" onclick="updateExamStatus(${e.id}, 'closed')">🔒 إغلاق</button>` : ''}
+                            <button class="btn btn-danger btn-sm" onclick="deleteExamConfirm(${e.id})">🗑️ حذف</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function updateExamStatus(id, status) {
+            await updateExamStatus(id, status);
+            loadExams();
+        }
+        
+        function deleteExamConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذا الامتحان؟', async () => {
+                await deleteExam(id);
+                loadExams();
+            });
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadExams());
+        document.getElementById('statusFilter').addEventListener('change', () => loadExams());
+        
+        loadExams();
+    </script>
+</body>
+</html>
