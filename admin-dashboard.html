@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم الطالب - منصة الاختبارات</title>
+    <title>لوحة تحكم المدير - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -11,123 +11,131 @@
 <body>
     <div class="container">
         <!-- الشريط العلوي -->
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">🎓</span> لوحة تحكم الطالب - <span id="studentName"></span></div>
-            <div>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات المتاحة</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
-                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-users.html'">👥 المستخدمين</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-exams.html'">📝 الامتحانات</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-groups.html'">👥 المجموعات</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-questions.html'">❓ الأسئلة</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-reports.html'">📊 التقارير</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
         </div>
 
         <!-- عنوان الصفحة -->
         <div class="card header">
-            <h1>📊 لوحة تحكم الطالب</h1>
-            <p>مرحباً بك في لوحة التحكم الرئيسية</p>
+            <h1>📊 لوحة تحكم المدير</h1>
+            <p>مرحباً بك في لوحة التحكم الرئيسية - نظرة عامة على المنصة</p>
         </div>
 
         <!-- الإحصائيات -->
         <div class="stats-grid" id="statsArea">
-            <div class="stat-card"><div class="stat-number" id="totalAttempts">0</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
-            <div class="stat-card"><div class="stat-number" id="totalGroups">0</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
-            <div class="stat-card"><div class="stat-number" id="avgScore">0%</div><div class="stat-label">⭐ متوسط الدرجات</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">👥 إجمالي المستخدمين</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalTeachers">0</div><div class="stat-label">👨‍🏫 المعلمين</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalStudents">0</div><div class="stat-label">👨‍🎓 الطلاب</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalExams">0</div><div class="stat-label">📝 الامتحانات</div></div>
+            <div class="stat-card"><div class="stat-number" id="pendingQuestions">0</div><div class="stat-label">⏳ أسئلة بانتظار المراجعة</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalAttempts">0</div><div class="stat-label">📋 محاولات الامتحان</div></div>
         </div>
 
-        <!-- الامتحانات المتاحة -->
+        <!-- الإجراءات السريعة -->
         <div class="card">
-            <h3>📝 الامتحانات المتاحة لك</h3>
-            <div id="availableExamsList"></div>
+            <h3>⚡ إجراءات سريعة</h3>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="window.location.href='admin-users.html'">➕ إضافة مستخدم جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='admin-exams.html'">📝 إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='admin-groups.html'">👥 إنشاء مجموعة جديدة</button>
+                <button class="btn btn-primary" onclick="window.location.href='admin-questions.html'">❓ مراجعة الأسئلة</button>
+            </div>
         </div>
 
-        <!-- آخر النتائج -->
+        <!-- آخر المستخدمين المسجلين -->
         <div class="card">
-            <h3>📊 آخر النتائج</h3>
-            <div id="recentResultsList"></div>
+            <h3>👤 آخر المستخدمين المسجلين</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>الاسم</th><th>رقم الهاتف</th><th>الدور</th><th>الحالة</th><th>تاريخ التسجيل</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="recentUsersTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- آخر الامتحانات المنشورة -->
+        <div class="card">
+            <h3>📝 آخر الامتحانات المنشورة</h3>
+            <div id="recentExamsList"></div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
-        if (!checkAuth(['student'])) return;
+        if (!checkAuth(['admin'])) return;
         
         const user = getUser();
-        document.getElementById('studentName').innerHTML = user.name;
+        document.getElementById('adminName').innerHTML = user.name;
         
         async function loadStats() {
-            const stats = await fetchStudentStats(user.id);
+            const stats = await fetchAdminStats();
+            document.getElementById('totalUsers').innerHTML = stats.totalUsers;
+            document.getElementById('totalTeachers').innerHTML = stats.totalTeachers;
+            document.getElementById('totalStudents').innerHTML = stats.totalStudents;
+            document.getElementById('totalExams').innerHTML = stats.totalExams;
+            document.getElementById('pendingQuestions').innerHTML = stats.pendingQuestions;
             document.getElementById('totalAttempts').innerHTML = stats.totalAttempts;
-            document.getElementById('totalGroups').innerHTML = stats.totalGroups;
-            document.getElementById('avgScore').innerHTML = stats.avgScore + '%';
         }
         
-        async function loadAvailableExams() {
-            // جلب الامتحانات المنشورة التي تناسب صف الطالب
-            let exams = await fetchExams({ status: 'published' });
+        async function loadRecentUsers() {
+            const users = await fetchUsers({});
+            const recentUsers = users.slice(0, 5);
+            const tbody = document.getElementById('recentUsersTable');
             
-            // فلترة الامتحانات حسب صف الطالب
-            if (user.class_id) {
-                exams = exams.filter(e => e.class_id === user.class_id);
-            }
-            
-            const container = document.getElementById('availableExamsList');
-            
-            if (exams.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 لا توجد امتحانات متاحة حالياً</div>';
+            if (recentUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا يوجد مستخدمين</td></tr>';
                 return;
             }
             
-            container.innerHTML = exams.map(e => `
+            tbody.innerHTML = recentUsers.map(u => `
+                <tr>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.phone || '-'}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'badge-primary' : u.role === 'teacher' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</span></td>
+                    <td><span class="badge ${u.status === 'active' ? 'badge-success' : 'badge-warning'}">${u.status === 'active' ? 'نشط' : 'قيد الانتظار'}</span></td>
+                    <td>${formatDate(u.created_at)}</td>
+                    <td><button class="btn btn-primary btn-sm" onclick="window.location.href='admin-users.html'">إدارة</button></td>
+                </tr>
+            `).join('');
+        }
+        
+        async function loadRecentExams() {
+            const exams = await fetchExams({});
+            const recentExams = exams.slice(0, 5);
+            const container = document.getElementById('recentExamsList');
+            
+            if (recentExams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات</div>';
+                return;
+            }
+            
+            container.innerHTML = recentExams.map(e => `
                 <div class="exam-card">
                     <div class="exam-title">${e.title}</div>
                     <div class="exam-info">
                         <span>📖 ${e.subjects?.name || '-'}</span>
+                        <span>🎓 ${e.classes?.name || '-'}</span>
                         <span>👨‍🏫 ${e.users?.name || '-'}</span>
                         <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                        <span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'draft' ? 'badge-warning' : 'badge-danger'}">${e.status === 'published' ? 'منشور' : e.status === 'draft' ? 'مسودة' : 'مغلق'}</span>
                     </div>
-                    <p style="color:#64748b; margin:10px 0;">${e.description || ''}</p>
-                    <button class="btn btn-primary" onclick="startExam(${e.id})">🚀 بدء الامتحان</button>
                 </div>
             `).join('');
         }
         
-        async function loadRecentResults() {
-            const attempts = await fetchExamAttempts({ studentId: user.id });
-            const recent = attempts.slice(0, 5);
-            const container = document.getElementById('recentResultsList');
-            
-            if (recent.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 لا توجد نتائج بعد</div>';
-                return;
-            }
-            
-            container.innerHTML = recent.map(a => {
-                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
-                return `
-                    <div class="exam-card">
-                        <div class="exam-title">${a.exams?.title || '-'}</div>
-                        <div class="exam-info">
-                            <span>📅 ${formatDate(a.submitted_at)}</span>
-                            <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
-                        </div>
-                        <button class="btn btn-outline btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        window.startExam = (examId) => {
-            localStorage.setItem('currentExamId', examId);
-            window.location.href = 'student-exam-attempt.html';
-        };
-        
-        window.viewResult = (attemptId) => {
-            window.location.href = `student-result.html?id=${attemptId}`;
-        };
-        
         loadStats();
-        loadAvailableExams();
-        loadRecentResults();
+        loadRecentUsers();
+        loadRecentExams();
     </script>
 </body>
 </html>
