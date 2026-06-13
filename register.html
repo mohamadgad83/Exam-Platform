@@ -11,31 +11,35 @@
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 40px 20px;
+            min-height: 100vh;
         }
-        .register-container { max-width: 500px; margin: 0 auto; }
+        .register-container { max-width: 550px; margin: 0 auto; }
         .form-group { margin-bottom: 20px; text-align: right; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); }
         .form-group input, .form-group select {
             width: 100%;
             padding: 14px 16px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border);
             border-radius: 16px;
             font-size: 16px;
             font-family: inherit;
+            transition: all 0.3s;
         }
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         .back-link { text-align: center; margin-top: 25px; }
-        .back-link a { color: #667eea; text-decoration: none; }
+        .back-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="register-container">
         <div class="card" style="text-align: center;">
-            <h1>🎓 تسجيل طالب جديد</h1>
-            <p class="subtitle" style="color: #64748b; margin-bottom: 30px;">قم بإنشاء حسابك للبدء</p>
+            <div class="logo" style="font-size: 48px; margin-bottom: 16px;">🎓</div>
+            <h1>تسجيل طالب جديد</h1>
+            <p class="subtitle" style="color: var(--gray); margin-bottom: 30px;">قم بإنشاء حسابك للبدء</p>
             
             <form id="registerForm">
                 <div class="form-group">
