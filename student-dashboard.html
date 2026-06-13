@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الطالب - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>🎓 لوحة تحكم الطالب</h1>
+            <p>مرحباً بك في منصة الاختبارات</p>
+        </div>
+
+        <div class="stats-grid" id="statsArea"></div>
+
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
+            <div class="card">
+                <h3>📝 الامتحانات المتاحة</h3>
+                <div id="availableExamsList"></div>
+            </div>
+
+            <div class="card">
+                <h3>📊 آخر النتائج</h3>
+                <div id="recentResultsList"></div>
+            </div>
+
+            <div class="card">
+                <h3>👥 المجموعات المتاحة</h3>
+                <div id="availableGroupsList"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚡ إجراءات سريعة</h3>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="window.location.href='student-exams.html'">📝 استعراض الامتحانات</button>
+                <button class="btn btn-primary" onclick="window.location.href='student-groups.html'">👥 استعراض المجموعات</button>
+                <button class="btn btn-outline" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['student'])) return;
+        
+        const user = getUser();
+        document.getElementById('studentName').innerHTML = user.name;
+        
+        async function loadStats() {
+            const stats = await fetchStudentStats(user.id);
+            document.getElementById('statsArea').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${stats.totalAttempts}</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.avgScore}%</div><div class="stat-label">⭐ متوسط الدرجات</div></div>
+            `;
+        }
+        
+        async function loadAvailableExams() {
+            let exams = await fetchExams({ status: 'published' }, 'student', user.id);
+            
+            // جلب طلبات الطالب المعلقة والمقبولة
+            const requests = await fetchExamRequests({}, 'student', user.id);
+            const requestedExamIds = new Set(requests.map(r => r.exam_id));
+            
+            // عرض فقط الامتحانات التي لم يطلبها الطالب بعد
+            const availableExams = exams.filter(e => !requestedExamIds.has(e.id));
+            const container = document.getElementById('availableExamsList');
+            
+            if (availableExams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات متاحة حالياً</div>';
+                return;
+            }
+            
+            container.innerHTML = availableExams.map(e => `
+                <div class="exam-card">
+                    <div class="exam-title">${e.title}</div>
+                    <div class="exam-info">
+                        <span>📖 ${e.subjects?.name || '-'}</span>
+                        <span>👨‍🏫 ${e.users?.name || '-'}</span>
+                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                    </div>
+                    <p style="color: var(--gray); margin: 10px 0;">${e.description || ''}</p>
+                    <button class="btn btn-primary" onclick="subscribeToExam(${e.id})">➕ اشتراك</button>
+                </div>
+            `).join('');
+        }
+        
+        async function loadRecentResults() {
+            const attempts = await fetchExamAttempts({}, 'student', user.id);
+            const recent = attempts.slice(0, 5);
+            const container = document.getElementById('recentResultsList');
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد نتائج بعد</div>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(a => {
+                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
+                return `
+                    <div class="exam-card">
+                        <div class="exam-title">${a.exams?.title || '-'}</div>
+                        <div class="exam-info">
+                            <span>📅 ${formatDate(a.submitted_at)}</span>
+                            <span class="badge ${percentage >= 70 ? 'badge-success' : percentage >= 50 ? 'badge-warning' : 'badge-danger'}">${percentage}%</span>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadAvailableGroups() {
+            const groups = await fetchGroups({}, 'student');
+            const container = document.getElementById('availableGroupsList');
+            
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="empty-state">👥 لا توجد مجموعات متاحة</div>';
+                return;
+            }
+            
+            // جلب عضوية الطالب الحالية
+            const myGroups = await fetchGroupMemberships(user.id);
+            const myGroupIds = new Set(myGroups.map(g => g.group_id));
+            
+            const availableGroups = groups.filter(g => !myGroupIds.has(g.id));
+            
+            if (availableGroups.length === 0) {
+                container.innerHTML = '<div class="empty-state">✅ أنت عضو في جميع المجموعات المتاحة</div>';
+                return;
+            }
+            
+            container.innerHTML = availableGroups.map(g => `
+                <div class="exam-card">
+                    <div class="exam-title">${g.name}</div>
+                    <div class="exam-info">
+                        <span>👨‍🏫 ${g.users?.name || '-'}</span>
+                        <span>👥 ${g.member_count || 0}${g.max_capacity ? `/${g.max_capacity}` : ''} طالب</span>
+                        <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
+                    </div>
+                    <p style="color: var(--gray); margin: 10px 0;">${g.description || ''}</p>
+                    ${g.is_open ? `<button class="btn btn-primary" onclick="joinGroup(${g.id})">➕ انضمام</button>` : '<span class="badge badge-danger">مغلق</span>'}
+                </div>
+            `).join('');
+        }
+        
+        async function fetchGroupMemberships(studentId) {
+            const { data } = await sb
+                .from('group_members')
+                .select('group_id')
+                .eq('student_id', studentId);
+            return data || [];
+        }
+        
+        window.subscribeToExam = async (examId) => {
+            const result = await createExamRequest(user.id, examId);
+            if (result) {
+                loadAvailableExams();
+                showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
+            }
+        };
+        
+        window.joinGroup = async (groupId) => {
+            const result = await joinGroup(groupId, user.id);
+            if (result.success) {
+                loadAvailableGroups();
+            } else {
+                showToast(result.error, 'error');
+            }
+        };
+        
+        window.viewResult = (attemptId) => {
+            window.location.href = `student-result.html?id=${attemptId}`;
+        };
+        
+        loadStats();
+        loadAvailableExams();
+        loadRecentResults();
+        loadAvailableGroups();
+    </script>
+</body>
+</html>
