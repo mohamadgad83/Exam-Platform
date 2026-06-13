@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصحيح الامتحانات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📋 تصحيح الامتحانات</h1>
+            <p>مراجعة وتصحيح إجابات الطلاب في الأسئلة المقالية</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <select id="examFilter" class="filter-select">
+                    <option value="all">كل الامتحانات</option>
+                </select>
+            </div>
+            <div id="submissionsList"></div>
+        </div>
+    </div>
+
+    <!-- مودال تصحيح السؤال -->
+    <div id="correctionModal" class="modal">
+        <div class="modal-content">
+            <h3>✏️ تصحيح السؤال</h3>
+            <div id="correctionContent"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveCorrection()">💾 حفظ التصحيح</button>
+                <button class="btn btn-outline" onclick="closeModal('correctionModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['teacher'])) return;
+        
+        const user = getUser();
+        let allSubmissions = [];
+        let currentCorrection = null;
+        
+        document.getElementById('teacherName').innerHTML = user.name;
+        
+        async function loadExamsFilter() {
+            const exams = await fetchExams({}, 'teacher', user.id);
+            const examFilter = document.getElementById('examFilter');
+            examFilter.innerHTML = '<option value="all">كل الامتحانات</option>';
+            exams.forEach(e => {
+                examFilter.innerHTML += `<option value="${e.id}">${e.title}</option>`;
+            });
+        }
+        
+        async function loadSubmissions() {
+            const examId = document.getElementById('examFilter').value;
+            let filters = {};
+            if (examId !== 'all') filters.examId = examId;
+            
+            const attempts = await fetchExamAttempts(filters, 'teacher', user.id);
+            // فلترة المحاولات المكتملة فقط
+            allSubmissions = attempts.filter(a => a.status === 'submitted');
+            
+            const container = document.getElementById('submissionsList');
+            if (allSubmissions.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد محاولات تحتاج تصحيح</div>';
+                return;
+            }
+            
+            container.innerHTML = allSubmissions.map(sub => `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <strong>👨‍🎓 ${sub.users?.name}</strong>
+                            <div class="exam-info">📞 ${sub.users?.phone || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="badge badge-info">📝 ${sub.exams?.title}</span>
+                            <span class="badge">📅 ${formatDateTime(sub.submitted_at)}</span>
+                        </div>
+                    </div>
+                    <div id="essays-${sub.id}">
+                        ${await renderEssayQuestions(sub)}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="finalizeCorrection(${sub.id})">✅ إنهاء التصحيح وحساب النتيجة النهائية</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function renderEssayQuestions(attempt) {
+            // جلب أسئلة الامتحان المقالية
+            const examQuestions = await fetchExamQuestions(attempt.exam_id);
+            const essayQuestions = examQuestions.filter(eq => {
+                const q = eq.questions;
+                return q && q.type === 'essay';
+            });
+            
+            if (essayQuestions.length === 0) {
+                return '<div class="empty-state">لا توجد أسئلة مقالية في هذا الامتحان</div>';
+            }
+            
+            const answers = attempt.answers || {};
+            let html = '';
+            
+            for (let i = 0; i < essayQuestions.length; i++) {
+                const eq = essayQuestions[i];
+                const q = eq.questions;
+                const studentAnswer = answers[eq.question_id] || 'لم يتم الإجابة';
+                const savedScore = (attempt.essay_scores && attempt.essay_scores[eq.question_id]) || 0;
+                
+                html += `
+                    <div class="exam-card" style="background: #fff7ed; border-right: 4px solid #f59e0b;">
+                        <div><strong>السؤال ${i+1}:</strong> ${q.text}</div>
+                        <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 12px;">
+                            <strong>إجابة الطالب:</strong><br>
+                            ${studentAnswer}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label>الدرجة: </label>
+                            <input type="number" id="score-${attempt.id}-${eq.question_id}" class="search-input" style="width: 100px;" min="0" max="${q.points}" value="${savedScore}">
+                            <span> / ${q.points}</span>
+                            <button class="btn btn-primary btn-sm" onclick="saveEssayScore(${attempt.id}, ${eq.question_id}, ${q.points})">💾 حفظ</button>
+                        </div>
+                    </div>
+                `;
+            }
+            return html;
+        }
+        
+        async function saveEssayScore(attemptId, questionId, maxPoints) {
+            const scoreInput = document.getElementById(`score-${attemptId}-${questionId}`);
+            const score = parseInt(scoreInput.value) || 0;
+            
+            if (score > maxPoints) {
+                showToast(`الدرجة لا يمكن أن تتجاوز ${maxPoints}`, 'error');
+                scoreInput.value = maxPoints;
+                return;
+            }
+            
+            // جلب المحاولة الحالية
+            const { data: attempt } = await sb
+                .from('exam_attempts')
+                .select('essay_scores')
+                .eq('id', attemptId)
+                .single();
+            
+            const essayScores = attempt?.essay_scores || {};
+            essayScores[questionId] = score;
+            
+            const { error } = await sb
+                .from('exam_attempts')
+                .update({ essay_scores: essayScores })
+                .eq('id', attemptId);
+            
+            if (error) {
+                showToast('حدث خطأ في حفظ الدرجة', 'error');
+            } else {
+                showToast('تم حفظ درجة السؤال', 'success');
+            }
+        }
+        
+        async function finalizeCorrection(attemptId) {
+            // جلب المحاولة والأسئلة المقالية
+            const { data: attempt } = await sb
+                .from('exam_attempts')
+                .select('*, exams!inner(id, title)')
+                .eq('id', attemptId)
+                .single();
+            
+            const examQuestions = await fetchExamQuestions(attempt.exam_id);
+            const essayQuestions = examQuestions.filter(eq => eq.questions?.type === 'essay');
+            
+            // حساب مجموع درجات المقالي
+            const essayScores = attempt.essay_scores || {};
+            let essayTotal = 0;
+            let essayMax = 0;
+            for (const eq of essayQuestions) {
+                essayTotal += essayScores[eq.question_id] || 0;
+                essayMax += eq.questions?.points || 1;
+            }
+            
+            // النتيجة النهائية = درجات الاختياري + درجات المقالي
+            const finalScore = (attempt.score || 0) + essayTotal;
+            const finalTotal = (attempt.total_points || 0) + essayMax;
+            
+            const { error } = await sb
+                .from('exam_attempts')
+                .update({
+                    score: finalScore,
+                    total_points: finalTotal,
+                    status: 'graded'
+                })
+                .eq('id', attemptId);
+            
+            if (error) {
+                showToast('حدث خطأ في إنهاء التصحيح', 'error');
+            } else {
+                showToast('تم إنهاء التصحيح وحساب النتيجة النهائية', 'success');
+                loadSubmissions();
+            }
+        }
+        
+        document.getElementById('examFilter').addEventListener('change', () => loadSubmissions());
+        
+        loadExamsFilter();
+        loadSubmissions();
+    </script>
+</body>
+</html>
