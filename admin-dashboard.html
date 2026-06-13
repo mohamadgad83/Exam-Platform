@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الطالب - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- الشريط العلوي -->
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">🎓</span> لوحة تحكم الطالب - <span id="studentName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات المتاحة</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <!-- عنوان الصفحة -->
+        <div class="card header">
+            <h1>📊 لوحة تحكم الطالب</h1>
+            <p>مرحباً بك في لوحة التحكم الرئيسية</p>
+        </div>
+
+        <!-- الإحصائيات -->
+        <div class="stats-grid" id="statsArea">
+            <div class="stat-card"><div class="stat-number" id="totalAttempts">0</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalGroups">0</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
+            <div class="stat-card"><div class="stat-number" id="avgScore">0%</div><div class="stat-label">⭐ متوسط الدرجات</div></div>
+        </div>
+
+        <!-- الامتحانات المتاحة -->
+        <div class="card">
+            <h3>📝 الامتحانات المتاحة لك</h3>
+            <div id="availableExamsList"></div>
+        </div>
+
+        <!-- آخر النتائج -->
+        <div class="card">
+            <h3>📊 آخر النتائج</h3>
+            <div id="recentResultsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['student'])) return;
+        
+        const user = getUser();
+        document.getElementById('studentName').innerHTML = user.name;
+        
+        async function loadStats() {
+            const stats = await fetchStudentStats(user.id);
+            document.getElementById('totalAttempts').innerHTML = stats.totalAttempts;
+            document.getElementById('totalGroups').innerHTML = stats.totalGroups;
+            document.getElementById('avgScore').innerHTML = stats.avgScore + '%';
+        }
+        
+        async function loadAvailableExams() {
+            // جلب الامتحانات المنشورة التي تناسب صف الطالب
+            let exams = await fetchExams({ status: 'published' });
+            
+            // فلترة الامتحانات حسب صف الطالب
+            if (user.class_id) {
+                exams = exams.filter(e => e.class_id === user.class_id);
+            }
+            
+            const container = document.getElementById('availableExamsList');
+            
+            if (exams.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 لا توجد امتحانات متاحة حالياً</div>';
+                return;
+            }
+            
+            container.innerHTML = exams.map(e => `
+                <div class="exam-card">
+                    <div class="exam-title">${e.title}</div>
+                    <div class="exam-info">
+                        <span>📖 ${e.subjects?.name || '-'}</span>
+                        <span>👨‍🏫 ${e.users?.name || '-'}</span>
+                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                    </div>
+                    <p style="color:#64748b; margin:10px 0;">${e.description || ''}</p>
+                    <button class="btn btn-primary" onclick="startExam(${e.id})">🚀 بدء الامتحان</button>
+                </div>
+            `).join('');
+        }
+        
+        async function loadRecentResults() {
+            const attempts = await fetchExamAttempts({ studentId: user.id });
+            const recent = attempts.slice(0, 5);
+            const container = document.getElementById('recentResultsList');
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px;">📭 لا توجد نتائج بعد</div>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(a => {
+                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
+                return `
+                    <div class="exam-card">
+                        <div class="exam-title">${a.exams?.title || '-'}</div>
+                        <div class="exam-info">
+                            <span>📅 ${formatDate(a.submitted_at)}</span>
+                            <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        window.startExam = (examId) => {
+            localStorage.setItem('currentExamId', examId);
+            window.location.href = 'student-exam-attempt.html';
+        };
+        
+        window.viewResult = (attemptId) => {
+            window.location.href = `student-result.html?id=${attemptId}`;
+        };
+        
+        loadStats();
+        loadAvailableExams();
+        loadRecentResults();
+    </script>
+</body>
+</html>
