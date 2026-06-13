@@ -8,15 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
         .card {
             background: white;
             border-radius: 28px;
             padding: 30px;
             margin-bottom: 20px;
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
         }
+        
         .header {
             display: flex;
             justify-content: space-between;
@@ -24,6 +27,8 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
         }
         h1 {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -31,6 +36,7 @@
             -webkit-text-fill-color: transparent;
             font-size: 28px;
         }
+        
         .btn {
             padding: 10px 20px;
             border: none;
@@ -43,10 +49,9 @@
             gap: 8px;
             font-family: inherit;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
         .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
         .btn-sm { padding: 6px 14px; font-size: 12px; }
         
@@ -67,59 +72,7 @@
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         
-        .choices-area {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 10px;
-        }
-        .choice-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: white;
-            padding: 12px 15px;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 10px;
-            transition: all 0.2s;
-        }
-        .choice-item:hover {
-            border-color: #6366f1;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.1);
-        }
-        .choice-text {
-            flex: 1;
-        }
-        .choice-text input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .choice-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .choice-correct {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-        .choice-correct input {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            margin: 0;
-        }
-        .choice-correct label {
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
+        /* منطقة رفع الصور */
         .image-upload-area {
             border: 2px dashed #e2e8f0;
             border-radius: 16px;
@@ -127,11 +80,11 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 10px;
+            background: #f8fafc;
         }
         .image-upload-area:hover {
             border-color: #6366f1;
-            background: #f8fafc;
+            background: #f1f5f9;
         }
         .image-preview {
             margin-top: 10px;
@@ -157,7 +110,107 @@
             justify-content: center;
             cursor: pointer;
             font-size: 12px;
+            font-weight: bold;
         }
+        
+        /* منطقة الاختيارات */
+        .choices-area {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .choice-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+        .choice-item:hover {
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+        }
+        .choice-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .choice-text {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .choice-text input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .choice-text input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        .choice-image-area {
+            margin-right: 30px;
+        }
+        .choice-image-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .choice-image-upload:hover {
+            background: #e2e8f0;
+        }
+        .choice-image-preview {
+            margin-top: 5px;
+        }
+        .choice-image-preview img {
+            max-width: 80px;
+            border-radius: 8px;
+        }
+        .choice-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .choice-correct {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #f1f5f9;
+        }
+        .choice-correct input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin: 0;
+        }
+        .choice-correct label {
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         
         .badge {
             display: inline-flex;
@@ -170,10 +223,17 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
         
-        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-        .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        @media (max-width: 768px) { .row-2, .row-3 { grid-template-columns: 1fr; } }
+        .info-note {
+            background: #fef3c7;
+            border-right: 4px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #92400e;
+        }
         
         .toast-notification {
             position: fixed;
@@ -205,6 +265,35 @@
             animation: progress 3s linear forwards;
         }
         @keyframes progress { from { width: 100%; } to { width: 0%; } }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .row-2, .row-3, .row-4 { grid-template-columns: 1fr; gap: 12px; }
+            .choice-item { flex-direction: column; align-items: stretch; }
+            .choice-actions { justify-content: flex-end; }
+        }
     </style>
 </head>
 <body>
@@ -215,14 +304,14 @@
                 <button class="btn btn-outline" onclick="window.location.href='admin-dashboard.html'">← العودة</button>
             </div>
 
-            <div class="form-group">
-                <label>👨‍🏫 المعلم (صاحب السؤال)</label>
-                <select id="questionTeacher">
-                    <option value="">-- اختر المعلم --</option>
-                </select>
-            </div>
-
+            <!-- الصف والمادة والمعلم -->
             <div class="row-2">
+                <div class="form-group">
+                    <label>👨‍🏫 المعلم</label>
+                    <select id="questionTeacher">
+                        <option value="">-- اختر المعلم --</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label>🎓 الصف الدراسي</label>
                     <select id="questionClass" onchange="loadSubjectsByClass()">
@@ -231,60 +320,57 @@
                 </div>
                 <div class="form-group">
                     <label>📚 المادة</label>
-                    <select id="questionSubject">
+                    <select id="questionSubject" disabled>
                         <option value="">-- اختر الصف أولاً --</option>
                     </select>
                 </div>
             </div>
 
+            <!-- نوع السؤال وإعداداته -->
             <div class="row-3">
                 <div class="form-group">
                     <label>📝 نوع السؤال</label>
                     <select id="questionType" onchange="toggleQuestionType()">
-                        <option value="mcq">اختيار من متعدد</option>
+                        <option value="mcq">اختيار من متعدد (إجابة واحدة)</option>
+                        <option value="multi_select">اختيار من متعدد (إجابات متعددة)</option>
                         <option value="true_false">صح / خطأ</option>
-                        <option value="multi_select">اختيار متعدد (إجابات متعددة)</option>
+                        <option value="essay">مقالي</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>⭐ الدرجة</label>
-                    <input type="number" id="questionPoints" value="5" min="1">
+                    <input type="number" id="questionPoints" value="5" min="1" max="100">
                 </div>
                 <div class="form-group">
                     <label>📊 مستوى الصعوبة</label>
                     <select id="questionDifficulty">
                         <option value="easy">🟢 سهل</option>
-                        <option value="medium">🟡 متوسط</option>
+                        <option value="medium" selected>🟡 متوسط</option>
                         <option value="hard">🔴 صعب</option>
                     </select>
                 </div>
             </div>
 
+            <!-- نص السؤال (مع إمكانية إضافة صورة) -->
             <div class="form-group">
                 <label>❓ نص السؤال</label>
                 <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا..."></textarea>
-            </div>
-
-            <!-- رفع صورة -->
-            <div class="form-group">
-                <label>🖼️ إضافة صورة للسؤال (اختياري)</label>
-                <div class="image-upload-area" onclick="document.getElementById('imageUpload').click()">
-                    📸 اضغط لرفع صورة أو اسحبها هنا
-                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this)">
+                <div class="image-upload-area" onclick="document.getElementById('questionImageUpload').click()" style="margin-top: 10px;">
+                    📸 إضافة صورة للسؤال (اختياري)
+                    <input type="file" id="questionImageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this, 'question')">
                 </div>
-                <div id="imagePreview" class="image-preview"></div>
+                <div id="questionImagePreview" class="image-preview"></div>
             </div>
 
             <!-- قسم الاختيارات (لنوع MCQ و Multi-Select) -->
             <div id="choicesSection" class="choices-area">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <label>🔘 الاختيارات</label>
-                    <button type="button" class="btn btn-success btn-sm" onclick="addChoice()">+ إضافة اختيار</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <label>🔘 الاختيارات (4 اختيارات)</label>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="addChoice()">+ إضافة اختيار إضافي (اختياري)</button>
                 </div>
                 <div id="choicesList"></div>
-                <div id="multiSelectNote" style="font-size: 12px; color: #f59e0b; margin-top: 10px; display: none;">
-                    ⚠️ ملاحظة: في وضع "اختيار متعدد (إجابات متعددة)"، سيأخذ الطالب الدرجة كاملة إذا اختار جميع الإجابات الصحيحة، 
-                    أو نصف الدرجة إذا اختار إجابة واحدة صحيحة فقط.
+                <div id="multiSelectNote" class="info-note" style="display: none;">
+                    💡 <strong>ملاحظة:</strong> في وضع "اختيار متعدد (إجابات متعددة)"، سيأخذ الطالب الدرجة كاملة إذا اختار جميع الإجابات الصحيحة، أو نصف الدرجة إذا اختار إجابة واحدة صحيحة فقط.
                 </div>
             </div>
 
@@ -292,54 +378,77 @@
             <div id="trueFalseSection" style="display: none;">
                 <div class="form-group">
                     <label>✅ الإجابة الصحيحة</label>
-                    <select id="trueFalseAnswer">
-                        <option value="true">صحيح</option>
-                        <option value="false">خطأ</option>
+                    <select id="trueFalseAnswer" class="filter-select">
+                        <option value="true">✅ صحيح</option>
+                        <option value="false">❌ خطأ</option>
                     </select>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <!-- قسم المقالي -->
+            <div id="essaySection" style="display: none;">
+                <div class="form-group">
+                    <label>📝 نموذج الإجابة المتوقعة (اختياري)</label>
+                    <textarea id="modelAnswer" rows="4" placeholder="اكتب نموذج الإجابة المتوقع للطلاب..."></textarea>
+                    <div class="image-upload-area" onclick="document.getElementById('modelAnswerImageUpload').click()" style="margin-top: 10px;">
+                        📸 إضافة صورة لنموذج الإجابة (اختياري)
+                        <input type="file" id="modelAnswerImageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this, 'model')">
+                    </div>
+                    <div id="modelAnswerImagePreview" class="image-preview"></div>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراءات -->
+            <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="saveQuestion()">💾 حفظ السؤال</button>
                 <button class="btn btn-outline" onclick="clearForm()">🗑️ مسح الحقول</button>
+                <button class="btn btn-outline" onclick="previewQuestion()">👁️ معاينة السؤال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال المعاينة -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">👁️ معاينة السؤال</h3>
+            <div id="previewContent"></div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-outline" onclick="closePreview()">إغلاق</button>
             </div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
+        // ==================== البيانات الأساسية ====================
         let questionImageUrl = null;
+        let modelAnswerImageUrl = null;
         let choices = [
-            { text: '', isCorrect: false }
+            { text: '', isCorrect: false, imageUrl: null },
+            { text: '', isCorrect: false, imageUrl: null },
+            { text: '', isCorrect: false, imageUrl: null },
+            { text: '', isCorrect: false, imageUrl: null }
         ];
         
-        // ==================== تحميل المعلمين ====================
+        // ==================== تحميل المعلمين والصفوف ====================
         async function loadTeachers() {
             const teachers = await fetchUsers({ role: 'teacher' });
             const select = document.getElementById('questionTeacher');
             select.innerHTML = '<option value="">-- اختر المعلم --</option>';
             for (let i = 0; i < teachers.length; i++) {
-                const option = document.createElement('option');
-                option.value = teachers[i].id;
-                option.textContent = teachers[i].name + (teachers[i].username ? ' (' + teachers[i].username + ')' : '');
-                select.appendChild(option);
+                select.innerHTML += `<option value="${teachers[i].id}">${teachers[i].name} (${teachers[i].username || teachers[i].phone})</option>`;
             }
         }
         
-        // ==================== تحميل الصفوف ====================
         async function loadClasses() {
             const classes = await fetchClasses();
             const select = document.getElementById('questionClass');
             select.innerHTML = '<option value="">-- اختر الصف --</option>';
             for (let i = 0; i < classes.length; i++) {
-                const option = document.createElement('option');
-                option.value = classes[i].id;
-                option.textContent = classes[i].name;
-                select.appendChild(option);
+                select.innerHTML += `<option value="${classes[i].id}">${classes[i].name}</option>`;
             }
         }
         
-        // ==================== تحميل المواد حسب الصف ====================
         async function loadSubjectsByClass() {
             const classId = document.getElementById('questionClass').value;
             const subjectSelect = document.getElementById('questionSubject');
@@ -356,10 +465,7 @@
             const classSubjects = await fetchClassSubjects(parseInt(classId));
             subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
             for (let i = 0; i < classSubjects.length; i++) {
-                const option = document.createElement('option');
-                option.value = classSubjects[i].subject_id;
-                option.textContent = classSubjects[i].subjects?.name || '-';
-                subjectSelect.appendChild(option);
+                subjectSelect.innerHTML += `<option value="${classSubjects[i].subject_id}">${classSubjects[i].subjects?.name || '-'}</option>`;
             }
         }
         
@@ -368,62 +474,99 @@
             const type = document.getElementById('questionType').value;
             const choicesSection = document.getElementById('choicesSection');
             const trueFalseSection = document.getElementById('trueFalseSection');
+            const essaySection = document.getElementById('essaySection');
             const multiSelectNote = document.getElementById('multiSelectNote');
             
-            if (type === 'true_false') {
-                choicesSection.style.display = 'none';
-                trueFalseSection.style.display = 'block';
-            } else {
-                choicesSection.style.display = 'block';
-                trueFalseSection.style.display = 'none';
-                multiSelectNote.style.display = type === 'multi_select' ? 'block' : 'none';
-            }
+            choicesSection.style.display = (type === 'mcq' || type === 'multi_select') ? 'block' : 'none';
+            trueFalseSection.style.display = (type === 'true_false') ? 'block' : 'none';
+            essaySection.style.display = (type === 'essay') ? 'block' : 'none';
+            multiSelectNote.style.display = (type === 'multi_select') ? 'block' : 'none';
             
-            // إذا كان نوع السؤال متعدد الإجابات، نضيف شرح للطالب
-            if (type === 'multi_select') {
-                multiSelectNote.style.display = 'block';
+            // إذا كان نوع السؤال MCQ أو Multi-Select، نعرض 4 اختيارات أساسية
+            if (type === 'mcq' || type === 'multi_select') {
+                if (choices.length < 4) {
+                    while (choices.length < 4) {
+                        choices.push({ text: '', isCorrect: false, imageUrl: null });
+                    }
+                }
+                renderChoices();
             }
         }
         
-        // ==================== إضافة اختيار جديد ====================
+        // ==================== إدارة الاختيارات ====================
         function addChoice() {
             if (choices.length < 10) {
-                choices.push({ text: '', isCorrect: false });
+                choices.push({ text: '', isCorrect: false, imageUrl: null });
                 renderChoices();
             } else {
                 showToast('لا يمكن إضافة أكثر من 10 اختيارات', 'error');
             }
         }
         
-        // ==================== حذف اختيار ====================
         function removeChoice(index) {
-            if (choices.length > 1) {
+            const type = document.getElementById('questionType').value;
+            const minChoices = (type === 'mcq' || type === 'multi_select') ? 4 : 2;
+            
+            if (choices.length > minChoices) {
                 choices.splice(index, 1);
                 renderChoices();
             } else {
-                showToast('يجب أن يكون هناك اختيار واحد على الأقل', 'error');
+                showToast(`يجب أن يكون هناك ${minChoices} اختيارات على الأقل`, 'error');
             }
         }
         
-        // ==================== تحديث نص الاختيار ====================
         function updateChoiceText(index, value) {
             choices[index].text = value;
         }
         
-        // ==================== تبديل صحة الاختيار ====================
         function toggleCorrect(index) {
             const type = document.getElementById('questionType').value;
             
             if (type === 'mcq') {
-                // اختيار من متعدد عادي: اختيار واحد فقط صحيح
+                // اختيار واحد فقط صحيح
                 for (let i = 0; i < choices.length; i++) {
                     choices[i].isCorrect = (i === index);
                 }
             } else if (type === 'multi_select') {
-                // متعدد الإجابات: يمكن اختيار أكثر من إجابة صحيحة
+                // يمكن اختيار أكثر من إجابة صحيحة
                 choices[index].isCorrect = !choices[index].isCorrect;
             }
             
+            renderChoices();
+        }
+        
+        // ==================== رفع صورة للاختيار ====================
+        async function uploadChoiceImage(index) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const fileName = `choices/${Date.now()}_${index}_${Math.random().toString(36).substring(7)}.png`;
+                
+                showToast('جاري رفع الصورة...', 'info');
+                
+                const { error } = await sb.storage
+                    .from('exam-images')
+                    .upload(fileName, file);
+                
+                if (error) {
+                    showToast('خطأ في رفع الصورة', 'error');
+                    return;
+                }
+                
+                const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
+                choices[index].imageUrl = data.publicUrl;
+                renderChoices();
+                showToast('✅ تم رفع الصورة', 'success');
+            };
+            input.click();
+        }
+        
+        function removeChoiceImage(index) {
+            choices[index].imageUrl = null;
             renderChoices();
         }
         
@@ -433,33 +576,46 @@
             const type = document.getElementById('questionType').value;
             const isMultiSelect = (type === 'multi_select');
             
+            if (!container) return;
+            
             container.innerHTML = '';
             for (let i = 0; i < choices.length; i++) {
                 const choice = choices[i];
                 const div = document.createElement('div');
                 div.className = 'choice-item';
                 div.innerHTML = `
-                    <div class="choice-text">
-                        <input type="text" placeholder="الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" onchange="updateChoiceText(${i}, this.value)">
+                    <div class="choice-content">
+                        <div class="choice-text">
+                            <span style="font-weight: bold; min-width: 30px;">${String.fromCharCode(65 + i)}.</span>
+                            <input type="text" placeholder="نص الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" oninput="updateChoiceText(${i}, this.value)">
+                        </div>
+                        <div class="choice-image-area">
+                            <div class="choice-image-upload" onclick="uploadChoiceImage(${i})">
+                                📸 ${choice.imageUrl ? 'تغيير الصورة' : 'إضافة صورة'}
+                            </div>
+                            <div id="choiceImagePreview-${i}" class="choice-image-preview">
+                                ${choice.imageUrl ? `<div style="position: relative; display: inline-block;"><img src="${choice.imageUrl}" style="max-width: 80px;"><span class="remove-image" onclick="removeChoiceImage(${i})" style="position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; font-size: 10px;">✖</span></div>` : ''}
+                            </div>
+                        </div>
                     </div>
                     <div class="choice-actions">
                         <div class="choice-correct" onclick="toggleCorrect(${i})">
                             <input type="${isMultiSelect ? 'checkbox' : 'radio'}" name="correctChoice" ${choice.isCorrect ? 'checked' : ''}>
                             <label>صحيح</label>
                         </div>
-                        <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 1 ? 'disabled' : ''}>🗑️</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 4 ? 'disabled' : ''}>🗑️</button>
                     </div>
                 `;
                 container.appendChild(div);
             }
         }
         
-        // ==================== رفع صورة ====================
-        async function uploadImage(input) {
+        // ==================== رفع صورة عامة ====================
+        async function uploadImage(input, type) {
             const file = input.files[0];
             if (!file) return;
             
-            const fileName = `questions/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+            const fileName = `${type}/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
             
             showToast('جاري رفع الصورة...', 'info');
             
@@ -468,31 +624,85 @@
                 .upload(fileName, file);
             
             if (error) {
-                showToast('خطأ في رفع الصورة: ' + error.message, 'error');
+                showToast('خطأ في رفع الصورة', 'error');
                 return;
             }
             
-            const { data } = sb.storage
-                .from('exam-images')
-                .getPublicUrl(fileName);
+            const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
             
-            questionImageUrl = data.publicUrl;
-            
-            const previewDiv = document.getElementById('imagePreview');
-            previewDiv.innerHTML = `
-                <div style="position: relative; display: inline-block;">
-                    <img src="${questionImageUrl}" style="max-width: 150px; border-radius: 12px;">
-                    <div class="remove-image" onclick="removeImage()">✖</div>
-                </div>
-            `;
+            if (type === 'question') {
+                questionImageUrl = data.publicUrl;
+                const previewDiv = document.getElementById('questionImagePreview');
+                previewDiv.innerHTML = `
+                    <div style="position: relative; display: inline-block;">
+                        <img src="${questionImageUrl}" style="max-width: 150px; border-radius: 12px;">
+                        <div class="remove-image" onclick="removeQuestionImage()">✖</div>
+                    </div>
+                `;
+            } else if (type === 'model') {
+                modelAnswerImageUrl = data.publicUrl;
+                const previewDiv = document.getElementById('modelAnswerImagePreview');
+                previewDiv.innerHTML = `
+                    <div style="position: relative; display: inline-block;">
+                        <img src="${modelAnswerImageUrl}" style="max-width: 150px; border-radius: 12px;">
+                        <div class="remove-image" onclick="removeModelImage()">✖</div>
+                    </div>
+                `;
+            }
             
             showToast('✅ تم رفع الصورة بنجاح', 'success');
         }
         
-        function removeImage() {
+        function removeQuestionImage() {
             questionImageUrl = null;
-            document.getElementById('imagePreview').innerHTML = '';
-            document.getElementById('imageUpload').value = '';
+            document.getElementById('questionImagePreview').innerHTML = '';
+            document.getElementById('questionImageUpload').value = '';
+        }
+        
+        function removeModelImage() {
+            modelAnswerImageUrl = null;
+            document.getElementById('modelAnswerImagePreview').innerHTML = '';
+            document.getElementById('modelAnswerImageUpload').value = '';
+        }
+        
+        // ==================== معاينة السؤال ====================
+        function previewQuestion() {
+            const type = document.getElementById('questionType').value;
+            const text = document.getElementById('questionText').value || 'نص السؤال هنا';
+            
+            let html = `<div style="margin-bottom: 20px;"><strong>❓ السؤال:</strong><br>${escapeHtml(text)}</div>`;
+            
+            if (questionImageUrl) {
+                html += `<div style="margin-bottom: 15px;"><img src="${questionImageUrl}" style="max-width: 200px; border-radius: 12px;"></div>`;
+            }
+            
+            if (type === 'true_false') {
+                const answer = document.getElementById('trueFalseAnswer').value;
+                html += `<div class="badge badge-success">✅ الإجابة الصحيحة: ${answer === 'true' ? 'صحيح' : 'خطأ'}</div>`;
+            } else if (type === 'essay') {
+                html += `<div class="badge badge-info">📝 سؤال مقالي - ينتظر تصحيح المعلم</div>`;
+            } else {
+                const validChoices = choices.filter(c => c.text.trim());
+                if (validChoices.length > 0) {
+                    html += `<div style="margin-top: 15px;"><strong>🔘 الاختيارات:</strong></div>`;
+                    for (let i = 0; i < validChoices.length; i++) {
+                        const c = validChoices[i];
+                        html += `<div style="padding: 8px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                            ${String.fromCharCode(65 + i)}. 
+                            ${c.imageUrl ? `<img src="${c.imageUrl}" style="max-width: 40px; border-radius: 6px;">` : ''}
+                            ${escapeHtml(c.text)} 
+                            ${c.isCorrect ? '<span style="color: #10b981;"> ✓</span>' : ''}
+                        </div>`;
+                    }
+                }
+            }
+            
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+        
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
         }
         
         // ==================== حفظ السؤال ====================
@@ -505,22 +715,10 @@
             const points = parseInt(document.getElementById('questionPoints').value);
             const difficulty = document.getElementById('questionDifficulty').value;
             
-            if (!teacherId) {
-                showToast('اختر المعلم', 'error');
-                return;
-            }
-            if (!classId) {
-                showToast('اختر الصف', 'error');
-                return;
-            }
-            if (!subjectId) {
-                showToast('اختر المادة', 'error');
-                return;
-            }
-            if (!text.trim()) {
-                showToast('نص السؤال مطلوب', 'error');
-                return;
-            }
+            if (!teacherId) { showToast('اختر المعلم', 'error'); return; }
+            if (!classId) { showToast('اختر الصف', 'error'); return; }
+            if (!subjectId) { showToast('اختر المادة', 'error'); return; }
+            if (!text.trim() && !questionImageUrl) { showToast('نص السؤال أو الصورة مطلوب', 'error'); return; }
             
             const questionData = {
                 teacher_id: parseInt(teacherId),
@@ -528,7 +726,7 @@
                 subject_id: parseInt(subjectId),
                 question_text: text,
                 question_image: questionImageUrl,
-                type: type,
+                type: type === 'multi_select' ? 'mcq' : type,
                 points: points,
                 difficulty: difficulty,
                 status: 'approved'
@@ -537,28 +735,26 @@
             if (type === 'true_false') {
                 const answer = document.getElementById('trueFalseAnswer').value;
                 questionData.correct_answer = answer === 'true' ? 'صحيح' : 'خطأ';
+            } else if (type === 'essay') {
+                const modelAnswer = document.getElementById('modelAnswer').value;
+                if (modelAnswer) questionData.model_answer = modelAnswer;
+                if (modelAnswerImageUrl) questionData.model_answer_image = modelAnswerImageUrl;
             } else {
-                // التحقق من وجود إجابات صحيحة
                 const correctChoices = choices.filter(c => c.isCorrect && c.text.trim());
                 if (correctChoices.length === 0) {
                     showToast('حدد الإجابة/الإجابات الصحيحة', 'error');
                     return;
                 }
                 
-                // التحقق من أن جميع الاختيارات غير فارغة
-                const emptyChoices = choices.filter(c => !c.text.trim());
+                const emptyChoices = choices.slice(0, 4).filter(c => !c.text.trim());
                 if (emptyChoices.length > 0) {
-                    showToast('جميع الاختيارات مطلوبة', 'error');
+                    showToast('الاختيارات الأربعة الأولى مطلوبة', 'error');
                     return;
                 }
                 
-                questionData.options = choices.map(c => c.text);
-                questionData.correct_answer = JSON.stringify(choices.filter(c => c.isCorrect).map(c => c.text));
-                
-                // إذا كان نوع MCQ عادي، نضيف الإجابة الصحيحة كنص
-                if (type === 'mcq') {
-                    questionData.correct_answer_text = correctChoices[0].text;
-                }
+                questionData.options = JSON.stringify(choices.map(c => ({ text: c.text, image: c.imageUrl })));
+                questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
+                questionData.is_multi_select = (type === 'multi_select');
             }
             
             const result = await createQuestion(questionData);
@@ -566,7 +762,7 @@
                 showToast('تم إضافة السؤال بنجاح', 'success');
                 clearForm();
             } else {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ في حفظ السؤال', 'error');
             }
         }
         
@@ -580,11 +776,21 @@
             document.getElementById('questionText').value = '';
             document.getElementById('questionPoints').value = '5';
             document.getElementById('questionDifficulty').value = 'medium';
-            questionImageUrl = null;
-            document.getElementById('imagePreview').innerHTML = '';
-            document.getElementById('imageUpload').value = '';
+            document.getElementById('modelAnswer').value = '';
             
-            choices = [{ text: '', isCorrect: false }];
+            questionImageUrl = null;
+            modelAnswerImageUrl = null;
+            document.getElementById('questionImagePreview').innerHTML = '';
+            document.getElementById('modelAnswerImagePreview').innerHTML = '';
+            document.getElementById('questionImageUpload').value = '';
+            document.getElementById('modelAnswerImageUpload').value = '';
+            
+            choices = [
+                { text: '', isCorrect: false, imageUrl: null },
+                { text: '', isCorrect: false, imageUrl: null },
+                { text: '', isCorrect: false, imageUrl: null },
+                { text: '', isCorrect: false, imageUrl: null }
+            ];
             renderChoices();
             toggleQuestionType();
         }
