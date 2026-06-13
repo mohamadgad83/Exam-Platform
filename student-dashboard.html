@@ -412,4 +412,29 @@
             }
             
             container.innerHTML = availableExams.map(e => `
-                <div
+                <div class="exam-card">
+                    <div class="exam-title">${e.title}</div>
+                    <div class="exam-info">
+                        <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
+                        <span>👨‍🏫 ${e.users?.name || 'بدون معلم'}</span>
+                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                        <span class="badge ${e.is_paid ? 'badge-warning' : 'badge-success'}">${e.is_paid ? '💰 مدفوع' : '🆓 مجاني'}</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="subscribeToExam(${e.id})">➕ اشتراك</button>
+                </div>
+            `).join('');
+        }
+        
+        window.subscribeToExam = async (examId) => {
+            const result = await createExamRequest(currentUser.id, examId);
+            if (result) {
+                showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
+                loadAvailableExams();
+            }
+        };
+        
+        loadStats();
+        loadAvailableExams();
+    </script>
+</body>
+</html>
