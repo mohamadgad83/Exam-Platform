@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المجموعات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>👥 إدارة المجموعات</h1>
+            <p>إدارة جميع المجموعات الدراسية</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث...">
+                <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
+            </div>
+            <div id="groupsList"></div>
+        </div>
+    </div>
+
+    <!-- مودال إنشاء مجموعة -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">➕ إنشاء مجموعة جديدة</h3>
+            <input type="text" id="groupName" placeholder="اسم المجموعة">
+            <textarea id="groupDesc" rows="3" placeholder="وصف المجموعة"></textarea>
+            <select id="groupClassId">
+                <option value="">-- اختر الصف --</option>
+            </select>
+            <select id="groupSubjectId">
+                <option value="">-- اختر المادة --</option>
+            </select>
+            <select id="groupTeacherId">
+                <option value="">-- اختر المعلم --</option>
+            </select>
+            <input type="number" id="groupMaxCapacity" placeholder="الحد الأقصى للطلاب">
+            <label><input type="checkbox" id="groupIsOpen" checked> مفتوح للانضمام</label>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveGroup()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeModal('groupModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['admin'])) return;
+        
+        let currentGroupId = null;
+        document.getElementById('adminName').innerHTML = getUser().name;
+        
+        async function loadGroups() {
+            const search = document.getElementById('searchInput').value;
+            let groups = await fetchGroups({});
+            if (search) {
+                groups = groups.filter(g => g.name.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('groupsList');
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align:center;">📭 لا توجد مجموعات</div>';
+                return;
+            }
+            
+            container.innerHTML = groups.map(g => `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <h3>📌 ${g.name}</h3>
+                            <p>${g.description || 'لا يوجد وصف'}</p>
+                            <div class="exam-info">
+                                <span>🎓 ${g.classes?.name || '-'}</span>
+                                <span>📖 ${g.subjects?.name || '-'}</span>
+                                <span>👨‍🏫 ${g.users?.name || '-'}</span>
+                                <span>👥 ${g.member_count || 0}${g.max_capacity ? `/${g.max_capacity}` : ''} طالب</span>
+                                <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadSelects() {
+            const [classes, subjects, teachers] = await Promise.all([
+                fetchClasses(), fetchSubjects(), fetchUsers({ role: 'teacher' })
+            ]);
+            
+            const classSelect = document.getElementById('groupClassId');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            classes.forEach(c => classSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            const subjectSelect = document.getElementById('groupSubjectId');
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            subjects.forEach(s => subjectSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+            
+            const teacherSelect = document.getElementById('groupTeacherId');
+            teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
+            teachers.forEach(t => teacherSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`);
+        }
+        
+        function openCreateGroupModal() {
+            currentGroupId = null;
+            document.getElementById('modalTitle').innerHTML = '➕ إنشاء مجموعة جديدة';
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDesc').value = '';
+            document.getElementById('groupMaxCapacity').value = '';
+            document.getElementById('groupIsOpen').checked = true;
+            loadSelects();
+            document.getElementById('groupModal').style.display = 'flex';
+        }
+        
+        async function editGroup(id) {
+            const groups = await fetchGroups({});
+            const group = groups.find(g => g.id === id);
+            if (!group) return;
+            
+            currentGroupId = id;
+            document.getElementById('modalTitle').innerHTML = '✏️ تعديل مجموعة';
+            document.getElementById('groupName').value = group.name;
+            document.getElementById('groupDesc').value = group.description || '';
+            document.getElementById('groupMaxCapacity').value = group.max_capacity || '';
+            document.getElementById('groupIsOpen').checked = group.is_open;
+            await loadSelects();
+            document.getElementById('groupClassId').value = group.class_id || '';
+            document.getElementById('groupSubjectId').value = group.subject_id || '';
+            document.getElementById('groupTeacherId').value = group.teacher_id || '';
+            document.getElementById('groupModal').style.display = 'flex';
+        }
+        
+        async function saveGroup() {
+            const name = document.getElementById('groupName').value;
+            const description = document.getElementById('groupDesc').value;
+            const classId = document.getElementById('groupClassId').value;
+            const subjectId = document.getElementById('groupSubjectId').value;
+            const teacherId = document.getElementById('groupTeacherId').value;
+            const maxCapacity = document.getElementById('groupMaxCapacity').value;
+            const isOpen = document.getElementById('groupIsOpen').checked;
+            
+            if (!name) {
+                showToast('اسم المجموعة مطلوب', 'error');
+                return;
+            }
+            
+            const groupData = {
+                name, description: description || null,
+                class_id: classId || null, subject_id: subjectId || null,
+                teacher_id: teacherId || null, max_capacity: maxCapacity || null,
+                is_open: isOpen
+            };
+            
+            if (currentGroupId) {
+                await updateGroup(currentGroupId, groupData);
+            } else {
+                await createGroup(groupData);
+            }
+            
+            closeModal('groupModal');
+            loadGroups();
+        }
+        
+        function deleteGroupConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذه المجموعة؟', async () => {
+                await deleteGroup(id);
+                loadGroups();
+            });
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadGroups());
+        loadGroups();
+    </script>
+</body>
+</html>
