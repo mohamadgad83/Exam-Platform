@@ -10,8 +10,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> مراجعة الأسئلة - <span id="adminName"></span></div>
             <div>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
@@ -20,7 +20,7 @@
 
         <div class="card header">
             <h1>❓ مراجعة الأسئلة</h1>
-            <p>مراجعة واعتماد أسئلة المعلمين</p>
+            <p>اعتماد أو رفض أسئلة المعلمين</p>
         </div>
 
         <div class="tabs">
@@ -30,6 +30,17 @@
         </div>
 
         <div id="questionsList"></div>
+    </div>
+
+    <!-- مودال عرض تفاصيل السؤال -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <h3>❓ تفاصيل السؤال</h3>
+            <div id="questionDetails"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-outline" onclick="closeModal('questionModal')">إغلاق</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
@@ -43,33 +54,62 @@
             const container = document.getElementById('questionsList');
             
             if (questions.length === 0) {
-                container.innerHTML = '<div class="card" style="text-align:center;">📭 لا توجد أسئلة</div>';
+                container.innerHTML = '<div class="empty-state">📭 لا توجد أسئلة</div>';
                 return;
             }
             
             container.innerHTML = questions.map(q => `
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div style="flex: 1;">
                             <p><strong>${q.text}</strong></p>
                             <div class="exam-info">
-                                <span>${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : 'مقالي'}</span>
+                                <span class="badge ${q.type === 'mcq' ? 'badge-primary' : q.type === 'true_false' ? 'badge-info' : 'badge-warning'}">
+                                    ${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : 'مقالي'}
+                                </span>
                                 <span>⭐ ${q.points} درجة</span>
                                 <span>👨‍🏫 ${q.users?.name || '-'}</span>
                                 <span>📅 ${formatDate(q.created_at)}</span>
                             </div>
-                            ${q.type === 'mcq' && q.options ? `<div style="margin-top:10px;"><strong>الخيارات:</strong> ${q.options.join(' | ')}</div>` : ''}
+                            ${q.type === 'mcq' && q.options ? `<div style="margin-top: 10px;"><strong>الخيارات:</strong> ${q.options.join(' | ')}</div>` : ''}
                             ${q.correct_answer ? `<div><strong>الإجابة الصحيحة:</strong> ${q.correct_answer}</div>` : ''}
+                            ${q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger" style="margin-top: 10px;">سبب الرفض: ${q.feedback}</div>` : ''}
                         </div>
                         ${q.status === 'pending' ? `
-                            <div style="display: flex; gap: 10px;">
+                            <div class="action-buttons">
                                 <button class="btn btn-success" onclick="approveQuestion(${q.id})">✅ اعتماد</button>
                                 <button class="btn btn-danger" onclick="rejectQuestion(${q.id})">❌ رفض</button>
+                                <button class="btn btn-info" onclick="viewQuestionDetails(${q.id})">📋 تفاصيل</button>
                             </div>
-                        ` : q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger">السبب: ${q.feedback}</div>` : ''}
+                        ` : `
+                            <div>
+                                <button class="btn btn-info btn-sm" onclick="viewQuestionDetails(${q.id})">📋 تفاصيل</button>
+                            </div>
+                        `}
                     </div>
                 </div>
             `).join('');
+        }
+        
+        async function viewQuestionDetails(id) {
+            const questions = await fetchQuestions({});
+            const q = questions.find(q => q.id === id);
+            if (!q) return;
+            
+            const container = document.getElementById('questionDetails');
+            container.innerHTML = `
+                <div style="margin-bottom: 15px;"><strong>نص السؤال:</strong><br>${q.text}</div>
+                <div><strong>النوع:</strong> ${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : 'مقالي'}</div>
+                <div><strong>الدرجة:</strong> ${q.points}</div>
+                <div><strong>المادة:</strong> ${q.subject || '-'}</div>
+                <div><strong>الصعوبة:</strong> ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}</div>
+                ${q.type === 'mcq' && q.options ? `<div><strong>الخيارات:</strong> ${q.options.join(' | ')}</div>` : ''}
+                ${q.correct_answer ? `<div><strong>الإجابة الصحيحة:</strong> ${q.correct_answer}</div>` : ''}
+                ${q.status === 'rejected' && q.feedback ? `<div><strong>سبب الرفض:</strong> ${q.feedback}</div>` : ''}
+                <div><strong>المعلم:</strong> ${q.users?.name || '-'}</div>
+                <div><strong>تاريخ الإضافة:</strong> ${formatDateTime(q.created_at)}</div>
+            `;
+            document.getElementById('questionModal').style.display = 'flex';
         }
         
         async function approveQuestion(id) {
