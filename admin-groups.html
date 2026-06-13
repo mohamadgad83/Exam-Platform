@@ -123,6 +123,8 @@
         }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
+        .empty-state { text-align: center; padding: 40px; color: #64748b; }
+        
         .toast-notification {
             position: fixed;
             bottom: 30px;
@@ -152,8 +154,8 @@
             width: 100%;
             animation: progress 3s linear forwards;
         }
-        .toast-success .toast-progress { background: #10b981; }
         @keyframes progress { from { width: 100%; } to { width: 0%; } }
+        
         .confirm-modal {
             position: fixed;
             top: 0;
@@ -177,8 +179,11 @@
         .confirm-buttons { display: flex; gap: 12px; margin-top: 20px; }
         .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
-        .empty-state { text-align: center; padding: 40px; color: #64748b; }
-        @media (max-width: 768px) { .filter-bar { flex-direction: column; align-items: stretch; } .search-input { width: 100%; } }
+        
+        @media (max-width: 768px) {
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-input { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -309,7 +314,7 @@
             if (!members || members.length === 0) {
                 container.innerHTML = '<div class="empty-state">لا يوجد أعضاء في هذه المجموعة</div>';
             } else {
-                let html = '<div class="table-wrapper"><table><thead><tr><th>الطالب</th><th>رقم الهاتف</th><th>الحالة</th><th>تاريخ الانضمام</th></tr></thead><tbody>';
+                let html = '<div class="table-wrapper"><tr><thead><tr><th>الطالب</th><th>رقم الهاتف</th><th>الحالة</th><th>تاريخ الانضمام</th></tr></thead><tbody>';
                 for (let i = 0; i < members.length; i++) {
                     const m = members[i];
                     let statusClass = 'badge-warning';
@@ -450,13 +455,11 @@
         
         // ==================== إغلاق المودال ====================
         function closeGroupModal() {
-            const modal = document.getElementById('groupModal');
-            if (modal) modal.style.display = 'none';
+            document.getElementById('groupModal').style.display = 'none';
         }
         
         function closeMembersModal() {
-            const modal = document.getElementById('membersModal');
-            if (modal) modal.style.display = 'none';
+            document.getElementById('membersModal').style.display = 'none';
         }
         
         // ==================== أحداث البحث ====================
