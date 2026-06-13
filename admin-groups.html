@@ -89,6 +89,7 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
         .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
         .modal {
             display: none;
@@ -122,7 +123,6 @@
         }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
-        h4 { margin: 15px 0 10px 0; color: #1e293b; }
         .toast-notification {
             position: fixed;
             bottom: 30px;
@@ -226,7 +226,7 @@
             </label>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveGroup()">💾 حفظ</button>
-                <button class="btn btn-outline" onclick="closeModal('groupModal')">إلغاء</button>
+                <button class="btn btn-outline" onclick="closeGroupModal()">إلغاء</button>
             </div>
         </div>
     </div>
@@ -237,7 +237,7 @@
             <h3 id="membersModalTitle">👥 أعضاء المجموعة</h3>
             <div id="membersList"></div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="closeModal('membersModal')">إغلاق</button>
+                <button class="btn btn-outline" onclick="closeMembersModal()">إغلاق</button>
             </div>
         </div>
     </div>
@@ -245,16 +245,16 @@
     <script src="js/supabase-config.js"></script>
     <script>
         // التحقق من صلاحية الدخول
-        if (!checkAuth(['admin'])) {
-            throw new Error('Unauthorized');
-        }
+        (function() {
+            const user = getUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('adminName').innerHTML = user.name;
+        })();
         
         let currentGroupId = null;
-        
-        const currentAdmin = getUser();
-        if (currentAdmin) {
-            document.getElementById('adminName').innerHTML = currentAdmin.name;
-        }
         
         // ==================== تحميل المجموعات ====================
         async function loadGroups() {
@@ -272,7 +272,8 @@
             }
             
             container.innerHTML = '';
-            for (const g of groups) {
+            for (let i = 0; i < groups.length; i++) {
+                const g = groups[i];
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
@@ -289,7 +290,7 @@
                             </div>
                         </div>
                         <div class="action-buttons">
-                            <button class="btn btn-info btn-sm" onclick="viewMembers(${g.id}, '${g.name}')">👥 الأعضاء</button>
+                            <button class="btn btn-info btn-sm" onclick="viewMembers(${g.id}, '${g.name.replace(/'/g, "\\'")}')">👥 الأعضاء</button>
                             <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
                         </div>
@@ -309,12 +310,19 @@
                 container.innerHTML = '<div class="empty-state">لا يوجد أعضاء في هذه المجموعة</div>';
             } else {
                 let html = '<div class="table-wrapper"><table><thead><tr><th>الطالب</th><th>رقم الهاتف</th><th>الحالة</th><th>تاريخ الانضمام</th></tr></thead><tbody>';
-                for (const m of members) {
+                for (let i = 0; i < members.length; i++) {
+                    const m = members[i];
+                    let statusClass = 'badge-warning';
+                    let statusText = 'قيد الانتظار';
+                    if (m.status === 'approved') {
+                        statusClass = 'badge-success';
+                        statusText = 'مقبول';
+                    }
                     html += `
                         <tr>
                             <td><strong>${m.users?.name || '-'}</strong></td>
                             <td>${m.users?.phone || '-'}</td>
-                            <td><span class="badge ${m.status === 'approved' ? 'badge-success' : 'badge-warning'}">${m.status === 'approved' ? 'مقبول' : 'قيد الانتظار'}</span></td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
                             <td>${formatDate(m.joined_at)}</td>
                         </tr>
                     `;
@@ -333,34 +341,34 @@
             
             const classSelect = document.getElementById('groupClassId');
             classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-            classes.forEach(c => {
+            for (let i = 0; i < classes.length; i++) {
                 const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.name;
+                option.value = classes[i].id;
+                option.textContent = classes[i].name;
                 classSelect.appendChild(option);
-            });
+            }
             
             const subjectSelect = document.getElementById('groupSubjectId');
             subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            subjects.forEach(s => {
+            for (let i = 0; i < subjects.length; i++) {
                 const option = document.createElement('option');
-                option.value = s.id;
-                option.textContent = s.name;
+                option.value = subjects[i].id;
+                option.textContent = subjects[i].name;
                 subjectSelect.appendChild(option);
-            });
+            }
             
             const teacherSelect = document.getElementById('groupTeacherId');
             teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
-            teachers.forEach(t => {
+            for (let i = 0; i < teachers.length; i++) {
                 const option = document.createElement('option');
-                option.value = t.id;
-                option.textContent = t.name;
+                option.value = teachers[i].id;
+                option.textContent = teachers[i].name;
                 teacherSelect.appendChild(option);
-            });
+            }
         }
         
         // ==================== فتح مودال إنشاء مجموعة ====================
-        async function openCreateGroupModal() {
+        window.openCreateGroupModal = async function() {
             currentGroupId = null;
             document.getElementById('modalTitle').innerHTML = '➕ إنشاء مجموعة جديدة';
             document.getElementById('groupName').value = '';
@@ -369,10 +377,10 @@
             document.getElementById('groupIsOpen').checked = true;
             await loadSelects();
             document.getElementById('groupModal').style.display = 'flex';
-        }
+        };
         
         // ==================== تعديل مجموعة ====================
-        async function editGroup(id) {
+        window.editGroup = async function(id) {
             const groups = await fetchGroups({});
             const group = groups.find(g => g.id === id);
             if (!group) return;
@@ -388,10 +396,10 @@
             document.getElementById('groupSubjectId').value = group.subject_id || '';
             document.getElementById('groupTeacherId').value = group.teacher_id || '';
             document.getElementById('groupModal').style.display = 'flex';
-        }
+        };
         
         // ==================== حفظ مجموعة ====================
-        async function saveGroup() {
+        window.saveGroup = async function() {
             const name = document.getElementById('groupName').value;
             const description = document.getElementById('groupDesc').value;
             const classId = document.getElementById('groupClassId').value;
@@ -423,31 +431,38 @@
             }
             
             if (result) {
-                closeModal('groupModal');
+                closeGroupModal();
                 loadGroups();
                 showToast('تم ' + (currentGroupId ? 'تعديل' : 'إنشاء') + ' المجموعة', 'success');
             } else {
                 showToast('حدث خطأ', 'error');
             }
-        }
+        };
         
         // ==================== حذف مجموعة ====================
-        function deleteGroupConfirm(id) {
-            showConfirm('هل أنت متأكد من حذف هذه المجموعة؟', async () => {
+        window.deleteGroupConfirm = function(id) {
+            showConfirm('هل أنت متأكد من حذف هذه المجموعة؟', async function() {
                 await deleteGroup(id);
                 loadGroups();
                 showToast('تم حذف المجموعة', 'success');
             });
-        }
+        };
         
         // ==================== إغلاق المودال ====================
-        function closeModal(id) {
-            const modal = document.getElementById(id);
+        function closeGroupModal() {
+            const modal = document.getElementById('groupModal');
+            if (modal) modal.style.display = 'none';
+        }
+        
+        function closeMembersModal() {
+            const modal = document.getElementById('membersModal');
             if (modal) modal.style.display = 'none';
         }
         
         // ==================== أحداث البحث ====================
-        document.getElementById('searchInput').addEventListener('input', () => loadGroups());
+        document.getElementById('searchInput').addEventListener('input', function() {
+            loadGroups();
+        });
         
         // ==================== تحميل أولي ====================
         loadGroups();
