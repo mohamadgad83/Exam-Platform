@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة سؤال جديد - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        h1 {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #334155; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        
+        .choices-area {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+        .choice-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .choice-item:hover {
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+        }
+        .choice-text {
+            flex: 1;
+        }
+        .choice-text input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .choice-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .choice-correct {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .choice-correct input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin: 0;
+        }
+        .choice-correct label {
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .image-upload-area {
+            border: 2px dashed #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .image-upload-area:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+        }
+        .image-preview {
+            margin-top: 10px;
+            position: relative;
+            display: inline-block;
+        }
+        .image-preview img {
+            max-width: 150px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .remove-image {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media (max-width: 768px) { .row-2, .row-3 { grid-template-columns: 1fr; } }
+        
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transform: translateX(-500px);
+            transition: transform 0.3s ease;
+            z-index: 10000;
+            direction: rtl;
+            border-right: 4px solid;
+        }
+        .toast-notification.show { transform: translateX(0); }
+        .toast-success { border-right-color: #10b981; }
+        .toast-error { border-right-color: #ef4444; }
+        .toast-message { flex: 1; font-size: 14px; color: #333; }
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            animation: progress 3s linear forwards;
+        }
+        @keyframes progress { from { width: 100%; } to { width: 0%; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>❓ إضافة سؤال جديد</h1>
+                <button class="btn btn-outline" onclick="window.location.href='admin-dashboard.html'">← العودة</button>
+            </div>
+
+            <div class="form-group">
+                <label>👨‍🏫 المعلم (صاحب السؤال)</label>
+                <select id="questionTeacher">
+                    <option value="">-- اختر المعلم --</option>
+                </select>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🎓 الصف الدراسي</label>
+                    <select id="questionClass" onchange="loadSubjectsByClass()">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📚 المادة</label>
+                    <select id="questionSubject">
+                        <option value="">-- اختر الصف أولاً --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row-3">
+                <div class="form-group">
+                    <label>📝 نوع السؤال</label>
+                    <select id="questionType" onchange="toggleQuestionType()">
+                        <option value="mcq">اختيار من متعدد</option>
+                        <option value="true_false">صح / خطأ</option>
+                        <option value="multi_select">اختيار متعدد (إجابات متعددة)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>⭐ الدرجة</label>
+                    <input type="number" id="questionPoints" value="5" min="1">
+                </div>
+                <div class="form-group">
+                    <label>📊 مستوى الصعوبة</label>
+                    <select id="questionDifficulty">
+                        <option value="easy">🟢 سهل</option>
+                        <option value="medium">🟡 متوسط</option>
+                        <option value="hard">🔴 صعب</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>❓ نص السؤال</label>
+                <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا..."></textarea>
+            </div>
+
+            <!-- رفع صورة -->
+            <div class="form-group">
+                <label>🖼️ إضافة صورة للسؤال (اختياري)</label>
+                <div class="image-upload-area" onclick="document.getElementById('imageUpload').click()">
+                    📸 اضغط لرفع صورة أو اسحبها هنا
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this)">
+                </div>
+                <div id="imagePreview" class="image-preview"></div>
+            </div>
+
+            <!-- قسم الاختيارات (لنوع MCQ و Multi-Select) -->
+            <div id="choicesSection" class="choices-area">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <label>🔘 الاختيارات</label>
+                    <button type="button" class="btn btn-success btn-sm" onclick="addChoice()">+ إضافة اختيار</button>
+                </div>
+                <div id="choicesList"></div>
+                <div id="multiSelectNote" style="font-size: 12px; color: #f59e0b; margin-top: 10px; display: none;">
+                    ⚠️ ملاحظة: في وضع "اختيار متعدد (إجابات متعددة)"، سيأخذ الطالب الدرجة كاملة إذا اختار جميع الإجابات الصحيحة، 
+                    أو نصف الدرجة إذا اختار إجابة واحدة صحيحة فقط.
+                </div>
+            </div>
+
+            <!-- قسم صح/خطأ -->
+            <div id="trueFalseSection" style="display: none;">
+                <div class="form-group">
+                    <label>✅ الإجابة الصحيحة</label>
+                    <select id="trueFalseAnswer">
+                        <option value="true">صحيح</option>
+                        <option value="false">خطأ</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveQuestion()">💾 حفظ السؤال</button>
+                <button class="btn btn-outline" onclick="clearForm()">🗑️ مسح الحقول</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        let questionImageUrl = null;
+        let choices = [
+            { text: '', isCorrect: false }
+        ];
+        
+        // ==================== تحميل المعلمين ====================
+        async function loadTeachers() {
+            const teachers = await fetchUsers({ role: 'teacher' });
+            const select = document.getElementById('questionTeacher');
+            select.innerHTML = '<option value="">-- اختر المعلم --</option>';
+            for (let i = 0; i < teachers.length; i++) {
+                const option = document.createElement('option');
+                option.value = teachers[i].id;
+                option.textContent = teachers[i].name + (teachers[i].username ? ' (' + teachers[i].username + ')' : '');
+                select.appendChild(option);
+            }
+        }
+        
+        // ==================== تحميل الصفوف ====================
+        async function loadClasses() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('questionClass');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>';
+            for (let i = 0; i < classes.length; i++) {
+                const option = document.createElement('option');
+                option.value = classes[i].id;
+                option.textContent = classes[i].name;
+                select.appendChild(option);
+            }
+        }
+        
+        // ==================== تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass() {
+            const classId = document.getElementById('questionClass').value;
+            const subjectSelect = document.getElementById('questionSubject');
+            
+            if (!classId) {
+                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+                subjectSelect.disabled = true;
+                return;
+            }
+            
+            subjectSelect.disabled = false;
+            subjectSelect.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
+            
+            const classSubjects = await fetchClassSubjects(parseInt(classId));
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            for (let i = 0; i < classSubjects.length; i++) {
+                const option = document.createElement('option');
+                option.value = classSubjects[i].subject_id;
+                option.textContent = classSubjects[i].subjects?.name || '-';
+                subjectSelect.appendChild(option);
+            }
+        }
+        
+        // ==================== تبديل نوع السؤال ====================
+        function toggleQuestionType() {
+            const type = document.getElementById('questionType').value;
+            const choicesSection = document.getElementById('choicesSection');
+            const trueFalseSection = document.getElementById('trueFalseSection');
+            const multiSelectNote = document.getElementById('multiSelectNote');
+            
+            if (type === 'true_false') {
+                choicesSection.style.display = 'none';
+                trueFalseSection.style.display = 'block';
+            } else {
+                choicesSection.style.display = 'block';
+                trueFalseSection.style.display = 'none';
+                multiSelectNote.style.display = type === 'multi_select' ? 'block' : 'none';
+            }
+            
+            // إذا كان نوع السؤال متعدد الإجابات، نضيف شرح للطالب
+            if (type === 'multi_select') {
+                multiSelectNote.style.display = 'block';
+            }
+        }
+        
+        // ==================== إضافة اختيار جديد ====================
+        function addChoice() {
+            if (choices.length < 10) {
+                choices.push({ text: '', isCorrect: false });
+                renderChoices();
+            } else {
+                showToast('لا يمكن إضافة أكثر من 10 اختيارات', 'error');
+            }
+        }
+        
+        // ==================== حذف اختيار ====================
+        function removeChoice(index) {
+            if (choices.length > 1) {
+                choices.splice(index, 1);
+                renderChoices();
+            } else {
+                showToast('يجب أن يكون هناك اختيار واحد على الأقل', 'error');
+            }
+        }
+        
+        // ==================== تحديث نص الاختيار ====================
+        function updateChoiceText(index, value) {
+            choices[index].text = value;
+        }
+        
+        // ==================== تبديل صحة الاختيار ====================
+        function toggleCorrect(index) {
+            const type = document.getElementById('questionType').value;
+            
+            if (type === 'mcq') {
+                // اختيار من متعدد عادي: اختيار واحد فقط صحيح
+                for (let i = 0; i < choices.length; i++) {
+                    choices[i].isCorrect = (i === index);
+                }
+            } else if (type === 'multi_select') {
+                // متعدد الإجابات: يمكن اختيار أكثر من إجابة صحيحة
+                choices[index].isCorrect = !choices[index].isCorrect;
+            }
+            
+            renderChoices();
+        }
+        
+        // ==================== عرض الاختيارات ====================
+        function renderChoices() {
+            const container = document.getElementById('choicesList');
+            const type = document.getElementById('questionType').value;
+            const isMultiSelect = (type === 'multi_select');
+            
+            container.innerHTML = '';
+            for (let i = 0; i < choices.length; i++) {
+                const choice = choices[i];
+                const div = document.createElement('div');
+                div.className = 'choice-item';
+                div.innerHTML = `
+                    <div class="choice-text">
+                        <input type="text" placeholder="الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" onchange="updateChoiceText(${i}, this.value)">
+                    </div>
+                    <div class="choice-actions">
+                        <div class="choice-correct" onclick="toggleCorrect(${i})">
+                            <input type="${isMultiSelect ? 'checkbox' : 'radio'}" name="correctChoice" ${choice.isCorrect ? 'checked' : ''}>
+                            <label>صحيح</label>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 1 ? 'disabled' : ''}>🗑️</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+        
+        // ==================== رفع صورة ====================
+        async function uploadImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const fileName = `questions/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+            
+            showToast('جاري رفع الصورة...', 'info');
+            
+            const { error } = await sb.storage
+                .from('exam-images')
+                .upload(fileName, file);
+            
+            if (error) {
+                showToast('خطأ في رفع الصورة: ' + error.message, 'error');
+                return;
+            }
+            
+            const { data } = sb.storage
+                .from('exam-images')
+                .getPublicUrl(fileName);
+            
+            questionImageUrl = data.publicUrl;
+            
+            const previewDiv = document.getElementById('imagePreview');
+            previewDiv.innerHTML = `
+                <div style="position: relative; display: inline-block;">
+                    <img src="${questionImageUrl}" style="max-width: 150px; border-radius: 12px;">
+                    <div class="remove-image" onclick="removeImage()">✖</div>
+                </div>
+            `;
+            
+            showToast('✅ تم رفع الصورة بنجاح', 'success');
+        }
+        
+        function removeImage() {
+            questionImageUrl = null;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageUpload').value = '';
+        }
+        
+        // ==================== حفظ السؤال ====================
+        async function saveQuestion() {
+            const teacherId = document.getElementById('questionTeacher').value;
+            const classId = document.getElementById('questionClass').value;
+            const subjectId = document.getElementById('questionSubject').value;
+            const type = document.getElementById('questionType').value;
+            const text = document.getElementById('questionText').value;
+            const points = parseInt(document.getElementById('questionPoints').value);
+            const difficulty = document.getElementById('questionDifficulty').value;
+            
+            if (!teacherId) {
+                showToast('اختر المعلم', 'error');
+                return;
+            }
+            if (!classId) {
+                showToast('اختر الصف', 'error');
+                return;
+            }
+            if (!subjectId) {
+                showToast('اختر المادة', 'error');
+                return;
+            }
+            if (!text.trim()) {
+                showToast('نص السؤال مطلوب', 'error');
+                return;
+            }
+            
+            const questionData = {
+                teacher_id: parseInt(teacherId),
+                class_id: parseInt(classId),
+                subject_id: parseInt(subjectId),
+                question_text: text,
+                question_image: questionImageUrl,
+                type: type,
+                points: points,
+                difficulty: difficulty,
+                status: 'approved'
+            };
+            
+            if (type === 'true_false') {
+                const answer = document.getElementById('trueFalseAnswer').value;
+                questionData.correct_answer = answer === 'true' ? 'صحيح' : 'خطأ';
+            } else {
+                // التحقق من وجود إجابات صحيحة
+                const correctChoices = choices.filter(c => c.isCorrect && c.text.trim());
+                if (correctChoices.length === 0) {
+                    showToast('حدد الإجابة/الإجابات الصحيحة', 'error');
+                    return;
+                }
+                
+                // التحقق من أن جميع الاختيارات غير فارغة
+                const emptyChoices = choices.filter(c => !c.text.trim());
+                if (emptyChoices.length > 0) {
+                    showToast('جميع الاختيارات مطلوبة', 'error');
+                    return;
+                }
+                
+                questionData.options = choices.map(c => c.text);
+                questionData.correct_answer = JSON.stringify(choices.filter(c => c.isCorrect).map(c => c.text));
+                
+                // إذا كان نوع MCQ عادي، نضيف الإجابة الصحيحة كنص
+                if (type === 'mcq') {
+                    questionData.correct_answer_text = correctChoices[0].text;
+                }
+            }
+            
+            const result = await createQuestion(questionData);
+            if (result) {
+                showToast('تم إضافة السؤال بنجاح', 'success');
+                clearForm();
+            } else {
+                showToast('حدث خطأ', 'error');
+            }
+        }
+        
+        // ==================== مسح الحقول ====================
+        function clearForm() {
+            document.getElementById('questionTeacher').value = '';
+            document.getElementById('questionClass').value = '';
+            document.getElementById('questionSubject').innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+            document.getElementById('questionSubject').disabled = true;
+            document.getElementById('questionType').value = 'mcq';
+            document.getElementById('questionText').value = '';
+            document.getElementById('questionPoints').value = '5';
+            document.getElementById('questionDifficulty').value = 'medium';
+            questionImageUrl = null;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageUpload').value = '';
+            
+            choices = [{ text: '', isCorrect: false }];
+            renderChoices();
+            toggleQuestionType();
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ==================== التهيئة ====================
+        async function init() {
+            await loadTeachers();
+            await loadClasses();
+            renderChoices();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
