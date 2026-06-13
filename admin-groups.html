@@ -10,8 +10,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> إدارة المجموعات - <span id="adminName"></span></div>
             <div>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
@@ -20,19 +20,19 @@
 
         <div class="card header">
             <h1>👥 إدارة المجموعات</h1>
-            <p>إدارة جميع المجموعات الدراسية</p>
+            <p>إنشاء وتعديل وحذف المجموعات الدراسية</p>
         </div>
 
         <div class="card">
             <div class="filter-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث...">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم المجموعة...">
                 <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
             </div>
             <div id="groupsList"></div>
         </div>
     </div>
 
-    <!-- مودال إنشاء مجموعة -->
+    <!-- مودال إنشاء/تعديل مجموعة -->
     <div id="groupModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إنشاء مجموعة جديدة</h3>
@@ -48,10 +48,23 @@
                 <option value="">-- اختر المعلم --</option>
             </select>
             <input type="number" id="groupMaxCapacity" placeholder="الحد الأقصى للطلاب">
-            <label><input type="checkbox" id="groupIsOpen" checked> مفتوح للانضمام</label>
+            <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <input type="checkbox" id="groupIsOpen" checked> مفتوح للانضمام
+            </label>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveGroup()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeModal('groupModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال عرض أعضاء المجموعة -->
+    <div id="membersModal" class="modal">
+        <div class="modal-content">
+            <h3 id="membersModalTitle">👥 أعضاء المجموعة</h3>
+            <div id="membersList"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-outline" onclick="closeModal('membersModal')">إغلاق</button>
             </div>
         </div>
     </div>
@@ -72,16 +85,16 @@
             
             const container = document.getElementById('groupsList');
             if (groups.length === 0) {
-                container.innerHTML = '<div class="card" style="text-align:center;">📭 لا توجد مجموعات</div>';
+                container.innerHTML = '<div class="empty-state">📭 لا توجد مجموعات</div>';
                 return;
             }
             
             container.innerHTML = groups.map(g => `
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
                             <h3>📌 ${g.name}</h3>
-                            <p>${g.description || 'لا يوجد وصف'}</p>
+                            <p style="color: var(--gray); margin: 8px 0;">${g.description || 'لا يوجد وصف'}</p>
                             <div class="exam-info">
                                 <span>🎓 ${g.classes?.name || '-'}</span>
                                 <span>📖 ${g.subjects?.name || '-'}</span>
@@ -90,13 +103,43 @@
                                 <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
                             </div>
                         </div>
-                        <div>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewMembers(${g.id}, '${g.name}')">👥 الأعضاء</button>
                             <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
                         </div>
                     </div>
                 </div>
             `).join('');
+        }
+        
+        async function viewMembers(groupId, groupName) {
+            const members = await fetchGroupMembers(groupId);
+            const container = document.getElementById('membersList');
+            document.getElementById('membersModalTitle').innerHTML = `👥 أعضاء مجموعة "${groupName}"`;
+            
+            if (members.length === 0) {
+                container.innerHTML = '<div class="empty-state">لا يوجد أعضاء في هذه المجموعة</div>';
+            } else {
+                container.innerHTML = `
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>الطالب</th><th>رقم الهاتف</th><th>الحالة</th><th>تاريخ الانضمام</th></tr></thead>
+                            <tbody>
+                                ${members.map(m => `
+                                    <tr>
+                                        <td><strong>${m.users?.name || '-'}</strong></td>
+                                        <td>${m.users?.phone || '-'}</td>
+                                        <td><span class="badge ${m.status === 'approved' ? 'badge-success' : 'badge-warning'}">${m.status === 'approved' ? 'مقبول' : 'قيد الانتظار'}</span></td>
+                                        <td>${formatDate(m.joined_at)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            document.getElementById('membersModal').style.display = 'flex';
         }
         
         async function loadSelects() {
@@ -167,14 +210,17 @@
                 is_open: isOpen
             };
             
+            let result;
             if (currentGroupId) {
-                await updateGroup(currentGroupId, groupData);
+                result = await updateGroup(currentGroupId, groupData);
             } else {
-                await createGroup(groupData);
+                result = await createGroup(groupData);
             }
             
-            closeModal('groupModal');
-            loadGroups();
+            if (result) {
+                closeModal('groupModal');
+                loadGroups();
+            }
         }
         
         function deleteGroupConfirm(id) {
