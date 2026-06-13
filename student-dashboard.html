@@ -6,190 +6,145 @@
     <title>لوحة تحكم الطالب - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .top-bar {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 24px;
+            padding: 22px;
+            color: white;
+            text-align: center;
+        }
+        .stat-number { font-size: 42px; font-weight: 800; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .exam-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        .exam-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+        .exam-info { display: flex; gap: 15px; flex-wrap: wrap; margin: 10px 0; color: #64748b; font-size: 13px; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .empty-state { text-align: center; padding: 40px; color: #64748b; }
+        .return-bar {
+            background: #e0e7ff;
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
 </head>
 <body>
     <div class="container">
+        <!-- شريط العودة للأدمن (يظهر فقط عند الدخول كأدمن) -->
+        <div id="returnBar" class="return-bar" style="display: none;">
+            <div><span style="font-size:18px;">👑</span> أنت تتصفح كـ <strong><span id="currentUserName"></span></strong> (طالب)</div>
+            <div>
+                <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
+                <button class="btn btn-outline btn-sm" onclick="goToOwnDashboard()">🏠 لوحة تحكمي</button>
+            </div>
+        </div>
+
         <div class="top-bar">
             <div class="logo">📚 منصة الاختبارات</div>
             <div>
                 <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
-                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
         </div>
 
-        <div class="card header">
+        <div class="card">
             <h1>🎓 لوحة تحكم الطالب</h1>
             <p>مرحباً بك في منصة الاختبارات</p>
         </div>
 
         <div class="stats-grid" id="statsArea"></div>
 
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
-            <div class="card">
-                <h3>📝 الامتحانات المتاحة</h3>
-                <div id="availableExamsList"></div>
-            </div>
-
-            <div class="card">
-                <h3>📊 آخر النتائج</h3>
-                <div id="recentResultsList"></div>
-            </div>
-
-            <div class="card">
-                <h3>👥 المجموعات المتاحة</h3>
-                <div id="availableGroupsList"></div>
-            </div>
-        </div>
-
         <div class="card">
-            <h3>⚡ إجراءات سريعة</h3>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
-                <button class="btn btn-primary" onclick="window.location.href='student-exams.html'">📝 استعراض الامتحانات</button>
-                <button class="btn btn-primary" onclick="window.location.href='student-groups.html'">👥 استعراض المجموعات</button>
-                <button class="btn btn-outline" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
-            </div>
+            <h3>📝 الامتحانات المتاحة</h3>
+            <div id="availableExamsList"></div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
-        if (!checkAuth(['student'])) return;
-        
         const user = getUser();
+        if (!user || (user.role !== 'student' && user.role !== 'admin')) {
+            window.location.href = 'index.html';
+        }
+        
         document.getElementById('studentName').innerHTML = user.name;
         
-        async function loadStats() {
-            const stats = await fetchStudentStats(user.id);
-            document.getElementById('statsArea').innerHTML = `
-                <div class="stat-card"><div class="stat-number">${stats.totalAttempts}</div><div class="stat-label">📝 الامتحانات المنجزة</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات المنضم لها</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.avgScore}%</div><div class="stat-label">⭐ متوسط الدرجات</div></div>
-            `;
-        }
+        // التحقق إذا كان الدخول بواسطة الأدمن
+        const originalUser = localStorage.getItem('originalUser');
+        const isImpersonating = user.isImpersonating === true;
         
-        async function loadAvailableExams() {
-            let exams = await fetchExams({ status: 'published' }, 'student', user.id);
-            
-            // جلب طلبات الطالب المعلقة والمقبولة
-            const requests = await fetchExamRequests({}, 'student', user.id);
-            const requestedExamIds = new Set(requests.map(r => r.exam_id));
-            
-            // عرض فقط الامتحانات التي لم يطلبها الطالب بعد
-            const availableExams = exams.filter(e => !requestedExamIds.has(e.id));
-            const container = document.getElementById('availableExamsList');
-            
-            if (availableExams.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات متاحة حالياً</div>';
-                return;
-            }
-            
-            container.innerHTML = availableExams.map(e => `
-                <div class="exam-card">
-                    <div class="exam-title">${e.title}</div>
-                    <div class="exam-info">
-                        <span>📖 ${e.subjects?.name || '-'}</span>
-                        <span>👨‍🏫 ${e.users?.name || '-'}</span>
-                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
-                    </div>
-                    <p style="color: var(--gray); margin: 10px 0;">${e.description || ''}</p>
-                    <button class="btn btn-primary" onclick="subscribeToExam(${e.id})">➕ اشتراك</button>
-                </div>
-            `).join('');
-        }
-        
-        async function loadRecentResults() {
-            const attempts = await fetchExamAttempts({}, 'student', user.id);
-            const recent = attempts.slice(0, 5);
-            const container = document.getElementById('recentResultsList');
-            
-            if (recent.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 لا توجد نتائج بعد</div>';
-                return;
-            }
-            
-            container.innerHTML = recent.map(a => {
-                const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
-                return `
-                    <div class="exam-card">
-                        <div class="exam-title">${a.exams?.title || '-'}</div>
-                        <div class="exam-info">
-                            <span>📅 ${formatDate(a.submitted_at)}</span>
-                            <span class="badge ${percentage >= 70 ? 'badge-success' : percentage >= 50 ? 'badge-warning' : 'badge-danger'}">${percentage}%</span>
-                        </div>
-                        <button class="btn btn-outline btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        async function loadAvailableGroups() {
-            const groups = await fetchGroups({}, 'student');
-            const container = document.getElementById('availableGroupsList');
-            
-            if (groups.length === 0) {
-                container.innerHTML = '<div class="empty-state">👥 لا توجد مجموعات متاحة</div>';
-                return;
-            }
-            
-            // جلب عضوية الطالب الحالية
-            const myGroups = await fetchGroupMemberships(user.id);
-            const myGroupIds = new Set(myGroups.map(g => g.group_id));
-            
-            const availableGroups = groups.filter(g => !myGroupIds.has(g.id));
-            
-            if (availableGroups.length === 0) {
-                container.innerHTML = '<div class="empty-state">✅ أنت عضو في جميع المجموعات المتاحة</div>';
-                return;
-            }
-            
-            container.innerHTML = availableGroups.map(g => `
-                <div class="exam-card">
-                    <div class="exam-title">${g.name}</div>
-                    <div class="exam-info">
-                        <span>👨‍🏫 ${g.users?.name || '-'}</span>
-                        <span>👥 ${g.member_count || 0}${g.max_capacity ? `/${g.max_capacity}` : ''} طالب</span>
-                        <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
-                    </div>
-                    <p style="color: var(--gray); margin: 10px 0;">${g.description || ''}</p>
-                    ${g.is_open ? `<button class="btn btn-primary" onclick="joinGroup(${g.id})">➕ انضمام</button>` : '<span class="badge badge-danger">مغلق</span>'}
-                </div>
-            `).join('');
-        }
-        
-        async function fetchGroupMemberships(studentId) {
-            const { data } = await sb
-                .from('group_members')
-                .select('group_id')
-                .eq('student_id', studentId);
-            return data || [];
-        }
-        
-        window.subscribeToExam = async (examId) => {
-            const result = await createExamRequest(user.id, examId);
-            if (result) {
-                loadAvailableExams();
-                showToast('تم إرسال طلب الاشتراك، في انتظار موافقة المعلم', 'success');
-            }
-        };
-        
-        window.joinGroup = async (groupId) => {
-            const result = await joinGroup(groupId, user.id);
-            if (result.success) {
-                loadAvailableGroups();
-            } else {
-                showToast(result.error, 'error');
-            }
-        };
-        
-        window.viewResult = (attemptId) => {
-            window.location.href = `student-result.html?id=${attemptId}`;
-        };
-        
-        loadStats();
-        loadAvailableExams();
-        loadRecentResults();
-        loadAvailableGroups();
-    </script>
-</body>
-</html>
+        if (isImpersonating
