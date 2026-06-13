@@ -7,11 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="admin-top-bar">
-            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> التقارير والإحصائيات - <span id="adminName"></span></div>
             <div>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
@@ -25,23 +26,15 @@
 
         <div class="stats-grid" id="statsArea"></div>
 
-        <div class="card">
-            <h3>📈 توزيع المستخدمين</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead><tr><th>الدور</th><th>العدد</th><th>النسبة</th></tr></thead>
-                    <tbody id="userDistribution"></tbody>
-                </table>
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+            <div class="card">
+                <h3>📈 توزيع المستخدمين</h3>
+                <canvas id="usersChart" width="400" height="300"></canvas>
             </div>
-        </div>
 
-        <div class="card">
-            <h3>📝 توزيع الامتحانات</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead><tr><th>الحالة</th><th>العدد</th></tr></thead>
-                    <tbody id="examDistribution"></tbody>
-                </table>
+            <div class="card">
+                <h3>📝 توزيع الامتحانات</h3>
+                <canvas id="examsChart" width="400" height="300"></canvas>
             </div>
         </div>
 
@@ -54,6 +47,11 @@
             <h3>👨‍🎓 أفضل الطلاب (حسب نتائج الامتحانات)</h3>
             <div id="topStudentsList"></div>
         </div>
+
+        <div class="card">
+            <h3>📋 سجل النشاطات الأخيرة</h3>
+            <div id="recentActivities"></div>
+        </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
@@ -62,12 +60,14 @@
         
         document.getElementById('adminName').innerHTML = getUser().name;
         
+        let usersChart, examsChart;
+        
         async function loadReports() {
             const [users, exams, questions, attempts] = await Promise.all([
                 sb.from('users').select('role'),
                 sb.from('exams').select('status'),
                 sb.from('questions').select('teacher_id, users!questions_teacher_id_fkey(name)'),
-                sb.from('exam_attempts').select('student_id, score, total_points, users!exam_attempts_student_id_fkey(name)')
+                sb.from('exam_attempts').select('student_id, score, total_points, users!exam_attempts_student_id_fkey(name), created_at')
             ]);
             
             // إحصائيات المستخدمين
@@ -75,20 +75,48 @@
             users.data?.forEach(u => userStats[u.role]++);
             const total = users.data?.length || 1;
             
-            document.getElementById('userDistribution').innerHTML = `
-                <tr><td>مدير</td><td>${userStats.admin}</td><td>${Math.round(userStats.admin/total*100)}%</td></tr>
-                <tr><td>معلم</td><td>${userStats.teacher}</td><td>${Math.round(userStats.teacher/total*100)}%</td></tr>
-                <tr><td>طالب</td><td>${userStats.student}</td><td>${Math.round(userStats.student/total*100)}%</td></tr>
+            document.getElementById('statsArea').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">👥 إجمالي المستخدمين</div></div>
+                <div class="stat-card"><div class="stat-number">${userStats.admin}</div><div class="stat-label">👑 مديرين</div></div>
+                <div class="stat-card"><div class="stat-number">${userStats.teacher}</div><div class="stat-label">👨‍🏫 معلمين</div></div>
+                <div class="stat-card"><div class="stat-number">${userStats.student}</div><div class="stat-label">👨‍🎓 طلاب</div></div>
             `;
+            
+            // رسم بياني للمستخدمين
+            if (usersChart) usersChart.destroy();
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            usersChart = new Chart(usersCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مديرين', 'معلمين', 'طلاب'],
+                    datasets: [{
+                        data: [userStats.admin, userStats.teacher, userStats.student],
+                        backgroundColor: ['#6366f1', '#8b5cf6', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
             
             // إحصائيات الامتحانات
             const examStats = { draft: 0, published: 0, closed: 0 };
             exams.data?.forEach(e => examStats[e.status]++);
-            document.getElementById('examDistribution').innerHTML = `
-                <tr><td>مسودة</td><td>${examStats.draft}</td></tr>
-                <tr><td>منشور</td><td>${examStats.published}</td></tr>
-                <tr><td>مغلق</td><td>${examStats.closed}</td></tr>
-            `;
+            
+            if (examsChart) examsChart.destroy();
+            const examsCtx = document.getElementById('examsChart').getContext('2d');
+            examsChart = new Chart(examsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['مسودة', 'منشور', 'مغلق'],
+                    datasets: [{
+                        label: 'عدد الامتحانات',
+                        data: [examStats.draft, examStats.published, examStats.closed],
+                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                        borderRadius: 8
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
             
             // أفضل المعلمين
             const teacherQuestions = {};
@@ -100,25 +128,66 @@
             const teacherMap = {};
             teachersList.forEach(t => teacherMap[t.id] = t.name);
             
-            document.getElementById('topTeachersList').innerHTML = topTeachers.length ? 
-                topTeachers.map(([id, count], i) => `<div class="exam-card">${i+1}. ${teacherMap[id]} - ${count} سؤال</div>`).join('') :
-                '<div style="text-align:center;">لا توجد بيانات</div>';
+            const topTeachersContainer = document.getElementById('topTeachersList');
+            if (topTeachers.length === 0) {
+                topTeachersContainer.innerHTML = '<div class="empty-state">لا توجد بيانات</div>';
+            } else {
+                topTeachersContainer.innerHTML = topTeachers.map(([id, count], i) => `
+                    <div class="exam-card">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${i+1}. ${teacherMap[id] || 'غير معروف'}</span>
+                            <span class="badge badge-primary">${count} سؤال</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
             
             // أفضل الطلاب
             const studentScores = {};
             attempts.data?.forEach(a => {
                 if (!studentScores[a.student_id]) studentScores[a.student_id] = { total: 0, count: 0 };
-                studentScores[a.student_id].total += (a.score / a.total_points) * 100;
-                studentScores[a.student_id].count++;
+                const percentage = (a.score / a.total_points) * 100;
+                if (!isNaN(percentage)) {
+                    studentScores[a.student_id].total += percentage;
+                    studentScores[a.student_id].count++;
+                }
             });
-            const topStudents = Object.entries(studentScores).map(([id, data]) => [id, data.total / data.count]).sort((a,b) => b[1] - a[1]).slice(0,5);
+            const topStudents = Object.entries(studentScores)
+                .map(([id, data]) => [id, data.total / data.count])
+                .sort((a,b) => b[1] - a[1]).slice(0,5);
             const studentsList = await fetchUsers({ role: 'student' });
             const studentMap = {};
             studentsList.forEach(s => studentMap[s.id] = s.name);
             
-            document.getElementById('topStudentsList').innerHTML = topStudents.length ?
-                topStudents.map(([id, avg], i) => `<div class="exam-card">${i+1}. ${studentMap[id]} - ${Math.round(avg)}% متوسط</div>`).join('') :
-                '<div style="text-align:center;">لا توجد بيانات</div>';
+            const topStudentsContainer = document.getElementById('topStudentsList');
+            if (topStudents.length === 0) {
+                topStudentsContainer.innerHTML = '<div class="empty-state">لا توجد بيانات</div>';
+            } else {
+                topStudentsContainer.innerHTML = topStudents.map(([id, avg], i) => `
+                    <div class="exam-card">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${i+1}. ${studentMap[id] || 'غير معروف'}</span>
+                            <span class="badge badge-success">${Math.round(avg)}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // النشاطات الأخيرة
+            const recentActivities = attempts.data?.slice(0, 10) || [];
+            const activitiesContainer = document.getElementById('recentActivities');
+            if (recentActivities.length === 0) {
+                activitiesContainer.innerHTML = '<div class="empty-state">لا توجد نشاطات حديثة</div>';
+            } else {
+                activitiesContainer.innerHTML = recentActivities.map(a => `
+                    <div class="exam-card">
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                            <span><strong>${a.users?.name || 'طالب'}</strong> أدى امتحاناً</span>
+                            <span class="badge badge-info">${formatDateTime(a.created_at)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
         
         loadReports();
