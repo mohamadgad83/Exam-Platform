@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مراجعة الأسئلة - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="admin-top-bar">
+            <div><span style="font-size:20px;">👑</span> لوحة تحكم المدير - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>❓ مراجعة الأسئلة</h1>
+            <p>مراجعة واعتماد أسئلة المعلمين</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="loadQuestions('pending')">⏳ قيد المراجعة</button>
+            <button class="tab-btn" onclick="loadQuestions('approved')">✅ معتمدة</button>
+            <button class="tab-btn" onclick="loadQuestions('rejected')">❌ مرفوضة</button>
+        </div>
+
+        <div id="questionsList"></div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['admin'])) return;
+        
+        document.getElementById('adminName').innerHTML = getUser().name;
+        
+        async function loadQuestions(status) {
+            const questions = await fetchQuestions({ status });
+            const container = document.getElementById('questionsList');
+            
+            if (questions.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align:center;">📭 لا توجد أسئلة</div>';
+                return;
+            }
+            
+            container.innerHTML = questions.map(q => `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <div style="flex: 1;">
+                            <p><strong>${q.text}</strong></p>
+                            <div class="exam-info">
+                                <span>${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : 'مقالي'}</span>
+                                <span>⭐ ${q.points} درجة</span>
+                                <span>👨‍🏫 ${q.users?.name || '-'}</span>
+                                <span>📅 ${formatDate(q.created_at)}</span>
+                            </div>
+                            ${q.type === 'mcq' && q.options ? `<div style="margin-top:10px;"><strong>الخيارات:</strong> ${q.options.join(' | ')}</div>` : ''}
+                            ${q.correct_answer ? `<div><strong>الإجابة الصحيحة:</strong> ${q.correct_answer}</div>` : ''}
+                        </div>
+                        ${q.status === 'pending' ? `
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-success" onclick="approveQuestion(${q.id})">✅ اعتماد</button>
+                                <button class="btn btn-danger" onclick="rejectQuestion(${q.id})">❌ رفض</button>
+                            </div>
+                        ` : q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger">السبب: ${q.feedback}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function approveQuestion(id) {
+            await updateQuestionStatus(id, 'approved');
+            loadQuestions('pending');
+        }
+        
+        async function rejectQuestion(id) {
+            const feedback = prompt('سبب الرفض:');
+            if (feedback) {
+                await updateQuestionStatus(id, 'rejected', feedback);
+                loadQuestions('pending');
+            }
+        }
+        
+        loadQuestions('pending');
+    </script>
+</body>
+</html>
