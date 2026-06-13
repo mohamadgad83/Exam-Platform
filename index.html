@@ -13,52 +13,70 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
             padding: 20px;
         }
-        .login-container { max-width: 420px; width: 100%; }
+        .login-container { max-width: 450px; width: 100%; }
         .demo-info {
             margin-top: 20px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 16px;
+            padding: 16px;
+            background: var(--light);
+            border-radius: 20px;
             font-size: 13px;
             text-align: right;
         }
-        .demo-info h4 { color: #1e293b; margin-bottom: 10px; }
-        .demo-info p { color: #64748b; margin: 5px 0; }
-        .demo-info strong { color: #667eea; }
+        .demo-info h4 { color: var(--dark); margin-bottom: 10px; font-size: 14px; }
+        .demo-info p { color: var(--gray); margin: 6px 0; }
+        .demo-info strong { color: var(--primary); }
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .logo { font-size: 56px; margin-bottom: 16px; }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="card" style="text-align: center;">
-            <div class="logo" style="font-size: 48px; margin-bottom: 15px;">🎓</div>
+            <div class="logo">📚</div>
             <h1>منصة الاختبارات</h1>
-            <p class="subtitle" style="color: #64748b; margin-bottom: 30px;">سجل دخولك للمتابعة</p>
+            <p class="subtitle" style="color: var(--gray); margin-bottom: 30px;">سجل دخولك للمتابعة</p>
 
             <form id="loginForm">
-                <div class="form-group" style="margin-bottom: 20px; text-align: right;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">👤 البريد الإلكتروني أو رقم الهاتف</label>
-                    <input type="text" id="identifier" placeholder="admin@exam.com أو 01000000000" style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 16px;">
+                <div class="form-group">
+                    <label>👤 البريد الإلكتروني أو رقم الهاتف</label>
+                    <input type="text" id="identifier" placeholder="admin@exam.com أو 01000000000" autocomplete="off">
                 </div>
-                <div class="form-group" style="margin-bottom: 20px; text-align: right;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">🔒 كلمة السر</label>
-                    <input type="password" id="password" placeholder="أدخل كلمة السر" style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 16px;">
+                <div class="form-group">
+                    <label>🔒 كلمة السر</label>
+                    <input type="password" id="password" placeholder="أدخل كلمة السر">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 18px;" id="loginBtn">دخول</button>
             </form>
 
             <div id="error" style="background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 12px; margin-top: 15px; display: none;"></div>
 
-            <div class="register-link" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                <a href="register.html" style="color: #667eea; text-decoration: none;">✨ تسجيل حساب جديد</a>
+            <div class="register-link" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">✨ تسجيل حساب جديد</a>
             </div>
             
             <div class="demo-info">
                 <h4>📝 بيانات الدخول التجريبية:</h4>
-                <p><strong>مدير:</strong> admin@exam.com / 123456</p>
-                <p><strong>معلم:</strong> teacher@exam.com / 123456</p>
-                <p><strong>طالب:</strong> student@exam.com / 123456</p>
+                <p><strong>👑 مدير:</strong> admin@exam.com / 123456</p>
+                <p><strong>👨‍🏫 معلم:</strong> teacher@exam.com / 123456</p>
+                <p><strong>👨‍🎓 طالب:</strong> student@exam.com / 123456</p>
             </div>
         </div>
     </div>
