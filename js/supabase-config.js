@@ -435,6 +435,40 @@ async function fetchAdminStats() {
         totalAttempts: attempts.count || 0
     };
 }
+// ==================== دوال ربط المواد بالصفوف ====================
+
+async function fetchClassSubjects(classId) {
+    const { data, error } = await sb
+        .from('class_subjects')
+        .select('*, subjects(*)')
+        .eq('class_id', classId);
+    if (error) return [];
+    return data || [];
+}
+
+async function fetchSubjectClasses(subjectId) {
+    const { data, error } = await sb
+        .from('class_subjects')
+        .select('*, classes(*)')
+        .eq('subject_id', subjectId);
+    if (error) return [];
+    return data || [];
+}
+
+async function addSubjectToClass(classId, subjectId) {
+    const { error } = await sb
+        .from('class_subjects')
+        .insert({ class_id: classId, subject_id: subjectId });
+    return !error;
+}
+
+async function removeSubjectFromClass(classSubjectId) {
+    const { error } = await sb
+        .from('class_subjects')
+        .delete()
+        .eq('id', classSubjectId);
+    return !error;
+}
 
 console.log('✅ supabase-config.js loaded successfully');
 console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, etc.');
