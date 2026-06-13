@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الاختبارات - تسجيل الدخول</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Cairo', 'Tahoma', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            max-width: 420px;
+            width: 100%;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        h1 {
+            color: #1e293b;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+        }
+        
+        .input-icon {
+            position: relative;
+        }
+        
+        .input-icon span {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #94a3b8;
+        }
+        
+        .input-icon input {
+            width: 100%;
+            padding: 14px 45px 14px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-icon input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .register-link {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .demo-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 16px;
+            font-size: 13px;
+            text-align: right;
+        }
+        
+        .demo-info h4 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        
+        .demo-info p {
+            color: #64748b;
+            margin: 5px 0;
+        }
+        
+        .demo-info strong {
+            color: #667eea;
+        }
+        
+        @media (max-width: 480px) {
+            .card { padding: 30px 25px; }
+            h1 { font-size: 24px; }
+        }
+        
+        /* Toast notifications */
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transform: translateX(-400px);
+            transition: transform 0.3s ease;
+            z-index: 10000;
+            direction: rtl;
+        }
+        
+        .toast-notification.show {
+            transform: translateX(0);
+        }
+        
+        .toast-success {
+            border-right: 4px solid #10b981;
+        }
+        
+        .toast-error {
+            border-right: 4px solid #ef4444;
+        }
+        
+        .toast-icon {
+            font-size: 24px;
+        }
+        
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #667eea;
+            width: 100%;
+            animation: progress 3s linear forwards;
+            border-radius: 0 0 16px 16px;
+        }
+        
+        .toast-success .toast-progress {
+            background: #10b981;
+        }
+        
+        .toast-error .toast-progress {
+            background: #ef4444;
+        }
+        
+        @keyframes progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="logo">🎓</div>
+            <h1>منصة الاختبارات</h1>
+            <p class="subtitle">سجل دخولك للمتابعة</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>👤 البريد الإلكتروني أو رقم الهاتف</label>
+                    <div class="input-icon">
+                        <span>📱</span>
+                        <input type="text" id="identifier" placeholder="admin@exam.com أو 01000000000" autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>🔒 كلمة السر</label>
+                    <div class="input-icon">
+                        <span>🔑</span>
+                        <input type="password" id="password" placeholder="أدخل كلمة السر">
+                    </div>
+                </div>
+                <button type="submit" class="btn-login" id="loginBtn">دخول</button>
+            </form>
+
+            <div id="error" class="error-message"></div>
+
+            <div class="register-link">
+                <a href="register.html">✨ تسجيل حساب جديد</a>
+            </div>
+            
+            <div class="demo-info">
+                <h4>📝 بيانات الدخول التجريبية:</h4>
+                <p><strong>مدير:</strong> admin@exam.com / 123456</p>
+                <p><strong>معلم:</strong> teacher@exam.com / 123456</p>
+                <p><strong>طالب:</strong> student@exam.com / 123456</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorDiv = document.getElementById('error');
+
+        function showError(msg) {
+            errorDiv.innerHTML = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 4000);
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!identifier || !password) {
+                showError('❌ يرجى إدخال البريد/الهاتف وكلمة السر');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = 'جاري التحقق... <span class="loading-spinner"></span>';
+            
+            const result = await loginUser(identifier, password);
+            
+            if (result.success) {
+                setUser(result.user);
+                showToast(`مرحباً ${result.user.name}! جاري التحويل...`, 'success');
+                
+                setTimeout(() => {
+                    if (result.user.role === 'admin') {
+                        window.location.href = 'admin/dashboard.html';
+                    } else if (result.user.role === 'teacher') {
+                        window.location.href = 'teacher/dashboard.html';
+                    } else {
+                        window.location.href = 'student/dashboard.html';
+                    }
+                }, 1000);
+            } else {
+                showError('❌ ' + result.error);
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'دخول';
+            }
+        });
+        
+        // التحقق من وجود جلسة سابقة
+        const savedUser = getUser();
+        if (savedUser) {
+            if (savedUser.role === 'admin') {
+                window.location.href = 'admin/dashboard.html';
+            } else if (savedUser.role === 'teacher') {
+                window.location.href = 'teacher/dashboard.html';
+            } else if (savedUser.role === 'student') {
+                window.location.href = 'student/dashboard.html';
+            }
+        }
+    </script>
+</body>
+</html>
