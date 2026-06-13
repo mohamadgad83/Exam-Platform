@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداء الامتحان - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .timer-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+        .timer-warning {
+            color: #fef08a;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .question-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .q-indicator {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .q-indicator.answered {
+            background: var(--success);
+            color: white;
+        }
+        .q-indicator.current {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.3);
+        }
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--light);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .option:hover {
+            border-color: var(--primary);
+            background: rgba(99,102,241,0.05);
+        }
+        .option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .essay-answer {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--light);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div id="app"></div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['student'])) return;
+        
+        const user = getUser();
+        let examId = localStorage.getItem('currentExamId');
+        let examData = null;
+        let questions = [];
+        let answers = {};
+        let currentQuestionIndex = 0;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let attemptId = null;
+        
+        document.getElementById('studentName').innerHTML = user.name;
+        
+        async function loadExam() {
+            if (!examId) {
+                showToast('لم يتم تحديد الامتحان', 'error');
+                setTimeout(() => window.location.href = 'student-exams.html', 1500);
+                return;
+            }
+            
+            // جلب بيانات الامتحان
+            const { data: exam } = await sb
+                .from('exams')
+                .select('*, subjects(name)')
+                .eq('id', examId)
+                .single();
+            
+            if (!exam) {
+                showToast('الامتحان غير موجود', 'error');
+                setTimeout(() => window.location.href = 'student-exams.html', 1500);
+                return;
+            }
+            
+            examData = exam;
+            timeLeft = examData.duration_minutes * 60;
+            
+            // جلب أسئلة الامتحان
+            const examQuestions = await fetchExamQuestions(examId);
+            questions = examQuestions.map(eq => ({
+                id: eq.question_id,
+                ...eq.questions,
+                points: eq.points
+            }));
+            
+            if (questions.length === 0) {
+                showToast('لا توجد أسئلة في هذا الامتحان', 'error');
+                setTimeout(() => window.location.href = 'student-exams.html', 1500);
+                return;
+            }
+            
+            // بدء محاولة جديدة
+            const attempt = await startExamAttempt(examId, user.id);
+            if (attempt) {
+                attemptId = attempt.id;
+                answers = attempt.answers || {};
+            }
+            
+            renderExam();
+            startTimer();
+        }
+        
+        function renderExam() {
+            document.getElementById('app').innerHTML = `
+                <div class="card header">
+                    <h1>📝 ${examData.title}</h1>
+                    <button class="btn btn-danger" onclick="submitExam()">✋ إنهاء وتسليم</button>
+                </div>
+                
+                <div class="timer-card">
+                    <div>⏰ الوقت المتبقي</div>
+                    <div class="timer" id="timer">${formatTime(timeLeft)}</div>
+                </div>
+                
+                <div class="card">
+                    <div class="question-indicators" id="indicators"></div>
+                    <div id="questionContainer"></div>
+                    <div class="nav-buttons">
+                        <button class="btn btn-outline" id="prevBtn" onclick="prevQuestion()">← السابق</button>
+                        <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">التالي →</button>
+                    </div>
+                </div>
+            `;
+            
+            renderIndicators();
+            renderQuestion(currentQuestionIndex);
+        }
+        
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function renderIndicators() {
+            const container = document.getElementById('indicators');
+            if (!container) return;
+            
+            container.innerHTML = questions.map((_, i) => `
+                <div class="q-indicator ${answers[questions[i].id] ? 'answered' : ''} ${i === currentQuestionIndex ? 'current' : ''}" 
+                     onclick="goToQuestion(${i})">
+                    ${i + 1}
+                </div>
+            `).join('');
+        }
+        
+        function renderQuestion(index) {
+            const q = questions[index];
+            if (!q) return;
+            
+            const container = document.getElementById('questionContainer');
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">السؤال ${index + 1}: ${q.text}</div>
+            `;
+            
+            if (q.type === 'mcq') {
+                const options = q.options || [];
+                // ترتيب عشوائي للخيارات
+                const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+                html += `<div>`;
+                shuffledOptions.forEach(opt => {
+                    html += `
+                        <div class="option ${answers[q.id] === opt ? 'selected' : ''}" onclick="selectOption(${q.id}, '${opt.replace(/'/g, "\\'")}')">
+                            ${opt}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            } else if (q.type === 'true_false') {
+                html += `
+                    <div>
+                        <div class="option ${answers[q.id] === 'صحيح' ? 'selected' : ''}" onclick="selectOption(${q.id}, 'صحيح')">✓ صحيح</div>
+                        <div class="option ${answers[q.id] === 'خطأ' ? 'selected' : ''}" onclick="selectOption(${q.id}, 'خطأ')">✗ خطأ</div>
+                    </div>
+                `;
+            } else if (q.type === 'essay') {
+                html += `
+                    <textarea id="essay_${q.id}" class="essay-answer" rows="6" placeholder="اكتب إجابتك هنا...">${answers[q.id] || ''}</textarea>
+                `;
+            }
+            
+            html += `</div>`;
+            container.innerHTML = html;
+            
+            // إضافة مستمع للأسئلة المقالية
+            if (q.type === 'essay') {
+                const textarea = document.getElementById(`essay_${q.id}`);
+                if (textarea) {
+                    textarea.oninput = (e) => {
+                        answers[q.id] = e.target.value;
+                        saveAnswer(q.id, e.target.value);
+                        renderIndicators();
+                    };
+                }
+            }
+        }
+        
+        window.selectOption = (questionId, value) => {
+            answers[questionId] = value;
+            saveAnswer(questionId, value);
+            renderIndicators();
+            renderQuestion(currentQuestionIndex);
+        };
+        
+        async function saveAnswer(questionId, answer) {
+            if (attemptId) {
+                await saveAnswer(attemptId, questionId, answer);
+            }
+        }
+        
+        window.goToQuestion = (index) => {
+            if (index >= 0 && index < questions.length) {
+                currentQuestionIndex = index;
+                renderQuestion(currentQuestionIndex);
+                renderIndicators();
+            }
+        };
+        
+        window.nextQuestion = () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+                renderIndicators();
+            }
+        };
+        
+        window.prevQuestion = () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(currentQuestionIndex);
+                renderIndicators();
+            }
+        };
+        
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                } else {
+                    timeLeft--;
+                    if (timerElement) {
+                        timerElement.innerHTML = formatTime(timeLeft);
+                        if (timeLeft < 60) {
+                            timerElement.classList.add('timer-warning');
+                        }
+                    }
+                }
+            }, 1000);
+            
+            // منع إغلاق الصفحة أثناء الامتحان
+            window.addEventListener('beforeunload', (e) => {
+                if (timeLeft > 0) {
+                    e.preventDefault();
+                    e.returnValue = 'سيتم فقدان إجاباتك. هل أنت متأكد؟';
+                }
+            });
+        }
+        
+        async function submitExam() {
+            clearInterval(timerInterval);
+            
+            let score = 0;
+            let totalPoints = 0;
+            
+            // حساب الدرجات للأسئلة الموضوعية
+            for (const q of questions) {
+                totalPoints += q.points;
+                if (q.type === 'mcq' || q.type === 'true_false') {
+                    const userAnswer = answers[q.id];
+                    if (userAnswer && userAnswer.trim() === q.correct_answer) {
+                        score += q.points;
+                    }
+                }
+            }
+            
+            // حفظ النتيجة النهائية
+            const success = await submitExamAttempt(attemptId, answers, score, totalPoints);
+            
+            if (success) {
+                localStorage.removeItem('currentExamId');
+                localStorage.setItem('lastExamResult', JSON.stringify({
+                    examId: examId,
+                    attemptId: attemptId,
+                    score: score,
+                    total: totalPoints
+                }));
+                window.location.href = 'student-result.html';
+            } else {
+                showToast('حدث خطأ في تسليم الامتحان', 'error');
+            }
+        }
+        
+        window.submitExam = () => {
+            const answeredCount = Object.keys(answers).length;
+            const totalCount = questions.length;
+            const unanswered = totalCount - answeredCount;
+            
+            let message = `هل أنت متأكد من تسليم الامتحان؟\n\n`;
+            message += `أجبت على ${answeredCount} من ${totalCount} سؤال.\n`;
+            if (unanswered > 0) {
+                message += `⚠️ هناك ${unanswered} سؤال لم تجب عليه بعد.\n\n`;
+            }
+            message += `لا يمكنك تعديل الإجابات بعد التسليم.`;
+            
+            if (confirm(message)) {
+                submitExam();
+            }
+        };
+        
+        loadExam();
+    </script>
+</body>
+</html>
