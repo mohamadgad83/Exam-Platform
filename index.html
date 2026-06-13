@@ -45,6 +45,28 @@
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         .logo { font-size: 56px; margin-bottom: 16px; }
+        .login-tab {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .login-tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray);
+            transition: all 0.2s;
+        }
+        .login-tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -54,10 +76,16 @@
             <h1>منصة الاختبارات</h1>
             <p class="subtitle" style="color: var(--gray); margin-bottom: 30px;">سجل دخولك للمتابعة</p>
 
+            <!-- تبويبات تسجيل الدخول -->
+            <div class="login-tab">
+                <button class="login-tab-btn active" onclick="switchTab('teacher')">👨‍🏫 معلم / أدمن</button>
+                <button class="login-tab-btn" onclick="switchTab('student')">👨‍🎓 طالب</button>
+            </div>
+
             <form id="loginForm">
-                <div class="form-group">
-                    <label>👤 البريد الإلكتروني أو رقم الهاتف</label>
-                    <input type="text" id="identifier" placeholder="admin@exam.com أو 01000000000" autocomplete="off">
+                <div class="form-group" id="identifierField">
+                    <label id="identifierLabel">👤 اسم المستخدم</label>
+                    <input type="text" id="identifier" placeholder="أدخل اسم المستخدم" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label>🔒 كلمة السر</label>
@@ -69,20 +97,47 @@
             <div id="error" style="background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 12px; margin-top: 15px; display: none;"></div>
 
             <div class="register-link" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border);">
-                <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">✨ تسجيل حساب جديد</a>
+                <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">✨ تسجيل حساب جديد (طالب)</a>
             </div>
             
             <div class="demo-info">
                 <h4>📝 بيانات الدخول التجريبية:</h4>
-                <p><strong>👑 مدير:</strong> admin@exam.com / 123456</p>
-                <p><strong>👨‍🏫 معلم:</strong> teacher@exam.com / 123456</p>
-                <p><strong>👨‍🎓 طالب:</strong> student@exam.com / 123456</p>
+                <p><strong>👑 مدير:</strong> اسم المستخدم: admin / كلمة السر: 123456</p>
+                <p><strong>👨‍🏫 معلم:</strong> اسم المستخدم: teacher1 / كلمة السر: 123456</p>
+                <p><strong>👨‍🎓 طالب:</strong> رقم الهاتف: 01222222222 / كلمة السر: 123456</p>
             </div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
+        let loginType = 'teacher'; // 'teacher' or 'student'
+        
+        function switchTab(type) {
+            loginType = type;
+            const identifierField = document.getElementById('identifierField');
+            const identifierLabel = document.getElementById('identifierLabel');
+            const identifierInput = document.getElementById('identifier');
+            
+            if (type === 'teacher') {
+                identifierLabel.innerHTML = '👤 اسم المستخدم';
+                identifierInput.placeholder = 'أدخل اسم المستخدم';
+                identifierInput.value = '';
+            } else {
+                identifierLabel.innerHTML = '📞 رقم الهاتف';
+                identifierInput.placeholder = 'أدخل رقم الهاتف (مثال: 01234567890)';
+                identifierInput.value = '';
+            }
+            
+            // تحديث التبويبات
+            document.querySelectorAll('.login-tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (type === 'teacher') {
+                document.querySelectorAll('.login-tab-btn')[0].classList.add('active');
+            } else {
+                document.querySelectorAll('.login-tab-btn')[1].classList.add('active');
+            }
+        }
+        
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
         const errorDiv = document.getElementById('error');
@@ -96,11 +151,11 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const identifier = document.getElementById('identifier').value.trim();
+            let identifier = document.getElementById('identifier').value.trim();
             const password = document.getElementById('password').value;
             
             if (!identifier || !password) {
-                showError('❌ يرجى إدخال البريد/الهاتف وكلمة السر');
+                showError('❌ يرجى إدخال جميع البيانات');
                 return;
             }
             
