@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المعلم - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>👨‍🏫 لوحة تحكم المعلم</h1>
+            <p>نظرة عامة على أدائك ومجموعاتك وامتحاناتك</p>
+        </div>
+
+        <div class="stats-grid" id="statsArea"></div>
+
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px;">
+            <div class="card">
+                <h3>📝 امتحاناتي الأخيرة</h3>
+                <div id="recentExamsList"></div>
+            </div>
+
+            <div class="card">
+                <h3>⏳ طلبات الانضمام للمجموعات</h3>
+                <div id="pendingRequestsList"></div>
+            </div>
+
+            <div class="card">
+                <h3>📋 طلبات اشتراك الامتحانات</h3>
+                <div id="pendingExamRequestsList"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚡ إجراءات سريعة</h3>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="window.location.href='teacher-create-exam.html'">➕ إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'">📚 إضافة سؤال</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-groups.html'">👥 إنشاء مجموعة</button>
+                <button class="btn btn-outline" onclick="window.location.href='teacher-students.html'">👨‍🎓 طلابي</button>
+                <button class="btn btn-outline" onclick="window.location.href='teacher-submissions.html'">📋 تصحيح الامتحانات</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['teacher'])) return;
+        
+        const user = getUser();
+        document.getElementById('teacherName').innerHTML = user.name;
+        
+        async function loadStats() {
+            const stats = await fetchTeacherStats(user.id);
+            document.getElementById('statsArea').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${stats.totalExams}</div><div class="stat-label">📝 الامتحانات</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalQuestions}</div><div class="stat-label">📚 الأسئلة</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalGroups}</div><div class="stat-label">👥 المجموعات</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.totalStudents}</div><div class="stat-label">👨‍🎓 الطلاب</div></div>
+            `;
+        }
+        
+        async function loadRecentExams() {
+            const exams = await fetchExams({}, 'teacher', user.id);
+            const recentExams = exams.slice(0, 5);
+            const container = document.getElementById('recentExamsList');
+            
+            if (recentExams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات</div>';
+                return;
+            }
+            
+            container.innerHTML = recentExams.map(e => `
+                <div class="exam-card">
+                    <div class="exam-title">${e.title}</div>
+                    <div class="exam-info">
+                        <span>📖 ${e.subjects?.name || '-'}</span>
+                        <span>🎓 ${e.classes?.name || '-'}</span>
+                        <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                        <span class="badge ${e.status === 'published' ? 'badge-success' : 'badge-warning'}">${e.status === 'published' ? 'منشور' : 'مسودة'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadPendingRequests() {
+            const pendingRequests = await fetchGroupPendingRequests(user.id);
+            const container = document.getElementById('pendingRequestsList');
+            
+            if (pendingRequests.length === 0) {
+                container.innerHTML = '<div class="empty-state">✅ لا توجد طلبات معلقة</div>';
+                return;
+            }
+            
+            container.innerHTML = pendingRequests.map(p => `
+                <div class="exam-card">
+                    <div><strong>👨‍🎓 ${p.studentName}</strong> يطلب الانضمام إلى مجموعة <strong>${p.groupName}</strong></div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-success btn-sm" onclick="approveGroupRequest(${p.groupId}, ${p.studentId})">✅ قبول</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectGroupRequest(${p.groupId}, ${p.studentId})">❌ رفض</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadPendingExamRequests() {
+            const requests = await fetchExamRequests({ status: 'pending' }, 'teacher', user.id);
+            const container = document.getElementById('pendingExamRequestsList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="empty-state">✅ لا توجد طلبات اشتراك</div>';
+                return;
+            }
+            
+            container.innerHTML = requests.map(r => `
+                <div class="exam-card">
+                    <div><strong>👨‍🎓 ${r.users?.name}</strong> يطلب الاشتراك في امتحان <strong>${r.exams?.title}</strong></div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-success btn-sm" onclick="approveExamRequest(${r.id})">✅ قبول</button>
+                        <button class="btn btn-danger btn-sm" onclick="rejectExamRequest(${r.id})">❌ رفض</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        window.approveGroupRequest = async (groupId, studentId) => {
+            await updateGroupMemberStatus(groupId, studentId, 'approved');
+            loadPendingRequests();
+            showToast('تم قبول الطالب', 'success');
+        };
+        
+        window.rejectGroupRequest = async (groupId, studentId) => {
+            await updateGroupMemberStatus(groupId, studentId, 'rejected');
+            loadPendingRequests();
+            showToast('تم رفض الطلب', 'success');
+        };
+        
+        window.approveExamRequest = async (requestId) => {
+            await updateExamRequestStatus(requestId, 'approved');
+            loadPendingExamRequests();
+            showToast('تم قبول طلب الاشتراك', 'success');
+        };
+        
+        window.rejectExamRequest = async (requestId) => {
+            await updateExamRequestStatus(requestId, 'rejected');
+            loadPendingExamRequests();
+            showToast('تم رفض طلب الاشتراك', 'success');
+        };
+        
+        loadStats();
+        loadRecentExams();
+        loadPendingRequests();
+        loadPendingExamRequests();
+    </script>
+</body>
+</html>
