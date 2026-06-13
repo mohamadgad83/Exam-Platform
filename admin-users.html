@@ -144,6 +144,7 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
         h4 { margin: 15px 0 10px 0; color: #1e293b; }
+        
         .toast-notification {
             position: fixed;
             bottom: 30px;
@@ -173,8 +174,8 @@
             width: 100%;
             animation: progress 3s linear forwards;
         }
-        .toast-success .toast-progress { background: #10b981; }
         @keyframes progress { from { width: 100%; } to { width: 0%; } }
+        
         .confirm-modal {
             position: fixed;
             top: 0;
@@ -198,7 +199,11 @@
         .confirm-buttons { display: flex; gap: 12px; margin-top: 20px; }
         .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
-        @media (max-width: 768px) { .filter-bar { flex-direction: column; align-items: stretch; } .search-input, .filter-select { width: 100%; } }
+        
+        @media (max-width: 768px) {
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-input, .filter-select { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -213,10 +218,7 @@
 
         <div class="card header">
             <h1>👥 إدارة المستخدمين</h1>
-            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات والتعيينات</p>
-            <p style="color: #64748b; font-size: 14px; margin-top: 8px;">
-                📌 <strong>ملاحظة:</strong> المعلمون والأدمن يدخلون بـ (اسم المستخدم + كلمة السر) | الطلاب يدخلون بـ (رقم الهاتف + كلمة السر)
-            </p>
+            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات</p>
         </div>
 
         <div class="card">
@@ -240,7 +242,7 @@
             <div class="table-wrapper">
                 <table>
                     <thead>
-                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>التسجيل</th><th>الإجراءات</th></tr>
+                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الصف</th><th>الدور</th><th>الحالة</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
@@ -248,7 +250,7 @@
         </div>
     </div>
 
-    <!-- مودال إضافة/تعديل مستخدم -->
+    <!-- مودال إضافة مستخدم -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
@@ -293,12 +295,6 @@
                 </div>
             </div>
             
-            <div id="teacherAssignmentsSection" style="display:none;">
-                <h4>📚 تعيين المواد والصفوف للمعلم</h4>
-                <div id="assignmentsList"></div>
-                <button type="button" class="btn btn-outline btn-sm" onclick="addAssignmentRow()">+ إضافة تعيين</button>
-            </div>
-            
             <div class="form-group">
                 <label>🔒 كلمة السر *</label>
                 <input type="password" id="userPassword" placeholder="أدخل كلمة السر (6 أحرف على الأقل)">
@@ -307,19 +303,6 @@
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeModal('userModal')">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- مودال تعيينات المعلم (للتعديل) -->
-    <div id="assignmentsModal" class="modal">
-        <div class="modal-content">
-            <h3>📚 تعيين المواد والصفوف للمعلم</h3>
-            <div id="editAssignmentsList"></div>
-            <button type="button" class="btn btn-outline btn-sm" onclick="addEditAssignmentRow()">+ إضافة تعيين</button>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="saveAssignments()">💾 حفظ التعيينات</button>
-                <button class="btn btn-outline" onclick="closeModal('assignmentsModal')">إلغاء</button>
             </div>
         </div>
     </div>
@@ -340,18 +323,17 @@
     <script src="js/supabase-config.js"></script>
     <script>
         // التحقق من صلاحية الدخول
-        if (!checkAuth(['admin'])) {
-            throw new Error('Unauthorized');
-        }
+        (function() {
+            const user = getUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('adminName').innerHTML = user.name;
+        })();
         
         let currentUserId = null;
         let currentResetUserId = null;
-        let currentTeacherId = null;
-        
-        const currentAdmin = getUser();
-        if (currentAdmin) {
-            document.getElementById('adminName').innerHTML = currentAdmin.name;
-        }
         
         // ==================== تحميل المستخدمين ====================
         async function loadUsers() {
@@ -363,7 +345,7 @@
             const tbody = document.getElementById('usersTableBody');
             
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
                 return;
             }
             
@@ -388,115 +370,60 @@
                     <td><strong>${u.name || ''}</strong></td>
                     <td>${u.username || '-'}</td>
                     <td>${u.phone || '-'}</td>
-                    <td>${u.email || '-'}</td>
+                    <td>${u.class_id || '-'}</td>
                     <td><span class="badge ${roleClass}">${roleText}</span></td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
-                    <td>${formatDate(u.created_at)}</td>
                     <td>
                         <div class="action-buttons">
                             ${u.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${u.id})">✅ تفعيل</button>` : ''}
-                            ${u.role === 'teacher' ? `<button class="btn btn-info btn-sm" onclick="manageAssignments(${u.id})">📚 تعيينات</button>` : ''}
+                            <button class="btn btn-info btn-sm" onclick="goToUserDashboard(${u.id}, '${u.role}', '${u.name.replace(/'/g, "\\'")}')">🚪 دخول للوحة</button>
                             <button class="btn btn-warning btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
                         </div>
-                    </td>
+                     </td>
                 `;
                 tbody.appendChild(row);
             }
         }
         
-        // ==================== تحميل الصفوف والمواد ====================
-        async function loadClassesAndSubjects() {
-            const classes = await fetchClasses();
-            const subjects = await fetchSubjects();
-            return { classes, subjects };
-        }
-        
-        // ==================== صفوف التعيينات ====================
-        function addAssignmentRow() {
-            const container = document.getElementById('assignmentsList');
-            const rowId = Date.now();
-            const div = document.createElement('div');
-            div.id = `assign-row-${rowId}`;
-            div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
-            div.innerHTML = `
-                <select id="class-${rowId}" class="class-select" style="flex:1;">
-                    <option value="">-- اختر الصف --</option>
-                </select>
-                <select id="subject-${rowId}" class="subject-select" style="flex:1;">
-                    <option value="">-- اختر المادة --</option>
-                </select>
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeAssignmentRow(${rowId})">🗑️</button>
-            `;
-            container.appendChild(div);
-            loadSelectOptions(rowId);
-        }
-        
-        function addEditAssignmentRow() {
-            const container = document.getElementById('editAssignmentsList');
-            const rowId = Date.now();
-            const div = document.createElement('div');
-            div.id = `edit-assign-row-${rowId}`;
-            div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
-            div.innerHTML = `
-                <select id="edit-class-${rowId}" class="class-select" style="flex:1;">
-                    <option value="">-- اختر الصف --</option>
-                </select>
-                <select id="edit-subject-${rowId}" class="subject-select" style="flex:1;">
-                    <option value="">-- اختر المادة --</option>
-                </select>
-                <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRow(${rowId})">🗑️</button>
-            `;
-            container.appendChild(div);
-            loadSelectOptions(rowId, 'edit');
-        }
-        
-        async function loadSelectOptions(rowId, prefix = '') {
-            const { classes, subjects } = await loadClassesAndSubjects();
-            const classSelect = document.getElementById(`${prefix}class-${rowId}`);
-            const subjectSelect = document.getElementById(`${prefix}subject-${rowId}`);
+        // ==================== الدخول للوحة تحكم المستخدم ====================
+        window.goToUserDashboard = async function(userId, role, userName) {
+            const users = await fetchUsers({});
+            const targetUser = users.find(u => u.id == userId);
+            if (!targetUser) return;
             
-            if (classSelect) {
-                classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-                classes.forEach(c => {
-                    const option = document.createElement('option');
-                    option.value = c.id;
-                    option.textContent = c.name;
-                    classSelect.appendChild(option);
-                });
-            }
-            if (subjectSelect) {
-                subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-                subjects.forEach(s => {
-                    const option = document.createElement('option');
-                    option.value = s.id;
-                    option.textContent = s.name;
-                    subjectSelect.appendChild(option);
-                });
-            }
-        }
-        
-        function removeAssignmentRow(rowId) {
-            const el = document.getElementById(`assign-row-${rowId}`);
-            if (el) el.remove();
-        }
-        
-        function removeEditAssignmentRow(rowId) {
-            const el = document.getElementById(`edit-assign-row-${rowId}`);
-            if (el) el.remove();
-        }
+            // حفظ بيانات الدخول المؤقتة مع حفظ بيانات الأدمن الأصلي
+            const adminUser = getUser();
+            localStorage.setItem('originalUser', JSON.stringify(adminUser));
+            localStorage.setItem('user', JSON.stringify({
+                id: targetUser.id,
+                name: targetUser.name,
+                role: targetUser.role,
+                username: targetUser.username,
+                phone: targetUser.phone,
+                class_id: targetUser.class_id,
+                isImpersonating: true
+            }));
+            
+            showToast(`جاري الدخول كـ ${userName}...`, 'success');
+            setTimeout(() => {
+                if (targetUser.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else if (targetUser.role === 'teacher') window.location.href = 'teacher-dashboard.html';
+                else window.location.href = 'student-dashboard.html';
+            }, 1000);
+        };
         
         // ==================== تحميل الصفوف للطلاب ====================
         async function loadClassesForSelect() {
             const classes = await fetchClasses();
             const select = document.getElementById('userClassId');
             select.innerHTML = '<option value="">-- اختر الصف --</option>';
-            classes.forEach(c => {
+            for (let i = 0; i < classes.length; i++) {
                 const option = document.createElement('option');
-                option.value = c.id;
-                option.textContent = c.name;
+                option.value = classes[i].id;
+                option.textContent = classes[i].name;
                 select.appendChild(option);
-            });
+            }
         }
         
         // ==================== فتح مودال إضافة مستخدم ====================
@@ -510,8 +437,6 @@
             document.getElementById('userRole').value = 'student';
             document.getElementById('userClassId').value = '';
             document.getElementById('userPassword').value = '';
-            document.getElementById('teacherAssignmentsSection').style.display = 'none';
-            document.getElementById('assignmentsList').innerHTML = '';
             
             const role = document.getElementById('userRole').value;
             document.getElementById('usernameField').style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none';
@@ -524,14 +449,6 @@
                 const selectedRole = this.value;
                 document.getElementById('usernameField').style.display = (selectedRole === 'teacher' || selectedRole === 'admin') ? 'block' : 'none';
                 document.getElementById('classField').style.display = selectedRole === 'student' ? 'block' : 'none';
-                document.getElementById('teacherAssignmentsSection').style.display = selectedRole === 'teacher' ? 'block' : 'none';
-                
-                if (selectedRole === 'teacher') {
-                    const assignmentsList = document.getElementById('assignmentsList');
-                    if (assignmentsList.children.length === 0) {
-                        addAssignmentRow();
-                    }
-                }
             };
         }
         
@@ -592,60 +509,6 @@
             loadUsers();
         }
         
-        // ==================== إدارة تعيينات المعلم ====================
-        async function manageAssignments(teacherId) {
-            currentTeacherId = teacherId;
-            const assignments = await fetchTeacherAssignments(teacherId);
-            
-            const container = document.getElementById('editAssignmentsList');
-            container.innerHTML = '';
-            
-            for (const a of assignments) {
-                const rowId = Date.now() + Math.random();
-                const div = document.createElement('div');
-                div.id = `edit-assign-row-${rowId}`;
-                div.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
-                div.innerHTML = `
-                    <select id="edit-class-${rowId}" class="class-select" style="flex:1;">
-                        <option value="">-- اختر الصف --</option>
-                    </select>
-                    <select id="edit-subject-${rowId}" class="subject-select" style="flex:1;">
-                        <option value="">-- اختر المادة --</option>
-                    </select>
-                    <input type="hidden" id="assign-id-${rowId}" value="${a.id}">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRow(${rowId})">🗑️</button>
-                `;
-                container.appendChild(div);
-                await loadSelectOptions(rowId, 'edit');
-                document.getElementById(`edit-class-${rowId}`).value = a.class_id;
-                document.getElementById(`edit-subject-${rowId}`).value = a.subject_id;
-            }
-            
-            document.getElementById('assignmentsModal').style.display = 'flex';
-        }
-        
-        async function saveAssignments() {
-            const rows = document.querySelectorAll('#editAssignmentsList [id^="edit-assign-row-"]');
-            for (const row of rows) {
-                const assignIdInput = row.querySelector('[id^="assign-id-"]');
-                if (assignIdInput && assignIdInput.value) {
-                    await removeTeacherAssignment(parseInt(assignIdInput.value));
-                }
-            }
-            
-            for (const row of rows) {
-                const classSelect = row.querySelector('.class-select');
-                const subjectSelect = row.querySelector('.subject-select');
-                if (classSelect && classSelect.value && subjectSelect && subjectSelect.value) {
-                    await addTeacherAssignment(currentTeacherId, parseInt(classSelect.value), parseInt(subjectSelect.value));
-                }
-            }
-            
-            showToast('تم حفظ التعيينات', 'success');
-            closeModal('assignmentsModal');
-            loadUsers();
-        }
-        
         // ==================== تفعيل المستخدم ====================
         async function approveUser(id) {
             await updateUserStatus(id, 'active');
@@ -687,8 +550,7 @@
         
         // ==================== إغلاق المودال ====================
         function closeModal(id) {
-            const modal = document.getElementById(id);
-            if (modal) modal.style.display = 'none';
+            document.getElementById(id).style.display = 'none';
         }
         
         // ==================== أحداث البحث والفلاتر ====================
