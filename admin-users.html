@@ -21,6 +21,9 @@
         <div class="card header">
             <h1>👥 إدارة المستخدمين</h1>
             <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات والتعيينات</p>
+            <p style="color: var(--gray); font-size: 14px; margin-top: 8px;">
+                📌 <strong>ملاحظة:</strong> المعلمون والأدمن يدخلون بـ (اسم المستخدم + كلمة السر) | الطلاب يدخلون بـ (رقم الهاتف + كلمة السر)
+            </p>
         </div>
 
         <div class="card">
@@ -44,7 +47,7 @@
             <div class="table-wrapper">
                 <table>
                     <thead>
-                        <tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>التسجيل</th><th>الإجراءات</th></tr>
+                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>التسجيل</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
@@ -52,28 +55,60 @@
         </div>
     </div>
 
-    <!-- مودال إضافة مستخدم -->
+    <!-- مودال إضافة/تعديل مستخدم -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
-            <input type="text" id="userName" placeholder="الاسم الكامل">
-            <input type="tel" id="userPhone" placeholder="رقم الهاتف">
-            <input type="email" id="userEmail" placeholder="البريد الإلكتروني (اختياري)">
-            <select id="userRole">
-                <option value="student">طالب</option>
-                <option value="teacher">معلم</option>
-                <option value="admin">مدير</option>
-            </select>
-            <select id="userClassId">
-                <option value="">-- اختر الصف (للطلاب) --</option>
-            </select>
-            <input type="password" id="userPassword" placeholder="كلمة السر">
             
-            <!-- قسم تعيينات المعلم (يظهر فقط عند اختيار معلم) -->
-            <div id="teacherAssignmentsSection" style="display:none; margin-top: 15px;">
+            <div class="form-group">
+                <label>👤 الاسم الكامل *</label>
+                <input type="text" id="userName" placeholder="مثال: أحمد محمد علي">
+            </div>
+            
+            <div class="form-group">
+                <label>📞 رقم الهاتف * (للطلاب: يستخدم للدخول)</label>
+                <input type="tel" id="userPhone" placeholder="مثال: 01012345678">
+            </div>
+            
+            <div class="form-group">
+                <label>📧 البريد الإلكتروني (اختياري)</label>
+                <input type="email" id="userEmail" placeholder="example@email.com">
+            </div>
+            
+            <div id="usernameField" style="display: none;">
+                <div class="form-group">
+                    <label>👤 اسم المستخدم * (للمعلمين والأدمن - يستخدم للدخول)</label>
+                    <input type="text" id="userUsername" placeholder="مثال: ahmed_teacher">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>🎭 الدور</label>
+                <select id="userRole">
+                    <option value="student">طالب</option>
+                    <option value="teacher">معلم</option>
+                    <option value="admin">مدير</option>
+                </select>
+            </div>
+            
+            <div id="classField">
+                <div class="form-group">
+                    <label>🎓 الصف الدراسي (للطلاب)</label>
+                    <select id="userClassId">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="teacherAssignmentsSection" style="display:none;">
                 <h4>📚 تعيين المواد والصفوف للمعلم</h4>
                 <div id="assignmentsList"></div>
                 <button type="button" class="btn btn-outline btn-sm" onclick="addAssignmentRow()">+ إضافة تعيين</button>
+            </div>
+            
+            <div class="form-group">
+                <label>🔒 كلمة السر *</label>
+                <input type="password" id="userPassword" placeholder="أدخل كلمة السر (6 أحرف على الأقل)">
             </div>
             
             <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -116,11 +151,10 @@
         let currentUserId = null;
         let currentResetUserId = null;
         let currentTeacherId = null;
-        let tempAssignments = [];
-        let editAssignments = [];
         
         document.getElementById('adminName').innerHTML = getUser().name;
         
+        // ==================== تحميل المستخدمين ====================
         async function loadUsers() {
             const search = document.getElementById('searchInput').value;
             const role = document.getElementById('roleFilter').value;
@@ -130,7 +164,7 @@
             const tbody = document.getElementById('usersTableBody');
             
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
                 return;
             }
             
@@ -138,6 +172,7 @@
                 <tr>
                     <td>${i+1}</td>
                     <td><strong>${u.name}</strong></td>
+                    <td>${u.username || '-'}</td>
                     <td>${u.phone || '-'}</td>
                     <td>${u.email || '-'}</td>
                     <td><span class="badge ${u.role === 'admin' ? 'badge-primary' : u.role === 'teacher' ? 'badge-info' : 'badge-success'}">${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</span></td>
@@ -151,10 +186,11 @@
                             <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
                         </div>
                     </td>
-                </tr>
+                <tr>
             `).join('');
         }
         
+        // ==================== تحميل الصفوف والمواد ====================
         async function loadClassesAndSubjects() {
             const [classes, subjects] = await Promise.all([
                 fetchClasses(), fetchSubjects()
@@ -162,6 +198,7 @@
             return { classes, subjects };
         }
         
+        // ==================== صفوف التعيينات ====================
         function addAssignmentRow() {
             const container = document.getElementById('assignmentsList');
             const rowId = Date.now();
@@ -219,6 +256,7 @@
             document.getElementById(`edit-assign-row-${rowId}`)?.remove();
         }
         
+        // ==================== تحميل الصفوف للطلاب ====================
         async function loadClassesForSelect() {
             const classes = await fetchClasses();
             const select = document.getElementById('userClassId');
@@ -226,40 +264,69 @@
             classes.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
         }
         
+        // ==================== فتح مودال إضافة مستخدم ====================
         function openAddUserModal() {
             currentUserId = null;
             document.getElementById('modalTitle').innerHTML = '➕ إضافة مستخدم جديد';
             document.getElementById('userName').value = '';
             document.getElementById('userPhone').value = '';
             document.getElementById('userEmail').value = '';
+            document.getElementById('userUsername').value = '';
             document.getElementById('userRole').value = 'student';
             document.getElementById('userClassId').value = '';
             document.getElementById('userPassword').value = '';
             document.getElementById('teacherAssignmentsSection').style.display = 'none';
             document.getElementById('assignmentsList').innerHTML = '';
-            tempAssignments = [];
+            
+            // إظهار/إخفاء الحقول حسب الدور
+            const role = document.getElementById('userRole').value;
+            document.getElementById('usernameField').style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none';
+            document.getElementById('classField').style.display = role === 'student' ? 'block' : 'none';
+            
             loadClassesForSelect();
             document.getElementById('userModal').style.display = 'flex';
             
             document.getElementById('userRole').onchange = function() {
-                const section = document.getElementById('teacherAssignmentsSection');
-                section.style.display = this.value === 'teacher' ? 'block' : 'none';
-                if (this.value === 'teacher') {
-                    addAssignmentRow();
+                const selectedRole = this.value;
+                const usernameField = document.getElementById('usernameField');
+                const classField = document.getElementById('classField');
+                const teacherSection = document.getElementById('teacherAssignmentsSection');
+                
+                usernameField.style.display = (selectedRole === 'teacher' || selectedRole === 'admin') ? 'block' : 'none';
+                classField.style.display = selectedRole === 'student' ? 'block' : 'none';
+                teacherSection.style.display = selectedRole === 'teacher' ? 'block' : 'none';
+                
+                if (selectedRole === 'teacher') {
+                    if (document.getElementById('assignmentsList').children.length === 0) {
+                        addAssignmentRow();
+                    }
                 }
             };
         }
         
+        // ==================== حفظ المستخدم ====================
         async function saveUser() {
             const name = document.getElementById('userName').value;
             const phone = document.getElementById('userPhone').value;
             const email = document.getElementById('userEmail').value;
             const role = document.getElementById('userRole').value;
             const classId = document.getElementById('userClassId').value;
+            const username = document.getElementById('userUsername').value;
             const password = document.getElementById('userPassword').value;
             
             if (!name || !phone || !password) {
                 showToast('الاسم ورقم الهاتف وكلمة السر مطلوبة', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            
+            // التحقق من username للمعلمين والأدمن
+            if ((role === 'teacher' || role === 'admin') && !username) {
+                showToast('اسم المستخدم مطلوب للمعلمين والأدمن', 'error');
                 return;
             }
             
@@ -279,31 +346,69 @@
                 }
             }
             
-            const userData = {
-                name, phone, email: email || null, password,
-                role, class_id: classId || null, assignments
+            const hashedPassword = await hashPassword(password);
+            
+            const insertData = {
+                name: name,
+                phone: phone,
+                email: email || null,
+                password_hash: hashedPassword,
+                role: role,
+                class_id: classId || null,
+                status: 'active'
             };
             
-            const result = await createUser(userData);
+            // إضافة username فقط للمعلمين والأدمن
+            if (role === 'teacher' || role === 'admin') {
+                insertData.username = username;
+            }
+            
+            let result;
+            if (currentUserId) {
+                // تحديث مستخدم موجود
+                const { error } = await sb
+                    .from('users')
+                    .update(insertData)
+                    .eq('id', currentUserId);
+                result = !error;
+            } else {
+                // إضافة مستخدم جديد
+                const { data, error } = await sb
+                    .from('users')
+                    .insert(insertData)
+                    .select()
+                    .single();
+                
+                if (!error && role === 'teacher' && assignments.length > 0) {
+                    for (const assignment of assignments) {
+                        await sb.from('teacher_assignments').insert({
+                            teacher_id: data.id,
+                            class_id: assignment.class_id,
+                            subject_id: assignment.subject_id
+                        });
+                    }
+                }
+                result = data;
+            }
             
             if (result) {
-                showToast('تم إضافة المستخدم', 'success');
+                showToast('تم ' + (currentUserId ? 'تعديل' : 'إضافة') + ' المستخدم', 'success');
                 closeModal('userModal');
                 loadUsers();
             } else {
-                showToast('حدث خطأ', 'error');
+                showToast('حدث خطأ - قد يكون اسم المستخدم أو رقم الهاتف موجوداً مسبقاً', 'error');
             }
         }
         
+        // ==================== إدارة تعيينات المعلم ====================
         async function manageAssignments(teacherId) {
             currentTeacherId = teacherId;
             const assignments = await fetchTeacherAssignments(teacherId);
-            editAssignments = assignments.map(a => ({ class_id: a.class_id, subject_id: a.subject_id }));
             
             const container = document.getElementById('editAssignmentsList');
             container.innerHTML = '';
             
-            for (const a of editAssignments) {
+            for (const a of assignments) {
                 const rowId = Date.now() + Math.random();
                 container.innerHTML += `
                     <div id="edit-assign-row-${rowId}" style="display: flex; gap: 10px; margin-bottom: 10px;">
@@ -313,7 +418,8 @@
                         <select id="edit-subject-${rowId}" class="subject-select" style="flex:1;">
                             <option value="">-- اختر المادة --</option>
                         </select>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRow(${rowId})">🗑️</button>
+                        <input type="hidden" id="assign-id-${rowId}" value="${a.id}">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeEditAssignmentRowWithId(${rowId})">🗑️</button>
                     </div>
                 `;
                 await loadSelectOptions(rowId, 'edit');
@@ -326,13 +432,15 @@
         
         async function saveAssignments() {
             // حذف التعيينات القديمة
-            const oldAssignments = await fetchTeacherAssignments(currentTeacherId);
-            for (const a of oldAssignments) {
-                await removeTeacherAssignment(a.id);
+            const rows = document.querySelectorAll('#editAssignmentsList [id^="edit-assign-row-"]');
+            for (const row of rows) {
+                const assignId = row.querySelector('[id^="assign-id-"]')?.value;
+                if (assignId) {
+                    await removeTeacherAssignment(parseInt(assignId));
+                }
             }
             
             // إضافة التعيينات الجديدة
-            const rows = document.querySelectorAll('#editAssignmentsList [id^="edit-assign-row-"]');
             for (const row of rows) {
                 const classSelect = row.querySelector('.class-select');
                 const subjectSelect = row.querySelector('.subject-select');
@@ -346,11 +454,17 @@
             loadUsers();
         }
         
+        function removeEditAssignmentRowWithId(rowId) {
+            document.getElementById(`edit-assign-row-${rowId}`)?.remove();
+        }
+        
+        // ==================== تفعيل المستخدم ====================
         async function approveUser(id) {
             await updateUserStatus(id, 'active');
             loadUsers();
         }
         
+        // ==================== إعادة تعيين كلمة المرور ====================
         function openResetPassword(id) {
             currentResetUserId = id;
             document.getElementById('newPassword').value = '';
@@ -375,6 +489,7 @@
             closeModal('resetPasswordModal');
         }
         
+        // ==================== حذف المستخدم ====================
         function deleteUserConfirm(id) {
             showConfirm('هل أنت متأكد من حذف هذا المستخدم؟', async () => {
                 await deleteUser(id);
@@ -382,10 +497,12 @@
             });
         }
         
+        // ==================== أحداث البحث والفلاتر ====================
         document.getElementById('searchInput').addEventListener('input', () => loadUsers());
         document.getElementById('roleFilter').addEventListener('change', () => loadUsers());
         document.getElementById('statusFilter').addEventListener('change', () => loadUsers());
         
+        // ==================== تحميل أولي ====================
         loadUsers();
     </script>
 </body>
