@@ -84,7 +84,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 800px;
+            min-width: 900px;
         }
         th, td {
             padding: 14px 16px;
@@ -110,6 +110,7 @@
         .badge-warning { background: #fef3c7; color: #d97706; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-secondary { background: #e2e8f0; color: #475569; }
         .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
         .modal {
             display: none;
@@ -128,7 +129,7 @@
             background: white;
             border-radius: 32px;
             padding: 32px;
-            width: 550px;
+            width: 650px;
             max-width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -144,6 +145,30 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
         h4 { margin: 15px 0 10px 0; color: #1e293b; }
+        
+        .assignment-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .assignment-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .assignment-info span {
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         
         .toast-notification {
             position: fixed;
@@ -203,6 +228,9 @@
         @media (max-width: 768px) {
             .filter-bar { flex-direction: column; align-items: stretch; }
             .search-input, .filter-select { width: 100%; }
+            .row-2 { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -218,7 +246,7 @@
 
         <div class="card header">
             <h1>👥 إدارة المستخدمين</h1>
-            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات</p>
+            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات - تعيين الصفوف والمواد للمعلمين</p>
         </div>
 
         <div class="card">
@@ -242,7 +270,7 @@
             <div class="table-wrapper">
                 <table>
                     <thead>
-                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الصف</th><th>الدور</th><th>الحالة</th><th>الإجراءات</th></tr>
+                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الصف/المواد</th><th>الدور</th><th>الحالة</th><th>الإجراءات</th></tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
@@ -250,7 +278,7 @@
         </div>
     </div>
 
-    <!-- مودال إضافة مستخدم -->
+    <!-- مودال إضافة/تعديل مستخدم -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
@@ -260,44 +288,69 @@
                 <input type="text" id="userName" placeholder="مثال: أحمد محمد علي">
             </div>
             
-            <div class="form-group">
-                <label>📞 رقم الهاتف * (للطلاب: يستخدم للدخول)</label>
-                <input type="tel" id="userPhone" placeholder="مثال: 01012345678">
-            </div>
-            
-            <div class="form-group">
-                <label>📧 البريد الإلكتروني (اختياري)</label>
-                <input type="email" id="userEmail" placeholder="example@email.com">
-            </div>
-            
-            <div id="usernameField" style="display: none;">
+            <div class="row-2">
                 <div class="form-group">
-                    <label>👤 اسم المستخدم * (للمعلمين والأدمن - يستخدم للدخول)</label>
+                    <label>📞 رقم الهاتف *</label>
+                    <input type="tel" id="userPhone" placeholder="مثال: 01012345678">
+                </div>
+                <div class="form-group">
+                    <label>📧 البريد الإلكتروني</label>
+                    <input type="email" id="userEmail" placeholder="example@email.com">
+                </div>
+            </div>
+            
+            <div id="usernameField">
+                <div class="form-group">
+                    <label>👤 اسم المستخدم * (للمعلمين والأدمن)</label>
                     <input type="text" id="userUsername" placeholder="مثال: ahmed_teacher">
                 </div>
             </div>
             
             <div class="form-group">
                 <label>🎭 الدور</label>
-                <select id="userRole">
+                <select id="userRole" onchange="onRoleChange()">
                     <option value="student">طالب</option>
                     <option value="teacher">معلم</option>
                     <option value="admin">مدير</option>
                 </select>
             </div>
             
+            <!-- حقل الصف للطلاب -->
             <div id="classField">
                 <div class="form-group">
-                    <label>🎓 الصف الدراسي (للطلاب)</label>
+                    <label>🎓 الصف الدراسي</label>
                     <select id="userClassId">
                         <option value="">-- اختر الصف --</option>
                     </select>
                 </div>
             </div>
             
+            <!-- قسم تعيينات المعلم (صفوف ومواد) -->
+            <div id="teacherAssignmentsSection" style="display: none;">
+                <h4>📚 تعيين الصفوف والمواد للمعلم</h4>
+                <div id="teacherAssignmentsList"></div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>الصف</label>
+                        <select id="assignClassId">
+                            <option value="">-- اختر الصف --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>المادة</label>
+                        <select id="assignSubjectId">
+                            <option value="">-- اختر المادة --</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addTeacherAssignment()">➕ إضافة تعيين</button>
+                <p style="font-size: 12px; color: #64748b; margin-top: 8px;">* يمكن للمعلم إدارة الامتحانات فقط في الصفوف والمواد المحددة</p>
+            </div>
+            
             <div class="form-group">
-                <label>🔒 كلمة السر *</label>
+                <label>🔒 كلمة السر</label>
                 <input type="password" id="userPassword" placeholder="أدخل كلمة السر (6 أحرف على الأقل)">
+                <small style="color: #64748b;">اتركها فارغة إذا كنت لا تريد تغييرها (في حالة التعديل)</small>
             </div>
             
             <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -322,7 +375,7 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
-        // التحقق من صلاحية الدخول
+        // ==================== التحقق من صلاحية الدخول ====================
         (function() {
             const user = getUser();
             if (!user || user.role !== 'admin') {
@@ -334,6 +387,7 @@
         
         let currentUserId = null;
         let currentResetUserId = null;
+        let currentTeacherAssignments = [];
         
         // ==================== تحميل المستخدمين ====================
         async function loadUsers() {
@@ -364,56 +418,237 @@
                 else if (u.status === 'pending') { statusClass = 'badge-warning'; statusText = 'قيد الانتظار'; }
                 else { statusClass = 'badge-danger'; statusText = 'موقوف'; }
                 
+                // عرض الصف للطالب أو عدد التعيينات للمعلم
+                let extraInfo = '';
+                if (u.role === 'student') {
+                    const className = await getClassName(u.class_id);
+                    extraInfo = className || 'بدون صف';
+                } else if (u.role === 'teacher') {
+                    const assignments = await fetchTeacherAssignments(u.id);
+                    extraInfo = `${assignments.length} تعيين`;
+                } else {
+                    extraInfo = '-';
+                }
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${i+1}</td>
-                    <td><strong>${u.name || ''}</strong></td>
+                    <td><strong>${escapeHtml(u.name || '')}</strong></td>
                     <td>${u.username || '-'}</td>
                     <td>${u.phone || '-'}</td>
-                    <td>${u.class_id || '-'}</td>
+                    <td><small>${escapeHtml(extraInfo)}</small></td>
                     <td><span class="badge ${roleClass}">${roleText}</span></td>
                     <td><span class="badge ${statusClass}">${statusText}</span></td>
                     <td>
                         <div class="action-buttons">
                             ${u.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${u.id})">✅ تفعيل</button>` : ''}
-                            <button class="btn btn-info btn-sm" onclick="goToUserDashboard(${u.id}, '${u.role}', '${u.name.replace(/'/g, "\\'")}')">🚪 دخول للوحة</button>
-                            <button class="btn btn-warning btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
+                            ${u.status === 'active' ? `<button class="btn btn-warning btn-sm" onclick="suspendUser(${u.id})">⛔ تعطيل</button>` : ''}
+                            ${u.status === 'suspended' ? `<button class="btn btn-success btn-sm" onclick="activateUser(${u.id})">▶️ تفعيل</button>` : ''}
+                            <button class="btn btn-info btn-sm" onclick="editUser(${u.id})">✏️ تعديل</button>
+                            <button class="btn btn-info btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
+                            <button class="btn btn-primary btn-sm" onclick="goToUserDashboard(${u.id}, '${u.role}', '${escapeHtml(u.name).replace(/'/g, "\\'")}')">🚪 دخول</button>
                         </div>
-                     </td>
+                      </td>
                 `;
                 tbody.appendChild(row);
             }
         }
         
-        // ==================== الدخول للوحة تحكم المستخدم ====================
-        window.goToUserDashboard = async function(userId, role, userName) {
-            const users = await fetchUsers({});
-            const targetUser = users.find(u => u.id == userId);
-            if (!targetUser) return;
-            
-            // حفظ بيانات الدخول المؤقتة مع حفظ بيانات الأدمن الأصلي
-            const adminUser = getUser();
-            localStorage.setItem('originalUser', JSON.stringify(adminUser));
-            localStorage.setItem('user', JSON.stringify({
-                id: targetUser.id,
-                name: targetUser.name,
-                role: targetUser.role,
-                username: targetUser.username,
-                phone: targetUser.phone,
-                class_id: targetUser.class_id,
-                isImpersonating: true
-            }));
-            
-            showToast(`جاري الدخول كـ ${userName}...`, 'success');
-            setTimeout(() => {
-                if (targetUser.role === 'admin') window.location.href = 'admin-dashboard.html';
-                else if (targetUser.role === 'teacher') window.location.href = 'teacher-dashboard.html';
-                else window.location.href = 'student-dashboard.html';
-            }, 1000);
-        };
+        async function getClassName(classId) {
+            if (!classId) return null;
+            const classes = await fetchClasses();
+            const cls = classes.find(c => c.id == classId);
+            return cls ? cls.name : null;
+        }
         
-        // ==================== تحميل الصفوف للطلاب ====================
+        // ==================== تغيير حالة المستخدم ====================
+        async function approveUser(id) {
+            await updateUserStatus(id, 'active');
+            loadUsers();
+        }
+        
+        async function suspendUser(id) {
+            showConfirm('هل أنت متأكد من تعطيل هذا المستخدم؟', async () => {
+                await updateUserStatus(id, 'suspended');
+                loadUsers();
+            });
+        }
+        
+        async function activateUser(id) {
+            await updateUserStatus(id, 'active');
+            loadUsers();
+        }
+        
+        // ==================== تعديل المستخدم ====================
+        async function editUser(id) {
+            const users = await fetchUsers({});
+            const user = users.find(u => u.id == id);
+            if (!user) return;
+            
+            currentUserId = id;
+            document.getElementById('modalTitle').innerHTML = '✏️ تعديل مستخدم';
+            document.getElementById('userName').value = user.name || '';
+            document.getElementById('userPhone').value = user.phone || '';
+            document.getElementById('userEmail').value = user.email || '';
+            document.getElementById('userUsername').value = user.username || '';
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userPassword').value = ''; // فارغة بمعنى لا تغيير
+            
+            // تحميل الصفوف
+            await loadClassesForSelect();
+            if (user.class_id) {
+                document.getElementById('userClassId').value = user.class_id;
+            }
+            
+            // إظهار/إخفاء الحقول حسب الدور
+            onRoleChange();
+            
+            // إذا كان معلم، تحميل تعييناته
+            if (user.role === 'teacher') {
+                await loadTeacherAssignmentsForEdit(user.id);
+            }
+            
+            document.getElementById('userModal').style.display = 'flex';
+        }
+        
+        async function loadTeacherAssignmentsForEdit(teacherId) {
+            currentTeacherAssignments = await fetchTeacherAssignments(teacherId);
+            renderTeacherAssignmentsList();
+            
+            // تحميل خيارات الصفوف والمواد للإضافة
+            const classes = await fetchClasses();
+            const subjects = await fetchSubjects();
+            
+            const classSelect = document.getElementById('assignClassId');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            classes.forEach(c => {
+                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+            
+            const subjectSelect = document.getElementById('assignSubjectId');
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            subjects.forEach(s => {
+                subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+            });
+        }
+        
+        function renderTeacherAssignmentsList() {
+            const container = document.getElementById('teacherAssignmentsList');
+            if (!currentTeacherAssignments || currentTeacherAssignments.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 20px;">لا توجد تعيينات</div>';
+                return;
+            }
+            
+            container.innerHTML = currentTeacherAssignments.map(assign => `
+                <div class="assignment-item">
+                    <div class="assignment-info">
+                        <span>📚 ${assign.classes?.name || 'بدون صف'}</span>
+                        <span>📖 ${assign.subjects?.name || 'بدون مادة'}</span>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeAssignment(${assign.id})">🗑️ إزالة</button>
+                </div>
+            `).join('');
+        }
+        
+        async function addTeacherAssignment() {
+            const classId = document.getElementById('assignClassId').value;
+            const subjectId = document.getElementById('assignSubjectId').value;
+            
+            if (!classId || !subjectId) {
+                showToast('اختر الصف والمادة', 'error');
+                return;
+            }
+            
+            // التحقق من عدم التكرار
+            const exists = currentTeacherAssignments.some(a => a.class_id == classId && a.subject_id == subjectId);
+            if (exists) {
+                showToast('هذا التعيين موجود بالفعل', 'error');
+                return;
+            }
+            
+            const newAssignment = {
+                teacher_id: currentUserId,
+                class_id: parseInt(classId),
+                subject_id: parseInt(subjectId)
+            };
+            
+            const { data, error } = await sb
+                .from('teacher_assignments')
+                .insert(newAssignment)
+                .select('*, classes(id, name), subjects(id, name)')
+                .single();
+            
+            if (error) {
+                showToast('حدث خطأ', 'error');
+                return;
+            }
+            
+            currentTeacherAssignments.push(data);
+            renderTeacherAssignmentsList();
+            showToast('تم إضافة التعيين', 'success');
+        }
+        
+        async function removeAssignment(assignmentId) {
+            showConfirm('هل أنت متأكد من إزالة هذا التعيين؟', async () => {
+                const { error } = await sb
+                    .from('teacher_assignments')
+                    .delete()
+                    .eq('id', assignmentId);
+                
+                if (error) {
+                    showToast('حدث خطأ', 'error');
+                    return;
+                }
+                
+                currentTeacherAssignments = currentTeacherAssignments.filter(a => a.id !== assignmentId);
+                renderTeacherAssignmentsList();
+                showToast('تم إزالة التعيين', 'success');
+            });
+        }
+        
+        // ==================== عند تغيير الدور ====================
+        function onRoleChange() {
+            const role = document.getElementById('userRole').value;
+            
+            // حقل اسم المستخدم (للمعلم والأدمن)
+            document.getElementById('usernameField').style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none';
+            
+            // حقل الصف (للطالب فقط)
+            document.getElementById('classField').style.display = role === 'student' ? 'block' : 'none';
+            
+            // قسم تعيينات المعلم
+            const teacherSection = document.getElementById('teacherAssignmentsSection');
+            teacherSection.style.display = (role === 'teacher' && currentUserId) ? 'block' : 'none';
+            
+            if (role !== 'teacher') {
+                currentTeacherAssignments = [];
+                if (document.getElementById('teacherAssignmentsList')) {
+                    document.getElementById('teacherAssignmentsList').innerHTML = '';
+                }
+            }
+        }
+        
+        // ==================== فتح مودال إضافة مستخدم ====================
+        async function openAddUserModal() {
+            currentUserId = null;
+            currentTeacherAssignments = [];
+            document.getElementById('modalTitle').innerHTML = '➕ إضافة مستخدم جديد';
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userRole').value = 'student';
+            document.getElementById('userClassId').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('teacherAssignmentsList').innerHTML = '';
+            
+            await loadClassesForSelect();
+            onRoleChange();
+            document.getElementById('userModal').style.display = 'flex';
+        }
+        
+        // ==================== تحميل الصفوف ====================
         async function loadClassesForSelect() {
             const classes = await fetchClasses();
             const select = document.getElementById('userClassId');
@@ -426,32 +661,6 @@
             }
         }
         
-        // ==================== فتح مودال إضافة مستخدم ====================
-        async function openAddUserModal() {
-            currentUserId = null;
-            document.getElementById('modalTitle').innerHTML = '➕ إضافة مستخدم جديد';
-            document.getElementById('userName').value = '';
-            document.getElementById('userPhone').value = '';
-            document.getElementById('userEmail').value = '';
-            document.getElementById('userUsername').value = '';
-            document.getElementById('userRole').value = 'student';
-            document.getElementById('userClassId').value = '';
-            document.getElementById('userPassword').value = '';
-            
-            const role = document.getElementById('userRole').value;
-            document.getElementById('usernameField').style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none';
-            document.getElementById('classField').style.display = role === 'student' ? 'block' : 'none';
-            
-            await loadClassesForSelect();
-            document.getElementById('userModal').style.display = 'flex';
-            
-            document.getElementById('userRole').onchange = function() {
-                const selectedRole = this.value;
-                document.getElementById('usernameField').style.display = (selectedRole === 'teacher' || selectedRole === 'admin') ? 'block' : 'none';
-                document.getElementById('classField').style.display = selectedRole === 'student' ? 'block' : 'none';
-            };
-        }
-        
         // ==================== حفظ المستخدم ====================
         async function saveUser() {
             const name = document.getElementById('userName').value;
@@ -462,13 +671,8 @@
             const username = document.getElementById('userUsername').value;
             const password = document.getElementById('userPassword').value;
             
-            if (!name || !phone || !password) {
-                showToast('الاسم ورقم الهاتف وكلمة السر مطلوبة', 'error');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+            if (!name || !phone) {
+                showToast('الاسم ورقم الهاتف مطلوبة', 'error');
                 return;
             }
             
@@ -477,42 +681,71 @@
                 return;
             }
             
-            const hashedPassword = await hashPassword(password);
-            
-            const insertData = {
+            // تحضير بيانات التحديث
+            const updateData = {
                 name: name,
                 phone: phone,
                 email: email || null,
-                password_hash: hashedPassword,
                 role: role,
-                class_id: classId || null,
-                status: 'active'
+                class_id: classId || null
             };
             
             if (role === 'teacher' || role === 'admin') {
-                insertData.username = username;
+                updateData.username = username;
             }
             
-            const { error } = await sb
-                .from('users')
-                .insert(insertData)
-                .select()
-                .single();
-            
-            if (error) {
-                showToast('حدث خطأ: ' + error.message, 'error');
-                return;
+            // معالجة كلمة السر
+            if (password) {
+                if (password.length < 6) {
+                    showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+                    return;
+                }
+                updateData.password_hash = await hashPassword(password);
             }
             
-            showToast('تم إضافة المستخدم', 'success');
-            closeModal('userModal');
-            loadUsers();
-        }
-        
-        // ==================== تفعيل المستخدم ====================
-        async function approveUser(id) {
-            await updateUserStatus(id, 'active');
-            loadUsers();
+            let result;
+            if (currentUserId) {
+                // تحديث مستخدم موجود
+                const { error } = await sb
+                    .from('users')
+                    .update(updateData)
+                    .eq('id', currentUserId);
+                
+                if (error) {
+                    showToast('حدث خطأ: ' + error.message, 'error');
+                    return;
+                }
+                result = true;
+                
+                // إذا كان معلم، تحديث التعيينات (لا نحذف القديمة، فقط نضيف الجديدة عبر الواجهة)
+                if (role === 'teacher') {
+                    // التعيينات تمت إضافتها/إزالتها عبر الواجهة
+                }
+            } else {
+                // إضافة مستخدم جديد
+                if (!password) {
+                    showToast('كلمة السر مطلوبة للمستخدم الجديد', 'error');
+                    return;
+                }
+                updateData.password_hash = await hashPassword(password);
+                updateData.status = 'active';
+                
+                const { error } = await sb
+                    .from('users')
+                    .insert(updateData);
+                
+                if (error) {
+                    showToast('حدث خطأ: ' + error.message, 'error');
+                    return;
+                }
+                result = true;
+            }
+            
+            if (result) {
+                showToast('تم ' + (currentUserId ? 'تعديل' : 'إضافة') + ' المستخدم', 'success');
+                closeModal('userModal');
+                loadUsers();
+            }
         }
         
         // ==================== إعادة تعيين كلمة المرور ====================
@@ -542,15 +775,51 @@
         
         // ==================== حذف المستخدم ====================
         function deleteUserConfirm(id) {
-            showConfirm('هل أنت متأكد من حذف هذا المستخدم؟', async () => {
+            showConfirm('⚠️ هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
                 await deleteUser(id);
                 loadUsers();
             });
         }
         
+        // ==================== الدخول للوحة المستخدم ====================
+        window.goToUserDashboard = async function(userId, role, userName) {
+            const users = await fetchUsers({});
+            const targetUser = users.find(u => u.id == userId);
+            if (!targetUser) return;
+            
+            const adminUser = getUser();
+            localStorage.setItem('originalUser', JSON.stringify(adminUser));
+            localStorage.setItem('user', JSON.stringify({
+                id: targetUser.id,
+                name: targetUser.name,
+                role: targetUser.role,
+                username: targetUser.username,
+                phone: targetUser.phone,
+                class_id: targetUser.class_id,
+                isImpersonating: true
+            }));
+            
+            showToast(`جاري الدخول كـ ${userName}...`, 'success');
+            setTimeout(() => {
+                if (targetUser.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else if (targetUser.role === 'teacher') window.location.href = 'teacher-dashboard.html';
+                else window.location.href = 'student-dashboard.html';
+            }, 1000);
+        };
+        
         // ==================== إغلاق المودال ====================
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         // ==================== أحداث البحث والفلاتر ====================
