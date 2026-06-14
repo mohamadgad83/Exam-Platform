@@ -92,6 +92,10 @@
         .badge-admin { background: #ef4444; color: white; }
         .badge-teacher { background: #3b82f6; color: white; }
         .badge-student { background: #10b981; color: white; }
+        .badge-warning { background: #f59e0b; color: #1e293b; }
+        .badge-info { background: #3b82f6; color: white; }
+        .badge-success { background: #10b981; color: white; }
+        .badge-danger { background: #ef4444; color: white; }
         .code-block {
             background: #0f172a;
             padding: 15px;
@@ -123,6 +127,14 @@
         .btn-copy:hover {
             background: #475569;
         }
+        .note {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            border-right: 3px solid #f59e0b;
+        }
         @media (max-width: 768px) {
             body { padding: 10px; }
             .card { padding: 15px; }
@@ -135,10 +147,10 @@
         <div class="header">
             <h1>📚 منصة الاختبارات</h1>
             <p>Exam Platform - نظام متكامل لإدارة الاختبارات</p>
-            <div class="version-badge">الإصدار 1.0.0 | آخر تحديث: <span id="lastUpdate"></span></div>
+            <div class="version-badge">الإصدار 2.0.0 | آخر تحديث: <span id="lastUpdate"></span></div>
         </div>
 
-        <!-- ==================== هيكل المجلدات ==================== -->
+        <!-- ==================== هيكل المجلدات والملفات ==================== -->
         <div class="card">
             <h2>📁 هيكل المجلدات والملفات</h2>
             <div class="file-tree">
@@ -147,6 +159,10 @@
                 ├── 📄 <span class="file">index.html</span>                    <span style="color:#64748b;"># تسجيل الدخول الموحد</span><br>
                 ├── 📄 <span class="file">register.html</span>                 <span style="color:#64748b;"># تسجيل طالب جديد</span><br>
                 ├── 📄 <span class="file">add-question.html</span>             <span style="color:#64748b;"># إضافة سؤال (للأدمن)</span><br>
+                ├── 📄 <span class="file">questions-bank.html</span>           <span style="color:#64748b;"># بنك الأسئلة (موحد)</span><br>
+                ├── 📄 <span class="file">exams.html</span>                    <span style="color:#64748b;"># إدارة الامتحانات (موحد)</span><br>
+                ├── 📄 <span class="file">create-exam.html</span>              <span style="color:#64748b;"># إنشاء امتحان (موحد)</span><br>
+                ├── 📄 <span class="file">project-docs.html</span>             <span style="color:#64748b;"># توثيق المشروع</span><br>
                 │<br>
                 ├── 📂 <span class="folder">css/</span><br>
                 │   └── 📄 <span class="file">style.css</span>                 <span style="color:#64748b;"># التصميم الموحد</span><br>
@@ -180,6 +196,30 @@
                     ├── 📄 <span class="file">results.html</span><br>
                     └── 📄 <span class="file">groups.html</span><br>
             </div>
+            <div class="note">
+                💡 <strong>ملاحظة:</strong> الملفات <span class="badge badge-info">exams.html</span> و <span class="badge badge-info">create-exam.html</span> و <span class="badge badge-info">questions-bank.html</span> في الجذر تعمل كصفحات موحدة للمعلم والأدمن.
+            </div>
+        </div>
+
+        <!-- ==================== الروابط بين الصفحات ==================== -->
+        <div class="card">
+            <h2>🔗 الروابط بين الصفحات</h2>
+            <table>
+                <thead>
+                    <tr><th>من</th><th>إلى</th><th>الوصف</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="3"><strong>📂 ملفات الجذر</strong></td></tr>
+                    <tr><td>index.html</td><td>admin-dashboard.html / teacher-dashboard.html / student-dashboard.html</td><td>حسب دور المستخدم</td></tr>
+                    <tr><td>admin-dashboard.html</td><td>admin-users.html, admin-classes.html, admin-exams.html, admin-groups.html, admin-questions.html, admin-reports.html</td><td>جميع صفحات الأدمن</td></tr>
+                    <tr><td>teacher-dashboard.html</td><td>teacher-exams.html, teacher-questions.html, teacher-groups.html, teacher-students.html, teacher-submissions.html</td><td>جميع صفحات المعلم</td></tr>
+                    <tr><td>student-dashboard.html</td><td>student-exams.html, student-results.html, student-groups.html</td><td>جميع صفحات الطالب</td></tr>
+                    <tr><td colspan="3"><strong>📂 الصفحات الموحدة</strong></td></tr>
+                    <tr><td>exams.html</td><td>create-exam.html, questions-bank.html</td><td>إدارة الامتحانات (يعمل للمعلم والأدمن)</td></tr>
+                    <tr><td>questions-bank.html</td><td>add-question.html, teacher-questions.html</td><td>بنك الأسئلة (يعمل للمعلم والأدمن)</td></tr>
+                    <tr><td>create-exam.html</td><td>exams.html</td><td>إنشاء امتحان (يعمل للمعلم والأدمن)</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- ==================== هيكل قاعدة البيانات ==================== -->
@@ -187,85 +227,258 @@
             <h2>🗄️ هيكل قاعدة البيانات (Supabase)</h2>
             <button class="btn-copy" onclick="copySQL()">📋 نسخ SQL كامل</button>
             <div class="code-block" id="sqlCode">
-                -- جدول المستخدمين
-                CREATE TABLE users (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    username VARCHAR(100) UNIQUE,
-                    phone VARCHAR(50) UNIQUE,
-                    email VARCHAR(255) UNIQUE,
-                    password_hash VARCHAR(255) NOT NULL,
-                    role VARCHAR(50) CHECK (role IN ('admin', 'teacher', 'student')),
-                    status VARCHAR(50) DEFAULT 'pending',
-                    class_id INTEGER,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- ============================================
+-- database.sql - جميع الجداول (INTEGER IDs)
+-- لمنصة الاختبارات المتكاملة
+-- ============================================
 
-                -- جدول الصفوف
-                CREATE TABLE classes (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    grade_level VARCHAR(100),
-                    description TEXT,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- 1. جدول المستخدمين
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    username VARCHAR(100) UNIQUE,
+    phone VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) CHECK (role IN ('admin', 'teacher', 'student')),
+    status VARCHAR(50) DEFAULT 'pending',
+    class_id INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
-                -- جدول المواد
-                CREATE TABLE subjects (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    description TEXT,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- 2. جدول الصفوف
+CREATE TABLE classes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    grade_level VARCHAR(100),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
-                -- جدول ربط المواد بالصفوف
-                CREATE TABLE class_subjects (
-                    id SERIAL PRIMARY KEY,
-                    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
-                    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    UNIQUE(class_id, subject_id)
-                );
+-- 3. جدول المواد
+CREATE TABLE subjects (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
-                -- جدول تعيينات المعلمين
-                CREATE TABLE teacher_assignments (
-                    id SERIAL PRIMARY KEY,
-                    teacher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
-                    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- 4. جدول ربط المواد بالصفوف
+CREATE TABLE class_subjects (
+    id SERIAL PRIMARY KEY,
+    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(class_id, subject_id)
+);
 
-                -- جدول الامتحانات
-                CREATE TABLE exams (
-                    id SERIAL PRIMARY KEY,
-                    title VARCHAR(255) NOT NULL,
-                    description TEXT,
-                    class_id INTEGER REFERENCES classes(id),
-                    subject_id INTEGER REFERENCES subjects(id),
-                    teacher_id INTEGER REFERENCES users(id),
-                    duration_minutes INTEGER DEFAULT 60,
-                    passing_score INTEGER DEFAULT 50,
-                    status VARCHAR(50) DEFAULT 'draft',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- 5. جدول تعيينات المعلمين
+CREATE TABLE teacher_assignments (
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
-                -- جدول الأسئلة
-                CREATE TABLE questions (
-                    id SERIAL PRIMARY KEY,
-                    teacher_id INTEGER REFERENCES users(id),
-                    class_id INTEGER REFERENCES classes(id),
-                    subject_id INTEGER REFERENCES subjects(id),
-                    question_text TEXT,
-                    question_image TEXT,
-                    type VARCHAR(50) DEFAULT 'mcq',
-                    points INTEGER DEFAULT 5,
-                    difficulty VARCHAR(20) DEFAULT 'medium',
-                    options TEXT,
-                    correct_answer TEXT,
-                    status VARCHAR(50) DEFAULT 'pending',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
+-- 6. جدول الامتحانات
+CREATE TABLE exams (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    teacher_id INTEGER REFERENCES users(id),
+    duration_minutes INTEGER DEFAULT 60,
+    passing_score INTEGER DEFAULT 50,
+    exam_type VARCHAR(20) DEFAULT 'free',
+    exam_price DECIMAL(10,2) DEFAULT 0,
+    target_type VARCHAR(20) DEFAULT 'all',
+    target_ids TEXT,
+    is_announced BOOLEAN DEFAULT false,
+    announced_at TIMESTAMP,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'draft',
+    created_by INTEGER REFERENCES users(id),
+    max_attempts INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 7. جدول exam_questions (أسئلة الامتحان)
+CREATE TABLE exam_questions (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    question_id INTEGER REFERENCES questions(id),
+    points DECIMAL(5,2) DEFAULT 1,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 8. جدول الأسئلة
+CREATE TABLE questions (
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER REFERENCES users(id),
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    question_text TEXT,
+    question_image TEXT,
+    type VARCHAR(50) DEFAULT 'mcq',
+    points INTEGER DEFAULT 5,
+    difficulty VARCHAR(20) DEFAULT 'medium',
+    options TEXT,
+    correct_answer TEXT,
+    model_answer TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    feedback TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 9. جدول المجموعات
+CREATE TABLE groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    teacher_id INTEGER REFERENCES users(id),
+    max_capacity INTEGER,
+    is_open BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 10. جدول أعضاء المجموعات
+CREATE TABLE group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending',
+    joined_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(group_id, student_id)
+);
+
+-- 11. جدول exam_requests (طلبات الاشتراك)
+CREATE TABLE exam_requests (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending_admin',
+    approved_by INTEGER REFERENCES users(id),
+    approved_at TIMESTAMP,
+    rejection_reason TEXT,
+    coupon_code VARCHAR(50),
+    discount_amount DECIMAL(10,2) DEFAULT 0,
+    final_amount DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(exam_id, student_id)
+);
+
+-- 12. جدول exam_enrollments (الطلاب المقبولون)
+CREATE TABLE exam_enrollments (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    exam_request_id INTEGER REFERENCES exam_requests(id),
+    enrolled_by INTEGER REFERENCES users(id),
+    enrolled_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(exam_id, student_id)
+);
+
+-- 13. جدول exam_attempts (محاولات الامتحان)
+CREATE TABLE exam_attempts (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id),
+    student_id INTEGER REFERENCES users(id),
+    start_time TIMESTAMP,
+    submitted_at TIMESTAMP,
+    answers JSONB,
+    essay_scores JSONB,
+    score DECIMAL(10,2),
+    total_points DECIMAL(10,2),
+    status VARCHAR(20) DEFAULT 'in_progress',
+    enrollment_id INTEGER REFERENCES exam_enrollments(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 14. جدول exam_violations (مخالفات الامتحان)
+CREATE TABLE exam_violations (
+    id SERIAL PRIMARY KEY,
+    exam_attempt_id INTEGER REFERENCES exam_attempts(id),
+    student_id INTEGER REFERENCES users(id),
+    violation_type VARCHAR(100),
+    details TEXT,
+    timestamp TIMESTAMP DEFAULT NOW()
+);
+
+-- 15. جدول payment_methods (طرق الدفع)
+CREATE TABLE payment_methods (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    account_number VARCHAR(100),
+    account_owner VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 0,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 16. جدول payments (المدفوعات)
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    exam_request_id INTEGER REFERENCES exam_requests(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id),
+    exam_id INTEGER REFERENCES exams(id),
+    amount DECIMAL(10,2),
+    payment_method_id INTEGER REFERENCES payment_methods(id),
+    payment_screenshot TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    confirmed_by INTEGER REFERENCES users(id),
+    confirmed_at TIMESTAMP,
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 17. جدول coupons (كوبونات الخصم)
+CREATE TABLE coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(20) DEFAULT 'percentage',
+    discount_value DECIMAL(10,2) NOT NULL,
+    max_discount DECIMAL(10,2),
+    min_amount DECIMAL(10,2),
+    valid_from TIMESTAMP,
+    valid_until TIMESTAMP,
+    usage_limit INTEGER DEFAULT 1,
+    used_count INTEGER DEFAULT 0,
+    target_exam_id INTEGER REFERENCES exams(id),
+    target_students TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 18. جدول coupon_usages (استخدامات الكوبونات)
+CREATE TABLE coupon_usages (
+    id SERIAL PRIMARY KEY,
+    coupon_id INTEGER REFERENCES coupons(id),
+    student_id INTEGER REFERENCES users(id),
+    exam_request_id INTEGER REFERENCES exam_requests(id),
+    used_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 19. جدول notifications (الإشعارات الداخلية)
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    message TEXT,
+    type VARCHAR(50),
+    related_id VARCHAR(50),
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
             </div>
         </div>
 
@@ -290,7 +503,7 @@
             </div>
         </div>
 
-        <!-- ==================== الميزات ==================== -->
+        <!-- ==================== الميزات المنفذة ==================== -->
         <div class="card">
             <h2>✅ الميزات المنفذة</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
@@ -300,48 +513,37 @@
                         <li>✅ إدارة المستخدمين (إضافة، تعديل، حذف)</li>
                         <li>✅ تعيين الصفوف والمواد للمعلمين</li>
                         <li>✅ إدارة الصفوف والمواد</li>
-                        <li>✅ مراجعة واعتماد الأسئلة</li>
-                        <li>✅ إدارة الامتحانات والمجموعات</li>
-                        <li>✅ تقارير وإحصائيات</li>
-                        <li>✅ الدخول كمعلم أو طالب</li>
+                        <li>✅ إدارة الامتحانات (exams.html)</li>
+                        <li>✅ مراجعة واعتماد الأسئلة (questions-bank.html)</li>
+                        <li>✅ إدارة المجموعات (admin-groups.html)</li>
+                        <li>✅ إدارة المدفوعات وكوبونات الخصم</li>
+                        <li>✅ تقارير وإحصائيات (admin-reports.html)</li>
+                        <li>✅ الدخول كمعلم أو طالب (Impersonate)</li>
                     </ul>
                 </div>
                 <div>
                     <h3>👨‍🏫 المعلم</h3>
                     <ul style="padding-right: 20px;">
-                        <li>✅ إنشاء/تعديل/حذف أسئلته</li>
-                        <li>✅ إنشاء/تعديل/حذف امتحاناته</li>
+                        <li>✅ إنشاء/تعديل/حذف أسئلته (teacher-questions.html)</li>
+                        <li>✅ إنشاء/تعديل/حذف امتحاناته (exams.html)</li>
                         <li>✅ نشر/إغلاق امتحاناته</li>
-                        <li>✅ إدارة مجموعاته</li>
+                        <li>✅ إدارة مجموعاته (teacher-groups.html)</li>
                         <li>✅ قبول/رفض طلاب للمجموعات</li>
-                        <li>✅ تصحيح الأسئلة المقالية</li>
+                        <li>✅ تصحيح الأسئلة المقالية (teacher-submissions.html)</li>
+                        <li>✅ عرض طلابه (teacher-students.html)</li>
                     </ul>
                 </div>
                 <div>
                     <h3>👨‍🎓 الطالب</h3>
                     <ul style="padding-right: 20px;">
-                        <li>✅ تسجيل حساب جديد</li>
-                        <li>✅ الاشتراك في الامتحانات</li>
-                        <li>✅ أداء الامتحان (مؤقت + حفظ تلقائي)</li>
-                        <li>✅ عرض النتائج</li>
-                        <li>✅ الانضمام للمجموعات</li>
+                        <li>✅ تسجيل حساب جديد (register.html)</li>
+                        <li>✅ الاشتراك في الامتحانات (student-exams.html)</li>
+                        <li>✅ أداء الامتحان (مؤقت + حفظ تلقائي + حماية)</li>
+                        <li>✅ عرض النتائج (student-results.html, student-result.html)</li>
+                        <li>✅ الانضمام للمجموعات (student-groups.html)</li>
                     </ul>
                 </div>
             </div>
-        </div>
-
-        <!-- ==================== ميزات إضافة السؤال ==================== -->
-        <div class="card">
-            <h2>🎯 ميزات صفحة إضافة السؤال (add-question.html)</h2>
-            <table>
-                <tr><th>الميزة</th><th>الوصف</th></tr>
-                <tr><td>اختيار المعلم</td><td>خيار "أدمن (جميع الصفوف)" مع فلترة ذكية</td></tr>
-                <tr><td>فلترة ذكية</td><td>عند اختيار معلم → تظهر صفوفه فقط / عند اختيار صف → تظهر مواده فقط</td></tr>
-                <tr><td>أنواع الأسئلة</td><td>MCQ (إجابة واحدة) - Multi-Select - صح/خطأ - مقالي</td></tr>
-                <tr><td>عدد الاختيارات</td><td>MCQ: 4 اختيارات / Multi-Select: 5 اختيارات (قابل للزيادة)</td></tr>
-                <tr><td>لصق الصور</td><td>Ctrl+V في أي حقل نص (سؤال، نموذج إجابة، اختيارات)</td></tr>
-                <tr><td>معاينة السؤال</td><td>زر معاينة قبل الحفظ</td></tr>
-            </table>
         </div>
 
         <!-- ==================== الدوال الرئيسية ==================== -->
@@ -356,7 +558,6 @@ hashPassword(password)
 
 // === المستخدمين ===
 fetchUsers(filters)
-createUser(userData)
 updateUserStatus(id, status)
 deleteUser(id)
 resetUserPassword(id, newPassword)
@@ -379,11 +580,15 @@ removeTeacherAssignment(id)
 // === الامتحانات ===
 fetchExams(filters)
 createExam(examData)
-updateExamStatus(id, status)
-deleteExam(id)
+updateExam(examId, examData)
+deleteExam(examId)
+updateExamStatusInDB(examId, status)
+fetchExamQuestions(examId)
+fetchExamStats(examId)
 
 // === الأسئلة ===
 fetchQuestions(filters)
+fetchTeacherQuestions(teacherId, filters)
 createQuestion(questionData)
 updateQuestionStatus(id, status, feedback)
 deleteQuestion(id)
@@ -396,38 +601,105 @@ deleteGroup(id)
 joinGroup(groupId, studentId)
 updateGroupMemberStatus(groupId, studentId, status)
 fetchGroupMembers(groupId)
+fetchStudentGroupMemberships(studentId)
 
 // === طلبات الامتحان ===
 fetchExamRequests(filters)
 createExamRequest(studentId, examId)
-updateExamRequestStatus(id, status)
+updateExamRequestStatus(requestId, status, rejectionReason)
+approveAllExamRequests(examId)
 
 // === محاولات الامتحان ===
 fetchExamAttempts(filters)
 startExamAttempt(examId, studentId)
-saveAnswer(attemptId, questionId, answer)
+saveAnswerToAttempt(attemptId, questionId, answer)
 submitExamAttempt(attemptId, answers, score, totalPoints)
+
+// === المدفوعات ===
+fetchPayments(filters)
+confirmPayment(paymentId, status, rejectionReason)
+fetchPaymentMethods()
+addPaymentMethod(methodData)
+deletePaymentMethod(methodId)
+
+// === الكوبونات ===
+fetchCoupons(filters)
+createCoupon(couponData)
+validateCoupon(code, examId, studentId)
+useCoupon(code, examId, studentId, examRequestId)
+
+// === الإشعارات ===
+fetchNotifications(userId, limit)
+markNotificationAsRead(notificationId)
+addNotification(userId, title, message, type, relatedId)
 
 // === الإحصائيات ===
 fetchAdminStats()
 fetchTeacherStats(teacherId)
 fetchStudentStats(studentId)
+fetchStudentDetailedStats(studentId)
+fetchExamStatistics(examId)
             </div>
+        </div>
+
+        <!-- ==================== نظام الحماية ==================== -->
+        <div class="card">
+            <h2>🛡️ نظام حماية الامتحانات</h2>
+            <table>
+                <thead>
+                    <tr><th>الميزة</th><th>الوصف</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>وضع ملء الشاشة</td><td>يتم تفعيل ملء الشاشة تلقائياً عند بدء الامتحان</td></tr>
+                    <tr><td>كشف تبديل التبويب</td><td>يتم تسجيل مخالفة عند تبديل التبويب (يسمح بـ 3 محاولات)</td></tr>
+                    <tr><td>منع النسخ واللصق</td><td>تعطيل خاصية النسخ واللصق أثناء الامتحان</td></tr>
+                    <tr><td>منع أدوات المطور</td><td>منع F12 و Ctrl+Shift+I و Ctrl+U وغيرها</td></tr>
+                    <tr><td>حفظ تلقائي</td><td>حفظ الإجابات تلقائياً كل 30 ثانية</td></tr>
+                    <tr><td>تسليم تلقائي</td><td>تسليم الامتحان تلقائياً عند انتهاء الوقت أو تجاوز المخالفات</td></tr>
+                    <tr><td>تسجيل المخالفات</td><td>تسجيل جميع المخالفات في قاعدة البيانات</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== أنظمة الدفع والكوبونات ==================== -->
+        <div class="card">
+            <h2>💰 أنظمة الدفع والكوبونات</h2>
+            <table>
+                <thead>
+                    <tr><th>الميزة</th><th>الوصف</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>امتحان مدفوع/مجاني</td><td>يحدد الأدمن نوع الامتحان وسعره</td></tr>
+                    <tr><td>طرق دفع متعددة</td><td>فودافون كاش، إنستاباي، تحويل بنكي (يديرها الأدمن)</td></tr>
+                    <tr><td>رفع إيصال الدفع</td><td>الطالب يرفع صورة الإيصال عند التقديم للامتحان المدفوع</td></tr>
+                    <tr><td>تأكيد الدفع</td><td>الأدمن يؤكد استلام الدفع بعد مراجعة الإيصال</td></tr>
+                    <tr><td>كوبونات خصم</td><td>إنشاء كوبونات خصم لنسبة مئوية أو قيمة ثابتة</td></tr>
+                    <tr><td>صلاحية الكوبون</td><td>كوبون صالح لامتحان واحد محدد أو لطلاب محددين</td></tr>
+                    <tr><td>تصدير المدفوعات</td><td>تصدير جميع المدفوعات إلى ملف CSV</td></tr>
+                    <tr><td>تنظيف الإيصالات</td><td>حذف الإيصالات القديمة بعد التصدير (توفير المساحة)</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- ==================== التحديثات المستقبلية ==================== -->
         <div class="card">
             <h2>🚀 التحديثات المستقبلية المقترحة</h2>
             <table>
-                <tr><th>المهمة</th><th>الأولوية</th><th>الوصف</th></tr>
-                <tr><td>حفظ تلقائي للامتحان</td><td>متوسطة</td><td>حفظ كل 30 ثانية، استئناف من آخر نقطة</td></tr>
-                <tr><td>تصدير البيانات</td><td>منخفضة</td><td>تصدير الجداول إلى Excel/PDF</td></tr>
-                <tr><td>إشعارات البريد الإلكتروني</td><td>منخفضة</td><td>إضافة خدمة SMTP مجانية (Brevo/Resend)</td></tr>
-                <tr><td>تطبيق جوال</td><td>مستقبلية</td><td>تحويل إلى React Native</td></tr>
+                <thead>
+                    <tr><th>المهمة</th><th>الأولوية</th><th>الوصف</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>نسخ احتياطي للبيانات</td><td>عالية</td><td>تصدير البيانات إلى Excel/PDF</td></tr>
+                    <tr><td>لوحة تحليلات متقدمة</td><td>متوسطة</td><td>رسوم بيانية لنتائج الطلاب</td></tr>
+                    <tr><td>إشعارات البريد الإلكتروني</td><td>منخفضة</td><td>إضافة خدمة SMTP مجانية</td></tr>
+                    <tr><td>تطبيق جوال</td><td>مستقبلية</td><td>تحويل إلى React Native</td></tr>
+                    <tr><td>نظام التقييم</td><td>منخفضة</td><td>تقييم الطلاب للامتحانات</td></tr>
+                    <tr><td>إعادة محاولة الامتحان</td><td>متوسطة</td><td>تحديد عدد مرات إعادة المحاولة</td></tr>
+                </tbody>
             </table>
         </div>
 
-        <!-- ==================== ملاحظات ==================== -->
+        <!-- ==================== ملاحظات مهمة ==================== -->
         <div class="card">
             <h2>📝 ملاحظات مهمة</h2>
             <ul style="padding-right: 20px;">
@@ -436,11 +708,15 @@ fetchStudentStats(studentId)
                 <li>✅ جميع الصفحات تعتمد على supabase-config.js</li>
                 <li>✅ الدخول كأدمن يحتفظ بجلسة الأدمن الأصلية للعودة</li>
                 <li>✅ لصق الصور بـ Ctrl+V يعمل في add-question.html</li>
+                <li>✅ نظام الحماية مفعل في student-exam-attempt.html</li>
+                <li>✅ الدفع والكوبونات يدعمها الأدمن فقط</li>
+                <li>✅ جدول student_classes غير مستخدم - الاعتماد على class_id في جدول users</li>
             </ul>
         </div>
 
         <div class="edit-date">
             📅 آخر تحديث: <span id="updateDate"></span><br>
+            📂 موقع الملفات: الجذر الرئيسي للمشروع<br>
             🔧 لتحديث هذا الملف، قم بتعديل HTML مباشرة
         </div>
     </div>
