@@ -686,8 +686,11 @@ async function fetchStudentStats(studentId) {
 }
 
 // جلب أسئلة المعلم (مع فلتر)
+// أضف هذه الدوال المصححة في supabase-config.js
+
+// جلب أسئلة المعلم (مع فلتر)
 async function fetchTeacherQuestions(teacherId, filters = {}) {
-    let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name, username)');
+    let query = sb.from('questions').select('*');
     
     query = query.eq('teacher_id', teacherId);
     
@@ -697,12 +700,21 @@ async function fetchTeacherQuestions(teacherId, filters = {}) {
     if (filters.type && filters.type !== 'all') {
         query = query.eq('type', filters.type);
     }
+    if (filters.class_id && filters.class_id !== 'all') {
+        query = query.eq('class_id', parseInt(filters.class_id));
+    }
+    if (filters.subject_id && filters.subject_id !== 'all') {
+        query = query.eq('subject_id', parseInt(filters.subject_id));
+    }
     
     const { data, error } = await query.order('created_at', { ascending: false });
-    if (error) return [];
-    return data;
+    
+    if (error) {
+        console.error('Error in fetchTeacherQuestions:', error);
+        return [];
+    }
+    return data || [];
 }
-
 // تحديث حالة الامتحان
 async function updateExamStatusInDB(examId, status) {
     const { error } = await sb.from('exams').update({ status }).eq('id', examId);
