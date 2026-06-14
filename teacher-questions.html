@@ -80,7 +80,7 @@
             min-width: 150px;
             font-family: inherit;
         }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .exam-card {
             background: #f8fafc;
             border-radius: 20px;
@@ -126,7 +126,7 @@
             background: white;
             border-radius: 32px;
             padding: 32px;
-            width: 650px;
+            width: 700px;
             max-width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -141,7 +141,14 @@
         }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
-        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .info-note {
+            background: #fef3c7;
+            padding: 10px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #92400e;
+        }
         .toast-notification {
             position: fixed;
             bottom: 30px;
@@ -220,6 +227,24 @@
             <p>إضافة وتعديل وحذف الأسئلة الخاصة بك (تنتظر اعتماد الأدمن)</p>
         </div>
 
+        <!-- فلتر الصف والمواد -->
+        <div class="card">
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🎓 فلتر حسب الصف</label>
+                    <select id="filterClass" onchange="filterByClassAndSubject()">
+                        <option value="all">كل الصفوف</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📖 فلتر حسب المادة</label>
+                    <select id="filterSubject" onchange="filterByClassAndSubject()">
+                        <option value="all">كل المواد</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="filter-bar">
                 <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث في الأسئلة...">
@@ -262,17 +287,17 @@
                 <textarea id="questionText" rows="3" placeholder="أدخل نص السؤال هنا..."></textarea>
             </div>
             
-            <!-- قسم MCQ و Multi-Select -->
+            <!-- قسم الاختيارات -->
             <div id="choicesSection">
                 <div class="form-group">
-                    <label>🔘 الخيارات</label>
+                    <label>🔘 الاختيارات</label>
                     <div id="choicesList"></div>
                     <button type="button" class="btn btn-outline btn-sm" onclick="addChoice()" style="margin-top: 10px;">+ إضافة اختيار</button>
                 </div>
-                <div id="multiSelectNote" class="info-note" style="display: none; background: #fef3c7; padding: 10px; border-radius: 12px; margin-top: 10px; font-size: 13px;">
+                <div id="multiSelectNote" class="info-note" style="display: none;">
                     💡 <strong>سؤال اختيار متعدد:</strong> يجب اختيار <strong>إجابتين صحيحتين</strong> بالضبط من 5 خيارات.
                 </div>
-                <div id="mcqNote" class="info-note" style="display: none; background: #fef3c7; padding: 10px; border-radius: 12px; margin-top: 10px; font-size: 13px;">
+                <div id="mcqNote" class="info-note" style="display: none;">
                     💡 <strong>سؤال اختيار من متعدد:</strong> اختر <strong>إجابة واحدة صحيحة</strong> فقط من 4 خيارات.
                 </div>
             </div>
@@ -311,18 +336,19 @@
                 </div>
             </div>
             
-            <div class="form-group">
-                <label>📚 المادة</label>
-                <select id="subjectId">
-                    <option value="">-- اختر المادة --</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>🎓 الصف</label>
-                <select id="classId">
-                    <option value="">-- اختر الصف --</option>
-                </select>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🎓 الصف *</label>
+                    <select id="classId" onchange="onClassChange()" required>
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📖 المادة *</label>
+                    <select id="subjectId" required>
+                        <option value="">-- اختر الصف أولاً --</option>
+                    </select>
+                </div>
             </div>
             
             <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -345,6 +371,9 @@
         let currentEditId = null;
         let allQuestions = [];
         let choices = [];
+        let teacherAssignments = []; // تخزين تعيينات المعلم
+        let teacherClasses = []; // الصفوف المسندة للمعلم
+        let teacherSubjects = []; // المواد المسندة للمعلم
         
         // ==================== دوال مساعدة ====================
         function escapeHtml(str) {
@@ -377,15 +406,287 @@
             return classes[type] || 'badge-info';
         }
         
+        // ==================== تحميل تعيينات المعلم ====================
+        async function loadTeacherAssignments() {
+            // جلب تعيينات المعلم (الصفوف والمواد المسندة له)
+            const { data: assignments, error } = await sb
+                .from('teacher_assignments')
+                .select(`
+                    *,
+                    classes:class_id(id, name),
+                    subjects:subject_id(id, name)
+                `)
+                .eq('teacher_id', currentUser.id);
+            
+            if (error) {
+                console.error('Error loading assignments:', error);
+                teacherAssignments = [];
+                teacherClasses = [];
+                teacherSubjects = [];
+                return;
+            }
+            
+            teacherAssignments = assignments || [];
+            
+            // استخراج الصفوف الفريدة
+            const classMap = new Map();
+            teacherAssignments.forEach(a => {
+                if (a.classes && !classMap.has(a.class_id)) {
+                    classMap.set(a.class_id, { id: a.class_id, name: a.classes.name });
+                }
+            });
+            teacherClasses = Array.from(classMap.values());
+            
+            // استخراج المواد الفريدة
+            const subjectMap = new Map();
+            teacherAssignments.forEach(a => {
+                if (a.subjects && !subjectMap.has(a.subject_id)) {
+                    subjectMap.set(a.subject_id, { id: a.subject_id, name: a.subjects.name });
+                }
+            });
+            teacherSubjects = Array.from(subjectMap.values());
+            
+            // تعبئة فلتر الصفوف
+            const filterClass = document.getElementById('filterClass');
+            filterClass.innerHTML = '<option value="all">كل الصفوف</option>';
+            teacherClasses.forEach(c => {
+                filterClass.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+            
+            // تعبئة فلتر المواد
+            const filterSubject = document.getElementById('filterSubject');
+            filterSubject.innerHTML = '<option value="all">كل المواد</option>';
+            teacherSubjects.forEach(s => {
+                filterSubject.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+            });
+            
+            // تعبئة حقول الصف والمواد في المودال
+            const classSelect = document.getElementById('classId');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            teacherClasses.forEach(c => {
+                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+        }
+        
+        // ==================== عند تغيير الصف في المودال ====================
+        function onClassChange() {
+            const classId = document.getElementById('classId').value;
+            const subjectSelect = document.getElementById('subjectId');
+            
+            if (!classId) {
+                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+                subjectSelect.disabled = true;
+                return;
+            }
+            
+            // جلب المواد المسندة للمعلم في هذا الصف فقط
+            const availableSubjects = teacherAssignments
+                .filter(a => a.class_id == classId)
+                .map(a => ({ id: a.subject_id, name: a.subjects?.name }));
+            
+            subjectSelect.disabled = false;
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            availableSubjects.forEach(s => {
+                if (s.name) {
+                    subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+                }
+            });
+            
+            if (availableSubjects.length === 0) {
+                subjectSelect.innerHTML = '<option value="">لا توجد مواد مسندة</option>';
+            }
+        }
+        
+        // ==================== الفلتر حسب الصف والمادة ====================
+        async function filterByClassAndSubject() {
+            const classId = document.getElementById('filterClass').value;
+            const subjectId = document.getElementById('filterSubject').value;
+            
+            let query = sb.from('questions').select('*').eq('teacher_id', currentUser.id);
+            
+            if (classId !== 'all') {
+                query = query.eq('class_id', parseInt(classId));
+            }
+            if (subjectId !== 'all') {
+                query = query.eq('subject_id', parseInt(subjectId));
+            }
+            
+            const { data: questions, error } = await query.order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('Error loading filtered questions:', error);
+                return;
+            }
+            
+            allQuestions = questions || [];
+            applySearchAndFilters();
+        }
+        
+        // ==================== تطبيق البحث والفلترة ====================
+        function applySearchAndFilters() {
+            const search = document.getElementById('searchInput').value;
+            const type = document.getElementById('typeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let filtered = [...allQuestions];
+            
+            if (search) {
+                filtered = filtered.filter(q => q.question_text?.toLowerCase().includes(search.toLowerCase()));
+            }
+            if (type !== 'all') {
+                filtered = filtered.filter(q => q.type === type);
+            }
+            if (status !== 'all') {
+                filtered = filtered.filter(q => q.status === status);
+            }
+            
+            renderQuestionsList(filtered);
+        }
+        
+        // ==================== عرض قائمة الأسئلة ====================
+        function renderQuestionsList(questions) {
+            const container = document.getElementById('questionsList');
+            
+            if (!questions || questions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>لا توجد أسئلة</p>
+                        <button class="btn btn-primary" onclick="openAddQuestionModal()" style="margin-top: 15px;">➕ أضف سؤالاً جديداً</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'approved': { text: '✅ معتمد', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            
+            // جلب أسماء الصفوف والمواد
+            container.innerHTML = '';
+            for (const q of questions) {
+                // جلب اسم الصف
+                let className = '';
+                let subjectName = '';
+                
+                const classInfo = teacherClasses.find(c => c.id === q.class_id);
+                className = classInfo ? classInfo.name : '';
+                
+                const subjectInfo = teacherSubjects.find(s => s.id === q.subject_id);
+                subjectName = subjectInfo ? subjectInfo.name : '';
+                
+                let optionsHtml = '';
+                if (q.options) {
+                    try {
+                        const opts = JSON.parse(q.options);
+                        optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">الخيارات: ${opts.slice(0, 3).join(' | ')}${opts.length > 3 ? ' ...' : ''}</div>`;
+                    } catch(e) {}
+                }
+                
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'exam-card';
+                questionDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <div class="exam-title">${escapeHtml(q.question_text || 'بدون نص')}</div>
+                            <div class="exam-info">
+                                <span class="badge ${getTypeClass(q.type)}">${getTypeText(q.type)}</span>
+                                <span>⭐ ${q.points || 0} درجة</span>
+                                <span>${q.difficulty === 'easy' ? '🟢 سهل' : q.difficulty === 'medium' ? '🟡 متوسط' : '🔴 صعب'}</span>
+                                <span class="badge ${statusMap[q.status]?.class || 'badge-warning'}">${statusMap[q.status]?.text || q.status}</span>
+                            </div>
+                            <div class="exam-info" style="margin-top: 5px;">
+                                <span>🎓 ${className || 'بدون صف'}</span>
+                                <span>📖 ${subjectName || 'بدون مادة'}</span>
+                            </div>
+                            ${optionsHtml}
+                            ${q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger" style="margin-top: 8px;">سبب الرفض: ${escapeHtml(q.feedback)}</div>` : ''}
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="viewQuestionDetails(${q.id})">👁️ عرض</button>
+                            ${q.status !== 'approved' ? `<button class="btn btn-warning btn-sm" onclick="editQuestion(${q.id})">✏️ تعديل</button>` : ''}
+                            <button class="btn btn-danger btn-sm" onclick="deleteQuestionConfirm(${q.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            }
+        }
+        
+        // ==================== تحميل الأسئلة ====================
+        async function loadQuestions() {
+            const { data: questions, error } = await sb
+                .from('questions')
+                .select('*')
+                .eq('teacher_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('Error loading questions:', error);
+                document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
+                return;
+            }
+            
+            allQuestions = questions || [];
+            applySearchAndFilters();
+        }
+        
+        // ==================== عرض تفاصيل السؤال ====================
+        async function viewQuestionDetails(questionId) {
+            const q = allQuestions.find(q => q.id === questionId);
+            if (!q) return;
+            
+            let className = '';
+            let subjectName = '';
+            const classInfo = teacherClasses.find(c => c.id === q.class_id);
+            className = classInfo ? classInfo.name : '';
+            const subjectInfo = teacherSubjects.find(s => s.id === q.subject_id);
+            subjectName = subjectInfo ? subjectInfo.name : '';
+            
+            let details = `📋 تفاصيل السؤال:\n\n`;
+            details += `نص السؤال: ${q.question_text}\n`;
+            details += `النوع: ${getTypeText(q.type)}\n`;
+            details += `الدرجة: ${q.points}\n`;
+            details += `مستوى الصعوبة: ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}\n`;
+            details += `الصف: ${className || 'بدون صف'}\n`;
+            details += `المادة: ${subjectName || 'بدون مادة'}\n`;
+            details += `الحالة: ${q.status === 'pending' ? 'قيد المراجعة' : q.status === 'approved' ? 'معتمد' : 'مرفوض'}\n`;
+            
+            if (q.type === 'mcq' || q.type === 'multi_select') {
+                if (q.options) {
+                    const opts = JSON.parse(q.options);
+                    details += `\nالخيارات:\n`;
+                    opts.forEach((opt, i) => {
+                        details += `  ${String.fromCharCode(65 + i)}. ${opt}\n`;
+                    });
+                }
+                if (q.correct_answer) {
+                    details += `\nالإجابة الصحيحة: ${q.correct_answer}\n`;
+                }
+            }
+            
+            if (q.type === 'true_false') {
+                details += `\nالإجابة الصحيحة: ${q.correct_answer === 'صحيح' ? '✓ صحيح' : '✗ خطأ'}\n`;
+            }
+            
+            if (q.type === 'essay' && q.model_answer) {
+                details += `\nنموذج الإجابة: ${q.model_answer}\n`;
+            }
+            
+            alert(details);
+        }
+        
         // ==================== تهيئة الاختيارات ====================
         function initChoicesForType() {
             const type = document.getElementById('questionType').value;
             let defaultCount = 4;
-            let defaultCorrect = [0]; // أول اختيار صحيح افتراضياً لـ MCQ
+            let defaultCorrect = [0];
             
             if (type === 'multi_select') {
                 defaultCount = 5;
-                defaultCorrect = [0, 1]; // أول اختيارين صحيحين افتراضياً
+                defaultCorrect = [0, 1];
             }
             
             choices = [];
@@ -484,142 +785,6 @@
             initChoicesForType();
         }
         
-        // ==================== تحميل المواد والصفوف ====================
-        async function loadSubjectsAndClasses() {
-            const subjects = await fetchSubjects();
-            const classes = await fetchClasses();
-            
-            const subjectSelect = document.getElementById('subjectId');
-            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            subjects.forEach(s => {
-                subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-            });
-            
-            const classSelect = document.getElementById('classId');
-            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-            classes.forEach(c => {
-                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
-            });
-        }
-        
-        // ==================== تحميل الأسئلة ====================
-        async function loadQuestions() {
-            const search = document.getElementById('searchInput').value;
-            const type = document.getElementById('typeFilter').value;
-            const status = document.getElementById('statusFilter').value;
-            
-            // استخدام الدالة المخصصة للمعلم
-            let query = sb.from('questions').select('*').eq('teacher_id', currentUser.id);
-            
-            if (status !== 'all') {
-                query = query.eq('status', status);
-            }
-            if (type !== 'all') {
-                query = query.eq('type', type);
-            }
-            
-            const { data: questions, error } = await query.order('created_at', { ascending: false });
-            
-            if (error) {
-                console.error('Error loading questions:', error);
-                document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
-                return;
-            }
-            
-            allQuestions = questions || [];
-            
-            if (search) {
-                allQuestions = allQuestions.filter(q => q.question_text?.toLowerCase().includes(search.toLowerCase()));
-            }
-            
-            const container = document.getElementById('questionsList');
-            if (allQuestions.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <p>لا توجد أسئلة</p>
-                        <button class="btn btn-primary" onclick="openAddQuestionModal()" style="margin-top: 15px;">➕ أضف سؤالاً جديداً</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            const statusMap = {
-                'pending': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
-                'approved': { text: '✅ معتمد', class: 'badge-success' },
-                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
-            };
-            
-            container.innerHTML = allQuestions.map(q => {
-                let optionsHtml = '';
-                if (q.options) {
-                    try {
-                        const opts = JSON.parse(q.options);
-                        optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">الخيارات: ${opts.slice(0, 3).join(' | ')}${opts.length > 3 ? ' ...' : ''}</div>`;
-                    } catch(e) {}
-                }
-                
-                return `
-                    <div class="exam-card">
-                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-                            <div style="flex: 1;">
-                                <div class="exam-title">${escapeHtml(q.question_text || 'بدون نص')}</div>
-                                <div class="exam-info">
-                                    <span class="badge ${getTypeClass(q.type)}">${getTypeText(q.type)}</span>
-                                    <span>⭐ ${q.points || 0} درجة</span>
-                                    <span>${q.difficulty === 'easy' ? '🟢 سهل' : q.difficulty === 'medium' ? '🟡 متوسط' : '🔴 صعب'}</span>
-                                    <span class="badge ${statusMap[q.status]?.class || 'badge-warning'}">${statusMap[q.status]?.text || q.status}</span>
-                                </div>
-                                ${optionsHtml}
-                                ${q.status === 'rejected' && q.feedback ? `<div class="badge badge-danger" style="margin-top: 8px;">سبب الرفض: ${escapeHtml(q.feedback)}</div>` : ''}
-                            </div>
-                            <div class="action-buttons">
-                                <button class="btn btn-info btn-sm" onclick="viewQuestionDetails(${q.id})">👁️ عرض</button>
-                                ${q.status !== 'approved' ? `<button class="btn btn-warning btn-sm" onclick="editQuestion(${q.id})">✏️ تعديل</button>` : ''}
-                                <button class="btn btn-danger btn-sm" onclick="deleteQuestionConfirm(${q.id})">🗑️ حذف</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        // ==================== عرض تفاصيل السؤال ====================
-        async function viewQuestionDetails(questionId) {
-            const q = allQuestions.find(q => q.id === questionId);
-            if (!q) return;
-            
-            let details = `📋 تفاصيل السؤال:\n\n`;
-            details += `نص السؤال: ${q.question_text}\n`;
-            details += `النوع: ${getTypeText(q.type)}\n`;
-            details += `الدرجة: ${q.points}\n`;
-            details += `مستوى الصعوبة: ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}\n`;
-            details += `الحالة: ${q.status === 'pending' ? 'قيد المراجعة' : q.status === 'approved' ? 'معتمد' : 'مرفوض'}\n`;
-            
-            if (q.type === 'mcq' || q.type === 'multi_select') {
-                if (q.options) {
-                    const opts = JSON.parse(q.options);
-                    details += `\nالخيارات:\n`;
-                    opts.forEach((opt, i) => {
-                        details += `  ${String.fromCharCode(65 + i)}. ${opt}\n`;
-                    });
-                }
-                if (q.correct_answer) {
-                    details += `\nالإجابة الصحيحة: ${q.correct_answer}\n`;
-                }
-            }
-            
-            if (q.type === 'true_false') {
-                details += `\nالإجابة الصحيحة: ${q.correct_answer === 'صحيح' ? '✓ صحيح' : '✗ خطأ'}\n`;
-            }
-            
-            if (q.type === 'essay' && q.model_answer) {
-                details += `\nنموذج الإجابة: ${q.model_answer}\n`;
-            }
-            
-            alert(details);
-        }
-        
         // ==================== فتح مودال إضافة سؤال ====================
         function openAddQuestionModal() {
             currentEditId = null;
@@ -628,8 +793,9 @@
             document.getElementById('questionType').value = 'mcq';
             document.getElementById('points').value = '5';
             document.getElementById('difficulty').value = 'medium';
-            document.getElementById('subjectId').value = '';
             document.getElementById('classId').value = '';
+            document.getElementById('subjectId').innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+            document.getElementById('subjectId').disabled = true;
             document.getElementById('modelAnswer').value = '';
             document.getElementById('trueFalseAnswer').value = 'true';
             
@@ -649,8 +815,11 @@
             document.getElementById('questionType').value = q.type || 'mcq';
             document.getElementById('points').value = q.points || 5;
             document.getElementById('difficulty').value = q.difficulty || 'medium';
-            document.getElementById('subjectId').value = q.subject_id || '';
             document.getElementById('classId').value = q.class_id || '';
+            
+            // تحميل المواد بناءً على الصف المختار
+            await onClassChange();
+            document.getElementById('subjectId').value = q.subject_id || '';
             
             if (q.type === 'mcq' || q.type === 'multi_select') {
                 if (q.options) {
@@ -688,21 +857,21 @@
             const text = document.getElementById('questionText').value;
             const points = parseFloat(document.getElementById('points').value);
             const difficulty = document.getElementById('difficulty').value;
-            const subjectId = document.getElementById('subjectId').value;
             const classId = document.getElementById('classId').value;
+            const subjectId = document.getElementById('subjectId').value;
             
             if (!text) {
                 showToast('نص السؤال مطلوب', 'error');
                 return;
             }
             
-            if (!subjectId) {
-                showToast('اختر المادة', 'error');
+            if (!classId) {
+                showToast('اختر الصف', 'error');
                 return;
             }
             
-            if (!classId) {
-                showToast('اختر الصف', 'error');
+            if (!subjectId) {
+                showToast('اختر المادة', 'error');
                 return;
             }
             
@@ -712,8 +881,8 @@
                 type: type,
                 points: points,
                 difficulty: difficulty,
-                subject_id: parseInt(subjectId),
                 class_id: parseInt(classId),
+                subject_id: parseInt(subjectId),
                 status: 'pending'
             };
             
@@ -765,7 +934,6 @@
             
             let result;
             if (currentEditId) {
-                // تحديث سؤال موجود
                 const { error } = await sb
                     .from('questions')
                     .update(questionData)
@@ -777,7 +945,6 @@
                 }
                 result = true;
             } else {
-                // إضافة سؤال جديد
                 const { error } = await sb
                     .from('questions')
                     .insert(questionData);
@@ -819,13 +986,17 @@
         }
         
         // ==================== أحداث البحث والفلتر ====================
-        document.getElementById('searchInput').addEventListener('input', () => loadQuestions());
-        document.getElementById('typeFilter').addEventListener('change', () => loadQuestions());
-        document.getElementById('statusFilter').addEventListener('change', () => loadQuestions());
+        document.getElementById('searchInput').addEventListener('input', () => applySearchAndFilters());
+        document.getElementById('typeFilter').addEventListener('change', () => applySearchAndFilters());
+        document.getElementById('statusFilter').addEventListener('change', () => applySearchAndFilters());
         
         // ==================== تحميل أولي ====================
-        loadSubjectsAndClasses();
-        loadQuestions();
+        async function init() {
+            await loadTeacherAssignments();
+            await loadQuestions();
+        }
+        
+        init();
     </script>
 </body>
 </html>
