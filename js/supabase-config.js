@@ -893,7 +893,148 @@ async function fetchGroupJoinRequests(groupId, status = 'pending') {
     if (error) return [];
     return data || [];
 }
+// ==================== إضافة في نهاية supabase-config.js ====================
 
+// جلب إحصائيات الامتحان للمعلم
+async function fetchExamStatistics(examId) {
+    try {
+        // جلب جميع محاولات الامتحان
+        const { data: attempts } = await sb
+            .from('exam_attempts')
+            .select('*, users:student_id(id, name, phone)')
+            .eq('exam_id', examId);
+        
+        if (!attempts || attempts.length === 0) {
+            return {
+                totalAttempts: 0,
+                averageScore: 0,
+                passedCount: 0,
+                failedCount: 0,
+                pendingCount: 0,
+                topStudents: [],
+                scoreDistribution: { '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '81-100': 0 }
+            };
+        }
+        
+        let totalScore = 0;
+        let passedCount = 0;
+        let failedCount = 0;
+        let pendingCount = 0;
+        const distribution = { '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '81-100': 0 };
+        const studentScores = [];
+        
+        for (const attempt of attempts) {
+            if (attempt.status === 'graded' || attempt.status === 'submitted') {
+                const percentage = attempt.total_points ? (attempt.score / attempt.total_points) * 100 : 0;
+                totalScore += percentage;
+                
+                if (percentage >= 50) passedCount++;
+                else failedCount++;
+                
+                // توزيع الدرجات
+                if (percentage <= 20) distribution['0-20']++;
+                else if (percentage <= 40) distribution['21-40']++;
+                else if (percentage <= 60) distribution['41-60']++;
+                else if (percentage <= 80) distribution['61-80']++;
+                else distribution['81-100']++;
+                
+                studentScores.push({
+                    name: attempt.users?.name || 'طالب',
+                    score: Math.round(percentage)
+                });
+            } else {
+                pendingCount++;
+            }
+        }
+        
+        const gradedCount = passedCount + failedCount;
+        const averageScore = gradedCount > 0 ? Math.round(totalScore / gradedCount) : 0;
+        
+        // ترتيب الطلاب حسب الدرجة
+        const topStudents = studentScores.sort((a, b) => b.score - a.score).slice(0, 5);
+        
+        return {
+            totalAttempts: attempts.length,
+            averageScore: averageScore,
+            passedCount: passedCount,
+            failedCount: failedCount,
+            pendingCount: pendingCount,
+            topStudents: topStudents,
+            scoreDistribution: distribution
+        };
+    } catch (error) {
+        console.error('Error fetching exam statistics:', error);
+        return null;
+    }
+}
+
+// جلب إحصائيات الطالب التفصيلية
+async function fetchStudentDetailedStats(studentId) {
+    try {
+        const [attempts, groups] = await Promise.all([
+            sb.from('exam_attempts')
+                .select('*, exams:exam_id(title, passing_score)')
+                .eq('student_id', studentId)
+                .order('submitted_at', { ascending: false }),
+            sb.from('group_members')
+                .select('*, groups:group_id(name, subjects:subject_id(name))')
+                .eq('student_id', studentId)
+                .eq('status', 'approved')
+        ]);
+        
+        let totalExams = 0;
+        let completedExams = 0;
+        let passedExams = 0;
+        let totalPercentage = 0;
+        let bestExam = { title: '', score: 0 };
+        let recentExams = [];
+        
+        for (const attempt of attempts.data || []) {
+            if (attempt.status === 'graded' || attempt.status === 'submitted') {
+                totalExams++;
+                const percentage = attempt.total_points ? (attempt.score / attempt.total_points) * 100 : 0;
+                totalPercentage += percentage;
+                
+                if (percentage >= (attempt.exams?.passing_score || 50)) {
+                    passedExams++;
+                }
+                
+                if (percentage > bestExam.score) {
+                    bestExam = { title: attempt.exams?.title || 'امتحان', score: Math.round(percentage) };
+                }
+                
+                if (recentExams.length < 5) {
+                    recentExams.push({
+                        title: attempt.exams?.title || 'امتحان',
+                        score: Math.round(percentage),
+                        date: attempt.submitted_at,
+                        passed: percentage >= (attempt.exams?.passing_score || 50)
+                    });
+                }
+            }
+            if (attempt.status === 'submitted') {
+                completedExams++;
+            }
+        }
+        
+        const averageScore = totalExams > 0 ? Math.round(totalPercentage / totalExams) : 0;
+        const successRate = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : 0;
+        
+        return {
+            totalExams: totalExams,
+            completedExams: completedExams,
+            passedExams: passedExams,
+            averageScore: averageScore,
+            successRate: successRate,
+            bestExam: bestExam,
+            recentExams: recentExams,
+            groupsCount: groups.data?.length || 0
+        };
+    } catch (error) {
+        console.error('Error fetching student detailed stats:', error);
+        return null;
+    }
+}
 console.log('✅ supabase-config.js updated with all missing functions');
 console.log('✅ supabase-config.js loaded successfully');
 console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, createGroup, createExam, createQuestion, etc.');
