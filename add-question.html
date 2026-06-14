@@ -10,7 +10,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
-        
         .card {
             background: white;
             border-radius: 28px;
@@ -19,7 +18,6 @@
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
             border: 1px solid #e2e8f0;
         }
-        
         .header {
             display: flex;
             justify-content: space-between;
@@ -36,7 +34,6 @@
             -webkit-text-fill-color: transparent;
             font-size: 28px;
         }
-        
         .btn {
             padding: 10px 20px;
             border: none;
@@ -54,7 +51,6 @@
         .btn-danger { background: #ef4444; color: white; }
         .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
         .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #334155; }
         .form-group input, .form-group select, .form-group textarea {
@@ -71,7 +67,6 @@
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
-        
         .paste-hint {
             background: #fef3c7;
             border-radius: 12px;
@@ -84,17 +79,8 @@
             gap: 10px;
             flex-wrap: wrap;
         }
-        
-        .image-preview {
-            margin-top: 10px;
-            position: relative;
-            display: inline-block;
-        }
-        .image-preview img {
-            max-width: 150px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-        }
+        .image-preview { margin-top: 10px; position: relative; display: inline-block; }
+        .image-preview img { max-width: 150px; border-radius: 12px; border: 1px solid #e2e8f0; }
         .remove-image {
             position: absolute;
             top: -8px;
@@ -110,13 +96,7 @@
             cursor: pointer;
             font-size: 12px;
             font-weight: bold;
-            transition: all 0.2s;
         }
-        .remove-image:hover {
-            background: #dc2626;
-            transform: scale(1.1);
-        }
-        
         .choices-area {
             background: #f8fafc;
             border-radius: 20px;
@@ -133,42 +113,11 @@
             border-radius: 14px;
             border: 1px solid #e2e8f0;
             margin-bottom: 12px;
-            transition: all 0.2s;
         }
-        .choice-item:hover {
-            border-color: #6366f1;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.1);
-        }
-        .choice-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .choice-text {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .choice-text input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        .choice-text input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99,102,241,0.1);
-        }
-        .choice-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .choice-content { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .choice-text { display: flex; gap: 10px; align-items: center; }
+        .choice-text input { flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-family: inherit; }
+        .choice-actions { display: flex; gap: 10px; align-items: center; }
         .choice-correct {
             display: flex;
             align-items: center;
@@ -177,26 +126,11 @@
             padding: 5px 10px;
             border-radius: 20px;
             background: #f1f5f9;
-            transition: all 0.2s;
         }
-        .choice-correct:hover {
-            background: #e2e8f0;
-        }
-        .choice-correct input {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin: 0;
-        }
-        .choice-correct label {
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
+        .choice-correct input { width: 18px; height: 18px; cursor: pointer; margin: 0; }
+        .choice-correct label { cursor: pointer; font-size: 12px; font-weight: 500; }
         .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        
         .badge {
             display: inline-flex;
             align-items: center;
@@ -209,7 +143,6 @@
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
         .badge-info { background: #dbeafe; color: #1e40af; }
-        
         .info-note {
             background: #fef3c7;
             border-right: 4px solid #f59e0b;
@@ -219,7 +152,6 @@
             font-size: 13px;
             color: #92400e;
         }
-        
         .toast-notification {
             position: fixed;
             bottom: 30px;
@@ -250,7 +182,6 @@
             animation: progress 3s linear forwards;
         }
         @keyframes progress { from { width: 100%; } to { width: 0%; } }
-        
         .modal {
             display: none;
             position: fixed;
@@ -273,12 +204,6 @@
             max-height: 85vh;
             overflow-y: auto;
         }
-        
-        .focused {
-            border-color: #6366f1 !important;
-            box-shadow: 0 0 0 2px rgba(99,102,241,0.2) !important;
-        }
-        
         @media (max-width: 768px) {
             .row-2, .row-3 { grid-template-columns: 1fr; gap: 12px; }
             .choice-item { flex-direction: column; align-items: stretch; }
@@ -294,7 +219,6 @@
                 <button class="btn btn-outline" onclick="window.location.href='admin-dashboard.html'">← العودة</button>
             </div>
 
-            <!-- الصف والمادة والمعلم -->
             <div class="row-2">
                 <div class="form-group">
                     <label>المعلم</label>
@@ -316,15 +240,14 @@
                 </div>
             </div>
 
-            <!-- نوع السؤال وإعداداته -->
             <div class="row-3">
                 <div class="form-group">
                     <label>نوع السؤال</label>
                     <select id="questionType" onchange="onQuestionTypeChange()">
-                        <option value="mcq">اختيار من متعدد (إجابة واحدة)</option>
-                        <option value="multi_select">اختيار من متعدد (إجابات متعددة)</option>
+                        <option value="mcq">✅ اختيار من متعدد (إجابة واحدة - 4 خيارات)</option>
+                        <option value="multi_select">✅✅ اختيار متعدد (إجابتان صحيحتان - 5 خيارات)</option>
                         <option value="true_false">صح / خطأ</option>
-                        <option value="essay">مقالي</option>
+                        <option value="essay">📝 مقالي</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -341,7 +264,6 @@
                 </div>
             </div>
 
-            <!-- نص السؤال -->
             <div class="form-group">
                 <label>السؤال</label>
                 <textarea id="questionText" rows="3" placeholder="اكتب السؤال هنا... (يمكنك لصق صورة بـ Ctrl+V)"></textarea>
@@ -352,7 +274,6 @@
                 <div id="questionImagePreview" class="image-preview"></div>
             </div>
 
-            <!-- قسم الاختيارات -->
             <div id="choicesSection" class="choices-area">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <label>الاختيارات</label>
@@ -360,11 +281,13 @@
                 </div>
                 <div id="choicesList"></div>
                 <div id="multiSelectNote" class="info-note" style="display: none;">
-                    💡 ملاحظة: الطالب سيأخذ الدرجة كاملة إذا اختار جميع الإجابات الصحيحة، أو نصف الدرجة إذا اختار إجابة واحدة صحيحة فقط.
+                    💡 <strong>سؤال اختيار متعدد (إجابات متعددة):</strong> يجب اختيار <strong>إجابتين صحيحتين</strong> بالضبط. الطالب سيأخذ الدرجة كاملة إذا اختار الإجابتين الصحيحتين فقط، أو نصف الدرجة إذا اختار إجابة واحدة صحيحة فقط.
+                </div>
+                <div id="mcqNote" class="info-note" style="display: none;">
+                    💡 <strong>سؤال اختيار من متعدد:</strong> اختر <strong>إجابة واحدة صحيحة</strong> فقط من بين 4 خيارات.
                 </div>
             </div>
 
-            <!-- قسم صح/خطأ -->
             <div id="trueFalseSection" style="display: none;">
                 <div class="form-group">
                     <label>الإجابة الصحيحة</label>
@@ -375,7 +298,6 @@
                 </div>
             </div>
 
-            <!-- قسم المقالي -->
             <div id="essaySection" style="display: none;">
                 <div class="form-group">
                     <label>نموذج الإجابة</label>
@@ -388,7 +310,6 @@
                 </div>
             </div>
 
-            <!-- أزرار الإجراءات -->
             <div style="display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="saveQuestion()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="clearForm()">🗑️ مسح</button>
@@ -397,7 +318,6 @@
         </div>
     </div>
 
-    <!-- مودال المعاينة -->
     <div id="previewModal" class="modal">
         <div class="modal-content">
             <h3 style="margin-bottom: 20px;">👁️ معاينة السؤال</h3>
@@ -410,29 +330,39 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
-        // ==================== البيانات الأساسية ====================
         let currentTeacherId = null;
         let questionImageUrl = null;
         let modelAnswerImageUrl = null;
         let choices = [];
         
-        // تهيئة 4 اختيارات افتراضية (لـ MCQ) أو 5 (لـ Multi-Select)
+        // تهيئة الاختيارات حسب نوع السؤال
         function initChoicesForType() {
             const type = document.getElementById('questionType').value;
-            const defaultCount = (type === 'multi_select') ? 5 : 4;
+            let defaultCount = 4;
+            let defaultCorrectCount = 1;
+            
+            if (type === 'multi_select') {
+                defaultCount = 5;
+                defaultCorrectCount = 2;
+            } else if (type === 'mcq') {
+                defaultCount = 4;
+                defaultCorrectCount = 1;
+            } else {
+                defaultCount = 0;
+            }
+            
             choices = [];
             for (let i = 0; i < defaultCount; i++) {
-                choices.push({ text: '', isCorrect: false });
+                choices.push({ text: '', isCorrect: (i < defaultCorrectCount) });
             }
         }
         
-        // ==================== تحميل المعلمين ====================
+        // تحميل المعلمين
         async function loadTeachers() {
             const teachers = await fetchUsers({ role: 'teacher' });
             const select = document.getElementById('questionTeacher');
             select.innerHTML = '<option value="">-- اختر المعلم --</option>';
             
-            // إضافة خيار "أدمن (جميع الصفوف)"
             const adminOption = document.createElement('option');
             adminOption.value = 'admin';
             adminOption.textContent = '👑 أدمن (جميع الصفوف والمواد)';
@@ -446,7 +376,7 @@
             }
         }
         
-        // ==================== عند تغيير المعلم ====================
+        // عند تغيير المعلم
         async function onTeacherChange() {
             const teacherValue = document.getElementById('questionTeacher').value;
             currentTeacherId = teacherValue;
@@ -466,10 +396,8 @@
             let classes = [];
             
             if (teacherValue === 'admin') {
-                // أدمن: يظهر جميع الصفوف
                 classes = await fetchClasses();
             } else {
-                // معلم عادي: يظهر فقط الصفوف المسندة له
                 const assignments = await fetchTeacherAssignments(parseInt(teacherValue));
                 const classIds = [...new Set(assignments.map(a => a.class_id))];
                 if (classIds.length > 0) {
@@ -488,7 +416,7 @@
             }
         }
         
-        // ==================== عند تغيير الصف ====================
+        // عند تغيير الصف
         async function onClassChange() {
             const classId = document.getElementById('questionClass').value;
             const teacherValue = currentTeacherId;
@@ -506,11 +434,9 @@
             let subjects = [];
             
             if (teacherValue === 'admin') {
-                // أدمن: يظهر جميع المواد الخاصة بهذا الصف
                 const classSubjects = await fetchClassSubjects(parseInt(classId));
                 subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
             } else {
-                // معلم عادي: يظهر فقط المواد المسندة له في هذا الصف
                 const assignments = await fetchTeacherAssignments(parseInt(teacherValue));
                 const subjectIds = assignments
                     .filter(a => a.class_id == classId)
@@ -532,25 +458,27 @@
             }
         }
         
-        // ==================== عند تغيير نوع السؤال ====================
+        // عند تغيير نوع السؤال
         function onQuestionTypeChange() {
             const type = document.getElementById('questionType').value;
             const choicesSection = document.getElementById('choicesSection');
             const trueFalseSection = document.getElementById('trueFalseSection');
             const essaySection = document.getElementById('essaySection');
             const multiSelectNote = document.getElementById('multiSelectNote');
+            const mcqNote = document.getElementById('mcqNote');
             
-            choicesSection.style.display = (type === 'mcq' || type === 'multi_select') ? 'block' : 'none';
+            const showChoices = (type === 'mcq' || type === 'multi_select');
+            choicesSection.style.display = showChoices ? 'block' : 'none';
             trueFalseSection.style.display = (type === 'true_false') ? 'block' : 'none';
             essaySection.style.display = (type === 'essay') ? 'block' : 'none';
             multiSelectNote.style.display = (type === 'multi_select') ? 'block' : 'none';
+            mcqNote.style.display = (type === 'mcq') ? 'block' : 'none';
             
-            // إعادة تهيئة الاختيارات حسب النوع
             initChoicesForType();
             renderChoices();
         }
         
-        // ==================== إدارة الاختيارات ====================
+        // إدارة الاختيارات
         function addChoice() {
             if (choices.length < 15) {
                 choices.push({ text: '', isCorrect: false });
@@ -580,17 +508,26 @@
             const type = document.getElementById('questionType').value;
             
             if (type === 'mcq') {
+                // MCQ: إجابة واحدة صحيحة فقط
                 for (let i = 0; i < choices.length; i++) {
                     choices[i].isCorrect = (i === index);
                 }
             } else if (type === 'multi_select') {
-                choices[index].isCorrect = !choices[index].isCorrect;
+                // Multi-Select: يمكن اختيار إجابتين صحيحتين كحد أقصى
+                const currentCorrect = choices.filter(c => c.isCorrect).length;
+                const willBeCorrect = !choices[index].isCorrect;
+                
+                if (willBeCorrect && currentCorrect >= 2) {
+                    showToast('يمكنك اختيار إجابتين صحيحتين فقط كحد أقصى', 'warning');
+                    return;
+                }
+                choices[index].isCorrect = willBeCorrect;
             }
             
             renderChoices();
         }
         
-        // ==================== عرض الاختيارات ====================
+        // عرض الاختيارات
         function renderChoices() {
             const container = document.getElementById('choicesList');
             const type = document.getElementById('questionType').value;
@@ -620,56 +557,9 @@
                 `;
                 container.appendChild(div);
             }
-            
-            // إعادة ربط أحداث اللصق للاختيارات الجديدة
-            setTimeout(() => {
-                setupChoicePasteHandlers();
-            }, 100);
         }
         
-        // ==================== لصق الصور ====================
-        function setupChoicePasteHandlers() {
-            const choiceInputs = document.querySelectorAll('#choicesList input[type="text"]');
-            choiceInputs.forEach(input => {
-                input.removeEventListener('paste', handleChoicePaste);
-                input.addEventListener('paste', handleChoicePaste);
-            });
-        }
-        
-        async function handleChoicePaste(e) {
-            const items = e.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    e.preventDefault();
-                    const blob = items[i].getAsFile();
-                    const fileName = `pasted/${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
-                    
-                    showToast('جاري رفع الصورة...', 'info');
-                    
-                    const { error } = await sb.storage
-                        .from('exam-images')
-                        .upload(fileName, blob);
-                    
-                    if (error) {
-                        showToast('خطأ في رفع الصورة', 'error');
-                        return;
-                    }
-                    
-                    const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
-                    
-                    // إضافة الصورة كنص في الحقل
-                    const input = e.target;
-                    const currentValue = input.value;
-                    input.value = currentValue + (currentValue ? '\n' : '') + data.publicUrl;
-                    input.dispatchEvent(new Event('input'));
-                    
-                    showToast('✅ تم لصق الصورة', 'success');
-                    break;
-                }
-            }
-        }
-        
-        // ==================== معاينة السؤال ====================
+        // معاينة السؤال
         function previewQuestion() {
             const type = document.getElementById('questionType').value;
             const text = document.getElementById('questionText').value || '';
@@ -707,7 +597,7 @@
             document.getElementById('previewModal').style.display = 'none';
         }
         
-        // ==================== حفظ السؤال ====================
+        // حفظ السؤال
         async function saveQuestion() {
             const teacherValue = document.getElementById('questionTeacher').value;
             const classId = document.getElementById('questionClass').value;
@@ -722,7 +612,6 @@
             if (!subjectId) { showToast('اختر المادة', 'error'); return; }
             if (!text.trim() && !questionImageUrl) { showToast('السؤال مطلوب', 'error'); return; }
             
-            // تحديد teacher_id (إذا كان أدمن نستخدم null أو قيمة خاصة)
             const teacherId = (teacherValue === 'admin') ? null : parseInt(teacherValue);
             
             const questionData = {
@@ -731,7 +620,7 @@
                 subject_id: parseInt(subjectId),
                 question_text: text,
                 question_image: questionImageUrl,
-                type: type === 'multi_select' ? 'mcq' : type,
+                type: type,
                 points: points,
                 difficulty: difficulty,
                 status: 'approved'
@@ -745,9 +634,15 @@
                 if (modelAnswer) questionData.model_answer = modelAnswer;
                 if (modelAnswerImageUrl) questionData.model_answer_image = modelAnswerImageUrl;
             } else {
+                // التحقق من صحة الاختيارات
                 const correctChoices = choices.filter(c => c.isCorrect && c.text.trim());
-                if (correctChoices.length === 0) {
-                    showToast('حدد الإجابة/الإجابات الصحيحة', 'error');
+                
+                if (type === 'mcq' && correctChoices.length !== 1) {
+                    showToast('يجب اختيار إجابة واحدة صحيحة بالضبط', 'error');
+                    return;
+                }
+                if (type === 'multi_select' && correctChoices.length !== 2) {
+                    showToast('يجب اختيار إجابتين صحيحتين بالضبط', 'error');
                     return;
                 }
                 
@@ -773,7 +668,7 @@
             }
         }
         
-        // ==================== مسح الحقول ====================
+        // مسح الحقول
         function clearForm() {
             document.getElementById('questionTeacher').value = '';
             document.getElementById('questionClass').innerHTML = '<option value="">-- اختر المعلم أولاً --</option>';
@@ -806,12 +701,16 @@
             });
         }
         
-        // ==================== لصق الصور في الحقول الرئيسية ====================
-        function setupMainPasteHandlers() {
-            const questionText = document.getElementById('questionText');
-            const modelAnswer = document.getElementById('modelAnswer');
+        // تهيئة
+        async function init() {
+            await loadTeachers();
+            initChoicesForType();
+            renderChoices();
+            onQuestionTypeChange();
             
-            async function handleMainPaste(e, targetField, imageSetter, previewId) {
+            // إضافة دعم لصق الصور
+            const questionText = document.getElementById('questionText');
+            questionText.addEventListener('paste', async (e) => {
                 const items = e.clipboardData.items;
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].type.indexOf('image') !== -1) {
@@ -831,13 +730,13 @@
                         }
                         
                         const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
-                        imageSetter(data.publicUrl);
+                        questionImageUrl = data.publicUrl;
                         
-                        const previewDiv = document.getElementById(previewId);
+                        const previewDiv = document.getElementById('questionImagePreview');
                         previewDiv.innerHTML = `
                             <div style="position: relative; display: inline-block;">
                                 <img src="${data.publicUrl}" style="max-width: 150px; border-radius: 12px;">
-                                <div class="remove-image" onclick="removeImage('${imageSetter === setQuestionImage ? 'question' : 'model'}')">✖</div>
+                                <div class="remove-image" onclick="removeImage('question')">✖</div>
                             </div>
                         `;
                         
@@ -845,13 +744,7 @@
                         break;
                     }
                 }
-            }
-            
-            function setQuestionImage(url) { questionImageUrl = url; }
-            function setModelImage(url) { modelAnswerImageUrl = url; }
-            
-            questionText.addEventListener('paste', (e) => handleMainPaste(e, questionText, setQuestionImage, 'questionImagePreview'));
-            modelAnswer.addEventListener('paste', (e) => handleMainPaste(e, modelAnswer, setModelImage, 'modelAnswerImagePreview'));
+            });
         }
         
         function removeImage(type) {
@@ -862,15 +755,6 @@
                 modelAnswerImageUrl = null;
                 document.getElementById('modelAnswerImagePreview').innerHTML = '';
             }
-        }
-        
-        // ==================== التهيئة ====================
-        async function init() {
-            await loadTeachers();
-            initChoicesForType();
-            renderChoices();
-            setupMainPasteHandlers();
-            onQuestionTypeChange();
         }
         
         init();
