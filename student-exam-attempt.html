@@ -383,7 +383,250 @@
                 submitExam();
             }
         };
+        // ==================== أضف هذا القسم في بداية ملف student-exam-attempt.html داخل <script> ====================
+
+// ==================== نظام الحماية المتقدم للامتحان ====================
+class ExamProtection {
+    constructor(examId, attemptId, studentId) {
+        this.examId = examId;
+        this.attemptId = attemptId;
+        this.studentId = studentId;
+        this.tabSwitchCount = 0;
+        this.maxTabSwitches = 3;
+        this.violations = [];
+        this.fullscreenEnabled = false;
+        this.examStarted = false;
+        this.prevented = false;
+    }
+    
+    // تسجيل مخالفة
+    async recordViolation(violationType, details = null) {
+        const violation = {
+            exam_attempt_id: this.attemptId,
+            student_id: this.studentId,
+            violation_type: violationType,
+            details: details,
+            timestamp: new Date().toISOString()
+        };
+        this.violations.push(violation);
         
+        console.warn(`⚠️ مخالفة: ${violationType}`);
+        
+        // حفظ في قاعدة البيانات
+        try {
+            await sb.from('exam_violations').insert(violation);
+        } catch(e) {
+            console.error('Error saving violation:', e);
+        }
+        
+        // إظهار تحذير للطالب
+        if (violationType !== 'tab_switch_count') {
+            showToast(`⚠️ تم تسجيل مخالفة: ${violationType}`, 'warning');
+        }
+    }
+    
+    // 1. تفعيل وضع ملء الشاشة
+    async enableFullscreen() {
+        try {
+            const elem = document.documentElement;
+            await elem.requestFullscreen();
+            this.fullscreenEnabled = true;
+            this.examStarted = true;
+            
+            // مراقبة الخروج من ملء الشاشة
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement && this.examStarted) {
+                    this.recordViolation('exit_fullscreen');
+                    // محاولة العودة لملء الشاشة
+                    elem.requestFullscreen().catch(e => console.log('Cannot re-enter fullscreen'));
+                }
+            });
+        } catch(e) {
+            console.log('Fullscreen not supported or blocked');
+            this.recordViolation('fullscreen_blocked');
+        }
+    }
+    
+    // 2. كشف تبديل التبويب
+    detectTabSwitch() {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.examStarted && !this.prevented) {
+                this.tabSwitchCount++;
+                this.recordViolation('tab_switch', `المرة ${this.tabSwitchCount}`);
+                
+                if (this.tabSwitchCount >= this.maxTabSwitches) {
+                    this.prevented = true;
+                    this.recordViolation('max_tab_switches_exceeded', `تم تجاوز ${this.maxTabSwitches} محاولات`);
+                    showToast(`🚨 تم إنهاء الامتحان لتكرار تبديل التبويب`, 'error');
+                    setTimeout(() => this.autoSubmitExam(), 2000);
+                } else {
+                    showToast(`⚠️ تحذير: تم تسجيل محاولة تبديل تبويب (${this.tabSwitchCount}/${this.maxTabSwitches})`, 'warning');
+                }
+            }
+        });
+    }
+    
+    // 3. منع النسخ واللصق
+    preventCopyPaste() {
+        document.addEventListener('copy', (e) => {
+            e.preventDefault();
+            this.recordViolation('copy_attempt');
+            return false;
+        });
+        
+        document.addEventListener('paste', (e) => {
+            e.preventDefault();
+            this.recordViolation('paste_attempt');
+            return false;
+        });
+        
+        document.addEventListener('cut', (e) => {
+            e.preventDefault();
+            this.recordViolation('cut_attempt');
+            return false;
+        });
+        
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.recordViolation('right_click');
+            return false;
+        });
+        
+        // منع السحب
+        document.addEventListener('dragstart', (e) => {
+            e.preventDefault();
+            return false;
+        });
+    }
+    
+    // 4. منع أدوات المطور
+    preventDevTools() {
+        // كشف F12
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12') {
+                e.preventDefault();
+                this.recordViolation('devtools_f12');
+                return false;
+            }
+            
+            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                e.preventDefault();
+                this.recordViolation('devtools_shortcut');
+                return false;
+            }
+            
+            // Ctrl+U (view source)
+            if (e.ctrlKey && e.key === 'u') {
+                e.preventDefault();
+                this.recordViolation('view_source_attempt');
+                return false;
+            }
+        });
+        
+        // كشف فتح console
+        setInterval(() => {
+            const before = new Date();
+            debugger;
+            const after = new Date();
+            if (after - before > 100) {
+                this.recordViolation('devtools_opened');
+            }
+        }, 1000);
+        
+        // منع F12 عن طريق oncontextmenu و onkeydown إضافي
+        window.oncontextmenu = (e) => {
+            e.preventDefault();
+            return false;
+        };
+    }
+    
+    // 5. منع فتح نوافذ جديدة
+    blockNewWindows() {
+        // منع window.open
+        const originalOpen = window.open;
+        window.open = function() {
+            examProtection.recordViolation('window_open_attempt');
+            return null;
+        };
+        
+        // منع الروابط الخارجية
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.recordViolation('external_link_click');
+                return false;
+            });
+        });
+    }
+    
+    // 6. حفظ تلقائي كل 30 ثانية
+    setupAutoSave(autoSaveCallback) {
+        setInterval(() => {
+            if (this.examStarted && !this.prevented) {
+                autoSaveCallback();
+                console.log('💾 Auto-saved at', new Date().toLocaleTimeString());
+            }
+        }, 30000); // كل 30 ثانية
+    }
+    
+    // 7. التأكيد عند الإغلاق
+    preventAccidentalClose() {
+        window.addEventListener('beforeunload', (e) => {
+            if (this.examStarted && !this.prevented) {
+                const message = '⚠️ أنت في منتصف الامتحان! سيتم فقدان إجاباتك. هل أنت متأكد من الخروج؟';
+                e.preventDefault();
+                e.returnValue = message;
+                return message;
+            }
+        });
+    }
+    
+    // 8. تسليم الامتحان تلقائياً
+    async autoSubmitExam() {
+        if (window.submitExam && !this.prevented) {
+            this.prevented = true;
+            showToast('🚨 تم تسليم الامتحان تلقائياً بسبب مخالفات', 'warning');
+            setTimeout(() => window.submitExam(), 1000);
+        }
+    }
+    
+    // 9. تفعيل جميع الحماية
+    activateAll(autoSaveCallback) {
+        this.enableFullscreen();
+        this.detectTabSwitch();
+        this.preventCopyPaste();
+        this.preventDevTools();
+        this.blockNewWindows();
+        this.preventAccidentalClose();
+        this.setupAutoSave(autoSaveCallback);
+        
+        // تسجيل بداية الامتحان
+        this.recordViolation('exam_started');
+        
+        showToast('🔒 تم تفعيل الحماية الكاملة للامتحان', 'info');
+    }
+}
+
+// ==================== استخدام نظام الحماية في الصفحة ====================
+// ضع هذا الكود بعد تحميل بيانات الامتحان وقبل بدء المؤقت
+
+// إنشاء كائن الحماية
+const protection = new ExamProtection(examId, attemptId, user.id);
+
+// دالة الحفظ التلقائي
+function autoSaveAnswers() {
+    if (Object.keys(answers).length > 0) {
+        // حفظ الإجابات الحالية
+        for (const [qId, answer] of Object.entries(answers)) {
+            saveAnswerToAttempt(attemptId, qId, answer);
+        }
+        showToast('💾 تم حفظ إجاباتك تلقائياً', 'info');
+    }
+}
+
+// تفعيل الحماية
+protection.activateAll(() => autoSaveAnswers());
         loadExam();
     </script>
 </body>
