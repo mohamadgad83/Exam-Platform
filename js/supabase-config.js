@@ -558,6 +558,342 @@ async function fetchAdminStats() {
         totalAttempts: attempts.count || 0
     };
 }
+// ==================== إضافة الدوال الناقصة في نهاية الملف ====================
 
+// ==================== دوال الامتحانات والأسئلة المتقدمة ====================
+
+// جلب أسئلة الامتحان
+async function fetchExamQuestions(examId) {
+    const { data, error } = await sb
+        .from('exam_questions')
+        .select(`
+            *,
+            questions:question_id(*)
+        `)
+        .eq('exam_id', examId)
+        .order('order_index', { ascending: true });
+    
+    if (error) return [];
+    return data || [];
+}
+
+// جلب محاولات الامتحان
+async function fetchExamAttempts(filters = {}) {
+    let query = sb.from('exam_attempts').select(`
+        *,
+        exams:exam_id(*),
+        users:student_id(id, name, phone)
+    `);
+    
+    if (filters.examId && filters.examId !== 'all') {
+        query = query.eq('exam_id', filters.examId);
+    }
+    if (filters.studentId) {
+        query = query.eq('student_id', filters.studentId);
+    }
+    if (filters.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+    }
+    
+    const { data, error } = await query.order('submitted_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+}
+
+// إضافة سؤال للامتحان
+async function addQuestionToExam(examId, questionId, points, orderIndex) {
+    const { error } = await sb
+        .from('exam_questions')
+        .insert({
+            exam_id: examId,
+            question_id: questionId,
+            points: points,
+            order_index: orderIndex
+        });
+    
+    if (error) {
+        console.error('Error adding question to exam:', error);
+        return false;
+    }
+    return true;
+}
+
+// إحصائيات المعلم
+async function fetchTeacherStats(teacherId) {
+    try {
+        const [exams, questions, groups] = await Promise.all([
+            sb.from('exams').select('*', { count: 'exact', head: true }).eq('teacher_id', teacherId),
+            sb.from('questions').select('*', { count: 'exact', head: true }).eq('teacher_id', teacherId),
+            sb.from('groups').select('*', { count: 'exact', head: true }).eq('teacher_id', teacherId)
+        ]);
+        
+        // جلب عدد الطلاب من تعيينات المعلم
+        const assignments = await fetchTeacherAssignments(teacherId);
+        const classIds = [...new Set(assignments.map(a => a.class_id))];
+        let totalStudents = 0;
+        
+        if (classIds.length > 0) {
+            const { count } = await sb
+                .from('users')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'student')
+                .in('class_id', classIds);
+            totalStudents = count || 0;
+        }
+        
+        return {
+            totalExams: exams.count || 0,
+            totalQuestions: questions.count || 0,
+            totalGroups: groups.count || 0,
+            totalStudents: totalStudents
+        };
+    } catch (error) {
+        console.error('Error fetching teacher stats:', error);
+        return { totalExams: 0, totalQuestions: 0, totalGroups: 0, totalStudents: 0 };
+    }
+}
+
+// إحصائيات الطالب
+async function fetchStudentStats(studentId) {
+    try {
+        const [attempts, groups] = await Promise.all([
+            sb.from('exam_attempts').select('score, total_points').eq('student_id', studentId),
+            sb.from('group_members').select('*', { count: 'exact', head: true }).eq('student_id', studentId).eq('status', 'approved')
+        ]);
+        
+        let avgScore = 0;
+        if (attempts.data && attempts.data.length > 0) {
+            let totalPercent = 0;
+            let validCount = 0;
+            for (const a of attempts.data) {
+                if (a.total_points && a.total_points > 0) {
+                    totalPercent += (a.score / a.total_points) * 100;
+                    validCount++;
+                }
+            }
+            avgScore = validCount > 0 ? Math.round(totalPercent / validCount) : 0;
+        }
+        
+        return {
+            totalAttempts: attempts.data?.length || 0,
+            totalGroups: groups.count || 0,
+            avgScore: avgScore
+        };
+    } catch (error) {
+        console.error('Error fetching student stats:', error);
+        return { totalAttempts: 0, totalGroups: 0, avgScore: 0 };
+    }
+}
+
+// جلب أسئلة المعلم (مع فلتر)
+async function fetchTeacherQuestions(teacherId, filters = {}) {
+    let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name, username)');
+    
+    query = query.eq('teacher_id', teacherId);
+    
+    if (filters.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+    }
+    if (filters.type && filters.type !== 'all') {
+        query = query.eq('type', filters.type);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) return [];
+    return data;
+}
+
+// تحديث حالة الامتحان
+async function updateExamStatusInDB(examId, status) {
+    const { error } = await sb.from('exams').update({ status }).eq('id', examId);
+    if (error) return false;
+    showToast(`تم ${status === 'published' ? 'نشر' : status === 'closed' ? 'إغلاق' : 'حفظ'} الامتحان`, 'success');
+    return true;
+}
+
+// جلب الصفوف المتاحة للمعلم
+async function fetchTeacherAvailableClasses(teacherId) {
+    const assignments = await fetchTeacherAssignments(teacherId);
+    const classIds = [...new Set(assignments.map(a => a.class_id))];
+    
+    if (classIds.length === 0) return [];
+    
+    const { data } = await sb.from('classes').select('*').in('id', classIds).order('name');
+    return data || [];
+}
+
+// جلب المواد المتاحة للمعلم
+async function fetchTeacherAvailableSubjects(teacherId) {
+    const assignments = await fetchTeacherAssignments(teacherId);
+    const subjectIds = [...new Set(assignments.map(a => a.subject_id))];
+    
+    if (subjectIds.length === 0) return [];
+    
+    const { data } = await sb.from('subjects').select('*').in('id', subjectIds).order('name');
+    return data || [];
+}
+
+// بدء محاولة امتحان
+async function startExamAttempt(examId, studentId) {
+    // التحقق من وجود محاولة سابقة غير مكتملة
+    const { data: existing } = await sb
+        .from('exam_attempts')
+        .select('*')
+        .eq('exam_id', examId)
+        .eq('student_id', studentId)
+        .eq('status', 'in_progress')
+        .maybeSingle();
+    
+    if (existing) {
+        return existing;
+    }
+    
+    const { data, error } = await sb
+        .from('exam_attempts')
+        .insert({
+            exam_id: examId,
+            student_id: studentId,
+            start_time: new Date(),
+            status: 'in_progress',
+            answers: {}
+        })
+        .select()
+        .single();
+    
+    if (error) return null;
+    return data;
+}
+
+// حفظ إجابة
+async function saveAnswerToAttempt(attemptId, questionId, answer) {
+    // جلب المحاولة الحالية
+    const { data: attempt } = await sb
+        .from('exam_attempts')
+        .select('answers')
+        .eq('id', attemptId)
+        .single();
+    
+    const answers = attempt?.answers || {};
+    answers[questionId] = answer;
+    
+    const { error } = await sb
+        .from('exam_attempts')
+        .update({ answers: answers })
+        .eq('id', attemptId);
+    
+    return !error;
+}
+
+// تسليم الامتحان
+async function submitExamAttempt(attemptId, answers, score, totalPoints) {
+    const { error } = await sb
+        .from('exam_attempts')
+        .update({
+            answers: answers,
+            score: score,
+            total_points: totalPoints,
+            status: 'submitted',
+            submitted_at: new Date()
+        })
+        .eq('id', attemptId);
+    
+    return !error;
+}
+
+// ==================== دوال الطلبات ====================
+
+// إنشاء طلب امتحان
+async function createExamRequest(studentId, examId) {
+    const { data: existing } = await sb
+        .from('exam_requests')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('exam_id', examId)
+        .maybeSingle();
+    
+    if (existing) {
+        showToast('لديك طلب سابق لهذا الامتحان', 'warning');
+        return null;
+    }
+    
+    const { data, error } = await sb
+        .from('exam_requests')
+        .insert({
+            student_id: studentId,
+            exam_id: examId,
+            status: 'pending'
+        })
+        .select()
+        .single();
+    
+    if (error) return null;
+    showToast('تم إرسال طلب الاشتراك', 'success');
+    return data;
+}
+
+// جلب طلبات الامتحان
+async function fetchExamRequests(filters = {}) {
+    let query = sb.from('exam_requests').select(`
+        *,
+        exams:exam_id(*),
+        users:student_id(id, name, phone)
+    `);
+    
+    if (filters.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+    }
+    if (filters.studentId) {
+        query = query.eq('student_id', filters.studentId);
+    }
+    if (filters.examId) {
+        query = query.eq('exam_id', filters.examId);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) return [];
+    return data;
+}
+
+// تحديث حالة طلب الامتحان
+async function updateExamRequestStatus(requestId, status, rejectionReason = null) {
+    const updateData = { status };
+    if (rejectionReason) updateData.rejection_reason = rejectionReason;
+    
+    const { error } = await sb
+        .from('exam_requests')
+        .update(updateData)
+        .eq('id', requestId);
+    
+    if (error) return false;
+    showToast(`تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب`, 'success');
+    return true;
+}
+
+// ==================== دوال المجموعات المحسنة ====================
+
+// جلب عضوية الطالب في المجموعات
+async function fetchStudentGroupMemberships(studentId) {
+    const { data, error } = await sb
+        .from('group_members')
+        .select('*, groups:group_id(*)')
+        .eq('student_id', studentId);
+    
+    if (error) return [];
+    return data || [];
+}
+
+// جلب طلبات الانضمام للمجموعة (للمعلم)
+async function fetchGroupJoinRequests(groupId, status = 'pending') {
+    const { data, error } = await sb
+        .from('group_members')
+        .select('*, users:student_id(id, name, phone)')
+        .eq('group_id', groupId)
+        .eq('status', status);
+    
+    if (error) return [];
+    return data || [];
+}
+
+console.log('✅ supabase-config.js updated with all missing functions');
 console.log('✅ supabase-config.js loaded successfully');
 console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, createGroup, createExam, createQuestion, etc.');
