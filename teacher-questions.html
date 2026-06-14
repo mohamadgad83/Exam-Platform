@@ -24,9 +24,6 @@
             gap: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             border-bottom: 1px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
         }
         .logo {
             font-size: 24px;
@@ -108,10 +105,6 @@
             font-size: 14px;
             background: white;
         }
-        .filter-group select:focus, .filter-group input:focus {
-            outline: none;
-            border-color: #6366f1;
-        }
         
         .btn {
             padding: 10px 20px;
@@ -134,7 +127,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(99,102,241,0.3);
         }
-        .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-info { background: #3b82f6; color: white; }
@@ -263,16 +255,15 @@
             border-radius: 14px;
             font-family: inherit;
             font-size: 14px;
-            transition: all 0.2s;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         .row-2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .row-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
         .choice-item {
@@ -294,7 +285,6 @@
             padding: 8px 12px;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            font-family: inherit;
         }
         .choice-correct {
             display: flex;
@@ -332,9 +322,7 @@
         
         @media (max-width: 768px) {
             .filter-row { flex-direction: column; }
-            .row-2 { grid-template-columns: 1fr; }
-            .modal-content { padding: 20px; }
-            .question-header { flex-direction: column; }
+            .row-2, .row-3 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -399,17 +387,17 @@
                 <button class="btn btn-outline btn-sm" onclick="closeQuestionModal()">✖</button>
             </div>
 
-            <div class="row-2">
+            <div class="row-3">
                 <div class="form-group">
                     <label>🎓 الصف *</label>
-                    <select id="classId" onchange="loadSubjectsByClass()" required>
+                    <select id="classId" required>
                         <option value="">-- اختر الصف --</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>📖 المادة *</label>
                     <select id="subjectId" required>
-                        <option value="">-- اختر الصف أولاً --</option>
+                        <option value="">-- اختر المادة --</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -430,7 +418,6 @@
                 <label>📝 نوع السؤال</label>
                 <select id="questionType" onchange="toggleQuestionFields()">
                     <option value="mcq">✅ اختيار من متعدد (إجابة واحدة - 4 خيارات)</option>
-                    <option value="multi_select">✅✅ اختيار متعدد (إجابتان صحيحتان - 5 خيارات)</option>
                     <option value="true_false">صح/خطأ</option>
                     <option value="essay">📝 مقالي</option>
                 </select>
@@ -447,10 +434,7 @@
                     <div id="choicesList"></div>
                     <button type="button" class="btn btn-outline btn-sm" onclick="addChoice()" style="margin-top: 8px;">+ إضافة اختيار</button>
                 </div>
-                <div id="multiSelectNote" class="info-note" style="display: none;">
-                    💡 <strong>سؤال اختيار متعدد:</strong> يجب اختيار <strong>إجابتين صحيحتين</strong> بالضبط من 5 خيارات.
-                </div>
-                <div id="mcqNote" class="info-note" style="display: none;">
+                <div id="mcqNote" class="info-note">
                     💡 <strong>سؤال اختيار من متعدد:</strong> اختر <strong>إجابة واحدة صحيحة</strong> فقط من 4 خيارات.
                 </div>
             </div>
@@ -490,7 +474,6 @@
         
         let currentEditId = null;
         let choices = [];
-        let teacherAssignments = [];
         let teacherClasses = [];
         let teacherSubjects = [];
         
@@ -507,7 +490,6 @@
         function getTypeText(type) {
             const types = {
                 'mcq': 'اختيار من متعدد',
-                'multi_select': 'اختيار متعدد',
                 'true_false': 'صح/خطأ',
                 'essay': 'مقالي'
             };
@@ -517,16 +499,16 @@
         function getTypeClass(type) {
             const classes = {
                 'mcq': 'badge-primary',
-                'multi_select': 'badge-info',
                 'true_false': 'badge-warning',
                 'essay': 'badge-success'
             };
             return classes[type] || 'badge-gray';
         }
         
-        // تحميل تعيينات المعلم
-        async function loadTeacherAssignments() {
+        // تحميل الصفوف والمواد المسندة للمعلم
+        async function loadTeacherClassesAndSubjects() {
             try {
+                // جلب تعيينات المعلم
                 const { data: assignments, error } = await sb
                     .from('teacher_assignments')
                     .select('*, classes:class_id(id, name), subjects:subject_id(id, name)')
@@ -537,12 +519,10 @@
                     return;
                 }
                 
-                teacherAssignments = assignments || [];
-                
                 const classMap = new Map();
                 const subjectMap = new Map();
                 
-                teacherAssignments.forEach(a => {
+                (assignments || []).forEach(a => {
                     if (a.classes && !classMap.has(a.class_id)) {
                         classMap.set(a.class_id, { id: a.class_id, name: a.classes.name });
                     }
@@ -556,59 +536,37 @@
                 
                 // تعبئة فلتر الصفوف
                 const filterClass = document.getElementById('filterClass');
-                filterClass.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
+                filterClass.innerHTML = '<option value="all">كل الصفوف</option>';
                 teacherClasses.forEach(c => {
                     filterClass.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
                 });
                 
                 // تعبئة فلتر المواد
                 const filterSubject = document.getElementById('filterSubject');
-                filterSubject.innerHTML = '<option value="all">📖 كل المواد</option>';
+                filterSubject.innerHTML = '<option value="all">كل المواد</option>';
                 teacherSubjects.forEach(s => {
                     filterSubject.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
                 });
                 
-                // تعبئة حقل الصف في المودال
+                // تعبئة حقول الصف والمادة في المودال
                 const classSelect = document.getElementById('classId');
                 classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
                 teacherClasses.forEach(c => {
                     classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
                 });
                 
-            } catch (error) {
-                console.error('Error in loadTeacherAssignments:', error);
-            }
-        }
-        
-        // تحميل المواد حسب الصف
-        async function loadSubjectsByClass() {
-            const classId = document.getElementById('classId').value;
-            const subjectSelect = document.getElementById('subjectId');
-            
-            if (!classId) {
-                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
-                subjectSelect.disabled = true;
-                return;
-            }
-            
-            const availableSubjects = teacherAssignments
-                .filter(a => a.class_id == classId)
-                .map(a => ({ id: a.subject_id, name: a.subjects?.name }));
-            
-            subjectSelect.disabled = false;
-            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            availableSubjects.forEach(s => {
-                if (s.name) {
+                const subjectSelect = document.getElementById('subjectId');
+                subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+                teacherSubjects.forEach(s => {
                     subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-                }
-            });
-            
-            if (availableSubjects.length === 0) {
-                subjectSelect.innerHTML = '<option value="">لا توجد مواد مسندة</option>';
+                });
+                
+            } catch (error) {
+                console.error('Error in loadTeacherClassesAndSubjects:', error);
             }
         }
         
-        // تحميل الأسئلة - بدون استخدام class_id في الفلتر لتجنب خطأ 400
+        // تحميل الأسئلة
         async function loadQuestions() {
             try {
                 const classId = document.getElementById('filterClass').value;
@@ -616,9 +574,15 @@
                 const status = document.getElementById('statusFilter').value;
                 const search = document.getElementById('searchInput').value;
                 
-                // جلب جميع أسئلة المعلم أولاً
                 let query = sb.from('questions').select('*').eq('teacher_id', currentUser.id);
                 
+                // تحويل القيم إلى أرقام صحيحة لمنع خطأ 400
+                if (classId !== 'all') {
+                    query = query.eq('class_id', parseInt(classId));
+                }
+                if (subjectId !== 'all') {
+                    query = query.eq('subject_id', parseInt(subjectId));
+                }
                 if (status !== 'all') {
                     query = query.eq('status', status);
                 }
@@ -633,17 +597,6 @@
                 
                 let filtered = questions || [];
                 
-                // فلترة حسب الصف (بعد الجلب لأن class_id قد لا يكون موجود)
-                if (classId !== 'all') {
-                    filtered = filtered.filter(q => q.class_id == classId);
-                }
-                
-                // فلترة حسب المادة (بعد الجلب)
-                if (subjectId !== 'all') {
-                    filtered = filtered.filter(q => q.subject_id == subjectId);
-                }
-                
-                // فلترة حسب البحث
                 if (search) {
                     filtered = filtered.filter(q => q.question_text?.toLowerCase().includes(search.toLowerCase()));
                 }
@@ -684,7 +637,7 @@
                 let optionsHtml = '';
                 if (q.options) {
                     try {
-                        const opts = JSON.parse(q.options);
+                        const opts = q.options;
                         optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">📋 الخيارات: ${opts.slice(0, 3).join(' | ')}${opts.length > 3 ? ' ...' : ''}</div>`;
                     } catch(e) {}
                 }
@@ -739,9 +692,9 @@
             details += `المادة: ${subjectInfo?.name || 'بدون مادة'}\n`;
             details += `الحالة: ${q.status === 'pending' ? 'قيد المراجعة' : q.status === 'approved' ? 'معتمد' : 'مرفوض'}\n`;
             
-            if (q.type === 'mcq' || q.type === 'multi_select') {
+            if (q.type === 'mcq') {
                 if (q.options) {
-                    const opts = JSON.parse(q.options);
+                    const opts = q.options;
                     details += `\nالخيارات:\n`;
                     opts.forEach((opt, i) => {
                         details += `  ${String.fromCharCode(65 + i)}. ${opt}\n`;
@@ -764,30 +717,16 @@
         }
         
         // إدارة الاختيارات
-        function initChoicesForType() {
-            const type = document.getElementById('questionType').value;
-            let defaultCount = 4;
-            let defaultCorrect = [0];
-            
-            if (type === 'multi_select') {
-                defaultCount = 5;
-                defaultCorrect = [0, 1];
-            } else if (type !== 'mcq') {
-                defaultCount = 0;
-            }
-            
+        function initChoices() {
             choices = [];
-            for (let i = 0; i < defaultCount; i++) {
-                choices.push({ text: '', isCorrect: defaultCorrect.includes(i) });
+            for (let i = 0; i < 4; i++) {
+                choices.push({ text: '', isCorrect: i === 0 });
             }
             renderChoices();
         }
         
         function renderChoices() {
             const container = document.getElementById('choicesList');
-            const type = document.getElementById('questionType').value;
-            const isMultiSelect = (type === 'multi_select');
-            
             if (!container) return;
             
             container.innerHTML = '';
@@ -799,10 +738,10 @@
                     <span class="choice-letter">${String.fromCharCode(65 + i)}.</span>
                     <input type="text" class="choice-input" placeholder="نص الاختيار ${i + 1}" value="${escapeHtml(choice.text)}" onchange="updateChoiceText(${i}, this.value)">
                     <div class="choice-correct">
-                        <input type="${isMultiSelect ? 'checkbox' : 'radio'}" name="correctChoice" ${choice.isCorrect ? 'checked' : ''} onchange="toggleCorrect(${i})">
+                        <input type="radio" name="correctChoice" ${choice.isCorrect ? 'checked' : ''} onchange="toggleCorrect(${i})">
                         <span style="font-size: 12px;">صحيح</span>
                     </div>
-                    <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= (isMultiSelect ? 5 : 4) ? 'disabled' : ''}>🗑️</button>
+                    <button class="btn btn-danger btn-sm" onclick="removeChoice(${i})" ${choices.length <= 4 ? 'disabled' : ''}>🗑️</button>
                 `;
                 container.appendChild(div);
             }
@@ -818,14 +757,11 @@
         }
         
         function removeChoice(index) {
-            const type = document.getElementById('questionType').value;
-            const minChoices = (type === 'multi_select') ? 5 : 4;
-            
-            if (choices.length > minChoices) {
+            if (choices.length > 4) {
                 choices.splice(index, 1);
                 renderChoices();
             } else {
-                showToast(`يجب أن يكون هناك ${minChoices} اختيارات على الأقل`, 'error');
+                showToast('يجب أن يكون هناك 4 اختيارات على الأقل', 'error');
             }
         }
         
@@ -834,21 +770,8 @@
         }
         
         function toggleCorrect(index) {
-            const type = document.getElementById('questionType').value;
-            
-            if (type === 'mcq') {
-                for (let i = 0; i < choices.length; i++) {
-                    choices[i].isCorrect = (i === index);
-                }
-            } else if (type === 'multi_select') {
-                const currentCorrect = choices.filter(c => c.isCorrect).length;
-                const willBeCorrect = !choices[index].isCorrect;
-                
-                if (willBeCorrect && currentCorrect >= 2) {
-                    showToast('يمكنك اختيار إجابتين صحيحتين فقط كحد أقصى', 'warning');
-                    return;
-                }
-                choices[index].isCorrect = willBeCorrect;
+            for (let i = 0; i < choices.length; i++) {
+                choices[i].isCorrect = (i === index);
             }
             renderChoices();
         }
@@ -858,18 +781,13 @@
             const choicesSection = document.getElementById('choicesSection');
             const trueFalseSection = document.getElementById('trueFalseSection');
             const essaySection = document.getElementById('essaySection');
-            const multiSelectNote = document.getElementById('multiSelectNote');
-            const mcqNote = document.getElementById('mcqNote');
             
-            const showChoices = (type === 'mcq' || type === 'multi_select');
-            choicesSection.style.display = showChoices ? 'block' : 'none';
+            choicesSection.style.display = (type === 'mcq') ? 'block' : 'none';
             trueFalseSection.style.display = (type === 'true_false') ? 'block' : 'none';
             essaySection.style.display = (type === 'essay') ? 'block' : 'none';
-            multiSelectNote.style.display = (type === 'multi_select') ? 'block' : 'none';
-            mcqNote.style.display = (type === 'mcq') ? 'block' : 'none';
             
-            if (showChoices) {
-                initChoicesForType();
+            if (type === 'mcq') {
+                initChoices();
             }
         }
         
@@ -881,12 +799,11 @@
             document.getElementById('points').value = '5';
             document.getElementById('difficulty').value = 'medium';
             document.getElementById('classId').value = '';
-            document.getElementById('subjectId').innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
-            document.getElementById('subjectId').disabled = true;
+            document.getElementById('subjectId').value = '';
             document.getElementById('modelAnswer').value = '';
             document.getElementById('trueFalseAnswer').value = 'true';
             
-            initChoicesForType();
+            initChoices();
             toggleQuestionFields();
             document.getElementById('questionModal').style.display = 'flex';
         }
@@ -910,25 +827,23 @@
             document.getElementById('points').value = q.points || 5;
             document.getElementById('difficulty').value = q.difficulty || 'medium';
             document.getElementById('classId').value = q.class_id || '';
-            
-            await loadSubjectsByClass();
             document.getElementById('subjectId').value = q.subject_id || '';
             
-            if (q.type === 'mcq' || q.type === 'multi_select') {
+            if (q.type === 'mcq') {
                 if (q.options) {
                     try {
-                        const opts = JSON.parse(q.options);
-                        const correct = q.correct_answer ? JSON.parse(q.correct_answer) : [];
+                        const opts = q.options;
+                        const correct = q.correct_answer;
                         choices = opts.map((text, idx) => ({
                             text: text,
-                            isCorrect: Array.isArray(correct) ? correct.includes(text) : false
+                            isCorrect: correct === text || (Array.isArray(correct) && correct.includes(text))
                         }));
                         renderChoices();
                     } catch(e) {
-                        initChoicesForType();
+                        initChoices();
                     }
                 } else {
-                    initChoicesForType();
+                    initChoices();
                 }
             }
             
@@ -990,25 +905,8 @@
                     return;
                 }
                 
-                questionData.options = JSON.stringify(validChoices.map(c => c.text));
-                questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
-                
-            } else if (type === 'multi_select') {
-                const validChoices = choices.slice(0, 5);
-                const emptyChoices = validChoices.filter(c => !c.text.trim());
-                if (emptyChoices.length > 0) {
-                    showToast('الاختيارات الخمسة الأولى مطلوبة', 'error');
-                    return;
-                }
-                
-                const correctChoices = validChoices.filter(c => c.isCorrect);
-                if (correctChoices.length !== 2) {
-                    showToast('يجب اختيار إجابتين صحيحتين بالضبط', 'error');
-                    return;
-                }
-                
-                questionData.options = JSON.stringify(validChoices.map(c => c.text));
-                questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
+                questionData.options = validChoices.map(c => c.text);
+                questionData.correct_answer = correctChoices[0].text;
                 
             } else if (type === 'true_false') {
                 const answer = document.getElementById('trueFalseAnswer').value;
@@ -1073,7 +971,7 @@
         }
         
         async function init() {
-            await loadTeacherAssignments();
+            await loadTeacherClassesAndSubjects();
             await loadQuestions();
         }
         
