@@ -368,26 +368,41 @@
         </div>
 
         <!-- ==================== تبويب الإعدادات (للأدمن فقط) ==================== -->
-        <div id="settingsTab" style="display: none;">
-            <div class="card">
-                <h3>💳 طرق الدفع</h3>
-                <div class="filter-bar">
-                    <button class="btn btn-primary" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button>
-                    <button class="btn btn-outline" onclick="loadPaymentMethods()">🔄 تحديث</button>
-                </div>
-                <div id="paymentMethodsList"></div>
-            </div>
-            
-            <div class="card">
-                <h3>📊 تصدير البيانات</h3>
-                <div class="filter-bar">
-                    <button class="btn btn-info" onclick="exportAllData()">📥 تصدير جميع البيانات</button>
-                    <button class="btn btn-warning" onclick="exportStudentsData()">👨‍🎓 تصدير بيانات الطلاب</button>
-                </div>
-            </div>
+        <!-- ==================== تبويب الإعدادات (للأدمن فقط) ==================== -->
+<div id="settingsTab" style="display: none;">
+    <!-- إدارة طرق الدفع -->
+    <div class="card">
+        <div class="card-header">
+            <h3>💳 طرق الدفع</h3>
+            <button class="btn btn-primary btn-sm" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button>
+        </div>
+        <div id="paymentMethodsList"></div>
+    </div>
+    
+    <!-- تصدير البيانات -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📊 تصدير البيانات</h3>
+        </div>
+        <div class="filter-bar">
+            <button class="btn btn-info" onclick="exportAllData()">📥 تصدير جميع البيانات</button>
+            <button class="btn btn-warning" onclick="exportStudentsData()">👨‍🎓 تصدير بيانات الطلاب</button>
+            <button class="btn btn-success" onclick="exportPaymentsData()">💰 تصدير المدفوعات</button>
         </div>
     </div>
-
+    
+    <!-- تنظيف الإيصالات -->
+    <div class="card">
+        <div class="card-header">
+            <h3>🗑️ تنظيف الإيصالات</h3>
+        </div>
+        <div class="filter-bar">
+            <button class="btn btn-danger" onclick="cleanupScreenshots()" id="cleanupBtn">🗑️ تنظيف الإيصالات القديمة</button>
+            <span style="font-size: 12px; color: #64748b;">⚠️ ملاحظة: لا يمكن التراجع عن هذا الإجراء. تأكد من تصدير البيانات أولاً.</span>
+        </div>
+    </div>
+</div>
+        
     <!-- مودال إنشاء/تعديل امتحان -->
     <div id="examModal" class="modal">
         <div class="modal-content">
@@ -520,36 +535,36 @@
         </div>
     </div>
 
-    <!-- مودال إضافة طريقة دفع -->
-    <div id="paymentMethodModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>➕ إضافة طريقة دفع</h3>
-                <button class="btn btn-outline btn-sm" onclick="closePaymentMethodModal()">✖</button>
-            </div>
-            <div class="form-group">
-                <label>🏦 اسم الطريقة</label>
-                <input type="text" id="methodName" placeholder="مثال: فودافون كاش">
-            </div>
-            <div class="form-group">
-                <label>📝 الوصف</label>
-                <textarea id="methodDesc" rows="2" placeholder="وصف طريقة الدفع"></textarea>
-            </div>
-            <div class="form-group">
-                <label>🔢 رقم الحساب</label>
-                <input type="text" id="methodAccountNumber" placeholder="رقم الحساب أو المحفظة">
-            </div>
-            <div class="form-group">
-                <label>👤 مالك الحساب</label>
-                <input type="text" id="methodAccountOwner" placeholder="اسم صاحب الحساب">
-            </div>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="savePaymentMethod()">💾 حفظ</button>
-                <button class="btn btn-outline" onclick="closePaymentMethodModal()">إلغاء</button>
-            </div>
+    <!-- مودال إضافة/تعديل طريقة دفع -->
+<div id="paymentMethodModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="paymentMethodModalTitle">➕ إضافة طريقة دفع</h3>
+            <button class="btn btn-outline btn-sm" onclick="closePaymentMethodModal()">✖</button>
+        </div>
+        <div class="form-group">
+            <label>🏦 اسم الطريقة *</label>
+            <input type="text" id="methodName" placeholder="مثال: فودافون كاش">
+        </div>
+        <div class="form-group">
+            <label>📝 الوصف</label>
+            <textarea id="methodDesc" rows="2" placeholder="وصف طريقة الدفع (اختياري)"></textarea>
+        </div>
+        <div class="form-group">
+            <label>🔢 رقم الحساب</label>
+            <input type="text" id="methodAccountNumber" placeholder="رقم الحساب أو المحفظة">
+        </div>
+        <div class="form-group">
+            <label>👤 مالك الحساب</label>
+            <input type="text" id="methodAccountOwner" placeholder="اسم صاحب الحساب">
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="savePaymentMethod()">💾 حفظ</button>
+            <button class="btn btn-outline" onclick="closePaymentMethodModal()">إلغاء</button>
         </div>
     </div>
-
+</div>
+        
     <script src="js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
@@ -562,7 +577,7 @@
         let currentExamId = null;
         let currentRequestId = null;
         let currentPaymentScreenshot = null;
-        
+        let currentEditMethodId = null;
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
             if (isAdmin) {
@@ -1131,6 +1146,281 @@
                 showToast('تم تنظيف الإيصالات', 'success');
             }
         }
+       // ==================== دوال إدارة طرق الدفع ====================
+
+// تحميل طرق الدفع
+async function loadPaymentMethods() {
+    try {
+        const { data: methods, error } = await sb
+            .from('payment_methods')
+            .select('*')
+            .order('sort_order', { ascending: true });
+        
+        if (error) throw error;
+        
+        const container = document.getElementById('paymentMethodsList');
+        
+        if (!methods || methods.length === 0) {
+            container.innerHTML = '<div class="empty-state">💳 لا توجد طرق دفع<br><button class="btn btn-primary btn-sm" style="margin-top: 15px;" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button></div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        for (let i = 0; i < methods.length; i++) {
+            const m = methods[i];
+            const card = document.createElement('div');
+            card.className = 'exam-card';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <h4>${escapeHtml(m.name)}</h4>
+                            <span class="badge ${m.is_active ? 'badge-success' : 'badge-danger'}">${m.is_active ? 'نشط' : 'غير نشط'}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #64748b; margin-top: 5px;">${escapeHtml(m.description || '')}</div>
+                        <div style="font-size: 13px; color: #64748b;">🔢 رقم الحساب: ${m.account_number || '-'}</div>
+                        <div style="font-size: 13px; color: #64748b;">👤 مالك الحساب: ${m.account_owner || '-'}</div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">📅 تاريخ الإضافة: ${formatDate(m.created_at)}</div>
+                    </div>
+                    <div class="action-buttons" style="margin-top: 0;">
+                        <button class="btn btn-warning btn-sm" onclick="openEditPaymentMethodModal(${m.id})">✏️ تعديل</button>
+                        <button class="btn ${m.is_active ? 'btn-danger' : 'btn-success'} btn-sm" onclick="togglePaymentMethodStatus(${m.id}, ${!m.is_active})">
+                            ${m.is_active ? '⛔ تعطيل' : '✅ تفعيل'}
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="movePaymentMethod(${m.id}, 'up', ${i})" ${i === 0 ? 'disabled' : ''}>⬆️</button>
+                        <button class="btn btn-outline btn-sm" onclick="movePaymentMethod(${m.id}, 'down', ${i})" ${i === methods.length - 1 ? 'disabled' : ''}>⬇️</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+        
+    } catch (error) {
+        console.error('Error loading payment methods:', error);
+        document.getElementById('paymentMethodsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل طرق الدفع</div>';
+    }
+}
+
+// فتح مودال إضافة طريقة دفع
+function openAddPaymentMethodModal() {
+    currentEditMethodId = null;
+    document.getElementById('methodName').value = '';
+    document.getElementById('methodDesc').value = '';
+    document.getElementById('methodAccountNumber').value = '';
+    document.getElementById('methodAccountOwner').value = '';
+    document.getElementById('paymentMethodModalTitle').innerHTML = '➕ إضافة طريقة دفع';
+    document.getElementById('paymentMethodModal').style.display = 'flex';
+}
+
+// فتح مودال تعديل طريقة دفع
+async function openEditPaymentMethodModal(methodId) {
+    try {
+        const { data: method, error } = await sb
+            .from('payment_methods')
+            .select('*')
+            .eq('id', methodId)
+            .single();
+        
+        if (error) throw error;
+        
+        currentEditMethodId = methodId;
+        document.getElementById('methodName').value = method.name || '';
+        document.getElementById('methodDesc').value = method.description || '';
+        document.getElementById('methodAccountNumber').value = method.account_number || '';
+        document.getElementById('methodAccountOwner').value = method.account_owner || '';
+        document.getElementById('paymentMethodModalTitle').innerHTML = '✏️ تعديل طريقة دفع';
+        document.getElementById('paymentMethodModal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('Error loading payment method:', error);
+        showToast('حدث خطأ', 'error');
+    }
+}
+
+// حفظ طريقة الدفع (إضافة أو تعديل)
+async function savePaymentMethod() {
+    const methodData = {
+        name: document.getElementById('methodName').value,
+        description: document.getElementById('methodDesc').value || null,
+        account_number: document.getElementById('methodAccountNumber').value || null,
+        account_owner: document.getElementById('methodAccountOwner').value || null,
+        is_active: true
+    };
+    
+    if (!methodData.name) {
+        showToast('اسم طريقة الدفع مطلوب', 'error');
+        return;
+    }
+    
+    let result;
+    if (currentEditMethodId) {
+        // تعديل
+        const { error } = await sb
+            .from('payment_methods')
+            .update(methodData)
+            .eq('id', currentEditMethodId);
+        result = !error;
+    } else {
+        // إضافة
+        methodData.sort_order = 999;
+        methodData.created_by = currentUser.id;
+        const { error } = await sb
+            .from('payment_methods')
+            .insert(methodData);
+        result = !error;
+    }
+    
+    if (result) {
+        showToast(`تم ${currentEditMethodId ? 'تعديل' : 'إضافة'} طريقة الدفع`, 'success');
+        closePaymentMethodModal();
+        loadPaymentMethods();
+    } else {
+        showToast('حدث خطأ', 'error');
+    }
+}
+
+// تغيير حالة طريقة الدفع (تفعيل/تعطيل)
+async function togglePaymentMethodStatus(methodId, newStatus) {
+    try {
+        const { error } = await sb
+            .from('payment_methods')
+            .update({ is_active: newStatus })
+            .eq('id', methodId);
+        
+        if (error) throw error;
+        
+        showToast(`تم ${newStatus ? 'تفعيل' : 'تعطيل'} طريقة الدفع`, 'success');
+        loadPaymentMethods();
+        
+    } catch (error) {
+        console.error('Error toggling payment method status:', error);
+        showToast('حدث خطأ', 'error');
+    }
+}
+
+// ترتيب طرق الدفع (تحريك لأعلى/لأسفل)
+async function movePaymentMethod(methodId, direction, currentIndex) {
+    try {
+        // جلب جميع طرق الدفع
+        const { data: methods } = await sb
+            .from('payment_methods')
+            .select('id, sort_order')
+            .order('sort_order', { ascending: true });
+        
+        if (!methods || methods.length === 0) return;
+        
+        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        if (newIndex < 0 || newIndex >= methods.length) return;
+        
+        // تبديل الترتيب
+        const currentMethod = methods[currentIndex];
+        const targetMethod = methods[newIndex];
+        
+        // تحديث كلا العنصرين
+        await sb
+            .from('payment_methods')
+            .update({ sort_order: targetMethod.sort_order })
+            .eq('id', currentMethod.id);
+        
+        await sb
+            .from('payment_methods')
+            .update({ sort_order: currentMethod.sort_order })
+            .eq('id', targetMethod.id);
+        
+        showToast('تم تحديث الترتيب', 'success');
+        loadPaymentMethods();
+        
+    } catch (error) {
+        console.error('Error moving payment method:', error);
+        showToast('حدث خطأ', 'error');
+    }
+}
+
+// تصدير المدفوعات
+async function exportPaymentsData() {
+    try {
+        const { data: payments } = await sb
+            .from('payments')
+            .select('*, student:student_id(name, phone), exam:exam_id(title)')
+            .order('created_at', { ascending: false });
+        
+        if (!payments || payments.length === 0) {
+            showToast('لا توجد مدفوعات للتصدير', 'warning');
+            return;
+        }
+        
+        // تحويل البيانات إلى CSV
+        let csv = 'تاريخ الدفع,الطالب,رقم الهاتف,الامتحان,المبلغ,الحالة,تاريخ التأكيد\n';
+        payments.forEach(p => {
+            csv += `"${formatDateTime(p.created_at)}","${p.student?.name || ''}","${p.student?.phone || ''}","${p.exam?.title || ''}",${p.amount || 0},"${p.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}",${p.confirmed_at ? formatDateTime(p.confirmed_at) : '-'}\n`;
+        });
+        
+        // تحميل الملف
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute('download', `payments_${new Date().toISOString().slice(0, 19)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast('تم تصدير المدفوعات بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('Error exporting payments:', error);
+        showToast('حدث خطأ', 'error');
+    }
+}
+
+// تنظيف الإيصالات القديمة (بعد التصدير)
+async function cleanupScreenshots() {
+    if (!confirm('⚠️ تحذير: هذا الإجراء سيقوم بحذف جميع إيصالات الدفع القديمة. هل قمت بتصدير البيانات أولاً؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+    
+    try {
+        // جلب الإيصالات القديمة (أقدم من 30 يوماً)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const { data: oldPayments } = await sb
+            .from('payments')
+            .select('id, payment_screenshot')
+            .eq('status', 'confirmed')
+            .lt('confirmed_at', thirtyDaysAgo.toISOString())
+            .not('payment_screenshot', 'is', null);
+        
+        if (!oldPayments || oldPayments.length === 0) {
+            showToast('لا توجد إيصالات قديمة للتنظيف', 'info');
+            return;
+        }
+        
+        // حذف الصور من Storage
+        for (const payment of oldPayments) {
+            if (payment.payment_screenshot) {
+                const filePath = payment.payment_screenshot.split('/').pop();
+                await sb.storage.from('exam-images').remove([`payments/${filePath}`]);
+            }
+        }
+        
+        // تحديث قاعدة البيانات (إزالة الروابط)
+        const { error } = await sb
+            .from('payments')
+            .update({ payment_screenshot: null })
+            .in('id', oldPayments.map(p => p.id));
+        
+        if (error) throw error;
+        
+        showToast(`تم تنظيف ${oldPayments.length} إيصال قديم`, 'success');
+        loadPaymentMethods();
+        
+    } catch (error) {
+        console.error('Error cleaning up screenshots:', error);
+        showToast('حدث خطأ', 'error');
+    }
+}
         
         // ==================== تحميل أولي ====================
         setupUI();
