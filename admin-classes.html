@@ -91,25 +91,18 @@
             width: 260px;
             font-family: inherit;
         }
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 20px;
+        .filter-select {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            min-width: 180px;
+            font-family: inherit;
+            background: white;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 500px;
-        }
-        th, td {
-            padding: 14px 16px;
-            text-align: right;
-            border-bottom: 1px solid #e2e8f0;
-            color: #1e293b;
-        }
-        th {
-            background: #f8fafc;
-            font-weight: 700;
-        }
+        .table-wrapper { overflow-x: auto; border-radius: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+        th { background: #f8fafc; font-weight: 700; }
         .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
         .modal {
             display: none;
@@ -163,6 +156,8 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
         .empty-state { text-align: center; padding: 40px; color: #64748b; }
         
         .toast-notification {
@@ -220,9 +215,19 @@
         .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         
+        .linked-subject {
+            background: #e8f5e9;
+            border-radius: 12px;
+            padding: 10px 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #c8e6c9;
+        }
+        
         @media (max-width: 768px) {
             .filter-bar { flex-direction: column; align-items: stretch; }
-            .search-input { width: 100%; }
+            .search-input, .filter-select { width: 100%; }
             .action-buttons { flex-direction: column; }
             .btn { width: 100%; justify-content: center; }
         }
@@ -255,6 +260,7 @@
                 <div class="filter-bar">
                     <input type="text" id="classSearch" class="search-input" placeholder="🔍 بحث باسم الصف...">
                     <button class="btn btn-primary" onclick="openClassModal()">➕ إضافة صف جديد</button>
+                    <button class="btn btn-outline" onclick="loadClasses()">🔄 تحديث</button>
                 </div>
                 <div class="table-wrapper">
                     <table>
@@ -273,6 +279,7 @@
                 <div class="filter-bar">
                     <input type="text" id="subjectSearch" class="search-input" placeholder="🔍 بحث باسم المادة...">
                     <button class="btn btn-primary" onclick="openSubjectModal()">➕ إضافة مادة جديدة</button>
+                    <button class="btn btn-outline" onclick="loadSubjects()">🔄 تحديث</button>
                 </div>
                 <div class="table-wrapper">
                     <table>
@@ -292,18 +299,24 @@
                 <p style="margin-bottom: 15px; color: #64748b;">اختر صفاً ثم اختر المواد التي يدرسها هذا الصف</p>
                 
                 <div class="filter-bar">
-                    <select id="classForSubjects" class="search-input" style="width: 100%;" onchange="loadClassSubjects()">
+                    <select id="classForSubjects" class="filter-select" style="width: 100%;" onchange="loadClassSubjects()">
                         <option value="">-- اختر الصف --</option>
                     </select>
                 </div>
                 
+                <!-- المواد المرتبطة حالياً -->
                 <div id="classSubjectsList" style="margin-top: 20px;"></div>
                 
-                <div style="margin-top: 20px;">
-                    <select id="availableSubjects" style="width: 70%; padding: 12px; border-radius: 16px; border: 1px solid #e2e8f0;">
-                        <option value="">-- اختر مادة للإضافة --</option>
-                    </select>
-                    <button class="btn btn-success" onclick="addSubjectToClass()" style="margin-right: 10px;">➕ إضافة</button>
+                <!-- إضافة مواد جديدة -->
+                <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 16px;">
+                    <h4>➕ إضافة مادة جديدة لهذا الصف</h4>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                        <select id="availableSubjects" style="flex: 2; padding: 12px; border-radius: 16px; border: 1px solid #e2e8f0;">
+                            <option value="">-- اختر مادة للإضافة --</option>
+                        </select>
+                        <button class="btn btn-success" onclick="addSubjectToClass()">➕ إضافة</button>
+                    </div>
+                    <p style="font-size: 12px; color: #64748b; margin-top: 8px;">* يمكنك إضافة مواد جديدة من تبويب "المواد الدراسية" أولاً</p>
                 </div>
             </div>
         </div>
@@ -336,13 +349,13 @@
         </div>
     </div>
 
-    <script src="js/supabase-config.js"></script>
+    <script src="../js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         (function() {
             const user = getUser();
             if (!user || user.role !== 'admin') {
-                window.location.href = 'index.html';
+                window.location.href = '../index.html';
                 return;
             }
             document.getElementById('adminName').innerHTML = user.name;
@@ -350,7 +363,6 @@
         
         let currentClassId = null;
         let currentSubjectId = null;
-        let currentClassSubjects = [];
         
         // ==================== التبويبات ====================
         window.showTab = function(tab) {
@@ -385,15 +397,19 @@
             for (let i = 0; i < classes.length; i++) {
                 const c = classes[i];
                 // جلب مواد هذا الصف
-                const classSubjects = await fetchClassSubjects(c.id);
-                const subjectsNames = classSubjects.map(cs => cs.subjects?.name).filter(n => n).join(', ');
+                const { data: classSubjects } = await sb
+                    .from('class_subjects')
+                    .select('*, subjects(*)')
+                    .eq('class_id', c.id);
+                
+                const subjectsNames = (classSubjects || []).map(cs => cs.subjects?.name).filter(n => n).join(', ');
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${i+1}</td>
-                    <td><strong>${c.name}</strong></td>
+                    <td><strong>${escapeHtml(c.name)}</strong></td>
                     <td>${c.grade_level || '-'}</td>
-                    <td>${subjectsNames || '-'}</td>
+                    <td><small>${subjectsNames || '-'}</small></td>
                     <td>${formatDate(c.created_at)}</td>
                     <td>
                         <div class="action-buttons">
@@ -485,15 +501,19 @@
             for (let i = 0; i < subjects.length; i++) {
                 const s = subjects[i];
                 // جلب الصفوف المرتبطة بهذه المادة
-                const subjectClasses = await fetchSubjectClasses(s.id);
-                const classesNames = subjectClasses.map(sc => sc.classes?.name).filter(n => n).join(', ');
+                const { data: subjectClasses } = await sb
+                    .from('class_subjects')
+                    .select('*, classes(*)')
+                    .eq('subject_id', s.id);
+                
+                const classesNames = (subjectClasses || []).map(sc => sc.classes?.name).filter(n => n).join(', ');
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${i+1}</td>
-                    <td><strong>${s.name}</strong></td>
+                    <td><strong>${escapeHtml(s.name)}</strong></td>
                     <td>${s.description || '-'}</td>
-                    <td>${classesNames || '-'}</td>
+                    <td><small>${classesNames || '-'}</small></td>
                     <td>${formatDate(s.created_at)}</td>
                     <td>
                         <div class="action-buttons">
@@ -562,93 +582,106 @@
             });
         };
         
-        // ==================== ربط المواد بالصفوف ====================
-        async function fetchClassSubjects(classId) {
-            const { data, error } = await sb
-                .from('class_subjects')
-                .select('*, subjects(*)')
-                .eq('class_id', classId);
-            if (error) return [];
-            return data || [];
-        }
+        // ==================== ربط المواد بالصفوف (محسن) ====================
         
-        async function fetchSubjectClasses(subjectId) {
-            const { data, error } = await sb
-                .from('class_subjects')
-                .select('*, classes(*)')
-                .eq('subject_id', subjectId);
-            if (error) return [];
-            return data || [];
-        }
-        
-        async function addSubjectToClassId(classId, subjectId) {
-            const { error } = await sb
-                .from('class_subjects')
-                .insert({ class_id: classId, subject_id: subjectId });
-            return !error;
-        }
-        
-        async function removeSubjectFromClassId(classSubjectId) {
-            const { error } = await sb
-                .from('class_subjects')
-                .delete()
-                .eq('id', classSubjectId);
-            return !error;
-        }
-        
+        // تحميل قائمة الصفوف والمواد المتاحة
         async function loadClassSubjectsSelect() {
-            const classes = await fetchClasses();
-            const select = document.getElementById('classForSubjects');
-            select.innerHTML = '<option value="">-- اختر الصف --</option>';
-            for (let i = 0; i < classes.length; i++) {
-                const option = document.createElement('option');
-                option.value = classes[i].id;
-                option.textContent = classes[i].name;
-                select.appendChild(option);
-            }
-            
-            // تحميل المواد المتاحة
-            const subjects = await fetchSubjects();
-            const subjectsSelect = document.getElementById('availableSubjects');
-            subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
-            for (let i = 0; i < subjects.length; i++) {
-                const option = document.createElement('option');
-                option.value = subjects[i].id;
-                option.textContent = subjects[i].name;
-                subjectsSelect.appendChild(option);
+            try {
+                // تحميل الصفوف
+                const classes = await fetchClasses();
+                const classSelect = document.getElementById('classForSubjects');
+                classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+                for (let i = 0; i < classes.length; i++) {
+                    const option = document.createElement('option');
+                    option.value = classes[i].id;
+                    option.textContent = classes[i].name;
+                    classSelect.appendChild(option);
+                }
+                
+                // تحميل جميع المواد المتاحة للإضافة
+                const subjects = await fetchSubjects();
+                const subjectsSelect = document.getElementById('availableSubjects');
+                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
+                for (let i = 0; i < subjects.length; i++) {
+                    subjectsSelect.innerHTML += `<option value="${subjects[i].id}">${escapeHtml(subjects[i].name)}</option>`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading class subjects select:', error);
             }
         }
         
+        // تحميل المواد المرتبطة بصف محدد
         window.loadClassSubjects = async function() {
             const classId = document.getElementById('classForSubjects').value;
+            
             if (!classId) {
-                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">اختر صفاً أولاً</div>';
+                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">📭 اختر صفاً أولاً</div>';
+                // تحديث قائمة المواد المتاحة للإضافة
+                const subjects = await fetchSubjects();
+                const subjectsSelect = document.getElementById('availableSubjects');
+                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
+                for (let i = 0; i < subjects.length; i++) {
+                    subjectsSelect.innerHTML += `<option value="${subjects[i].id}">${escapeHtml(subjects[i].name)}</option>`;
+                }
+                subjectsSelect.disabled = false;
                 return;
             }
             
-            const subjects = await fetchClassSubjects(parseInt(classId));
-            currentClassSubjects = subjects;
-            const container = document.getElementById('classSubjectsList');
-            
-            if (!subjects || subjects.length === 0) {
-                container.innerHTML = '<div class="empty-state">لا توجد مواد مرتبطة بهذا الصف</div>';
-                return;
+            try {
+                // جلب المواد المرتبطة بهذا الصف
+                const { data: classSubjects, error } = await sb
+                    .from('class_subjects')
+                    .select('*, subjects(*)')
+                    .eq('class_id', parseInt(classId));
+                
+                if (error) throw error;
+                
+                const container = document.getElementById('classSubjectsList');
+                const subjectsSelect = document.getElementById('availableSubjects');
+                
+                // عرض المواد المرتبطة
+                if (!classSubjects || classSubjects.length === 0) {
+                    container.innerHTML = '<div class="empty-state">📭 لا توجد مواد مرتبطة بهذا الصف</div>';
+                } else {
+                    let html = '<h4>📚 المواد المرتبطة بهذا الصف:</h4><div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">';
+                    for (let i = 0; i < classSubjects.length; i++) {
+                        const cs = classSubjects[i];
+                        html += `
+                            <div class="linked-subject">
+                                <span>📖 ${escapeHtml(cs.subjects?.name)}</span>
+                                <button class="btn btn-danger btn-sm" onclick="removeSubjectFromClass(${cs.id})">🗑️</button>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+                
+                // تحديث قائمة المواد المتاحة للإضافة (إزالة المواد المرتبطة بالفعل)
+                const allSubjects = await fetchSubjects();
+                const linkedSubjectIds = new Set(classSubjects.map(cs => cs.subject_id));
+                const availableSubjects = allSubjects.filter(s => !linkedSubjectIds.has(s.id));
+                
+                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
+                for (let i = 0; i < availableSubjects.length; i++) {
+                    subjectsSelect.innerHTML += `<option value="${availableSubjects[i].id}">${escapeHtml(availableSubjects[i].name)}</option>`;
+                }
+                
+                if (availableSubjects.length === 0) {
+                    subjectsSelect.innerHTML = '<option value="">-- لا توجد مواد متاحة للإضافة --</option>';
+                    subjectsSelect.disabled = true;
+                } else {
+                    subjectsSelect.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Error loading class subjects:', error);
+                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل البيانات</div>';
             }
-            
-            let html = '<h4>📚 المواد المرتبطة بهذا الصف:</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;">';
-            for (let i = 0; i < subjects.length; i++) {
-                const cs = subjects[i];
-                html += `
-                    <div style="background: #f1f5f9; border-radius: 12px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 10px;">
-                        <span>📖 ${cs.subjects?.name}</span>
-                        <button class="btn btn-danger btn-sm" onclick="removeSubjectFromClass(${cs.id})">🗑️</button>
-                    </div>
-                `;
-            }
-            html += '</div>';
-            container.innerHTML = html;
         };
         
+        // إضافة مادة للصف
         window.addSubjectToClass = async function() {
             const classId = document.getElementById('classForSubjects').value;
             const subjectId = document.getElementById('availableSubjects').value;
@@ -662,30 +695,55 @@
                 return;
             }
             
-            const success = await addSubjectToClassId(parseInt(classId), parseInt(subjectId));
-            if (success) {
+            try {
+                const { error } = await sb
+                    .from('class_subjects')
+                    .insert({ class_id: parseInt(classId), subject_id: parseInt(subjectId) });
+                
+                if (error) {
+                    if (error.code === '23505') {
+                        showToast('هذه المادة مرتبطة بالفعل بهذا الصف', 'warning');
+                    } else {
+                        showToast('حدث خطأ: ' + error.message, 'error');
+                    }
+                    return;
+                }
+                
                 showToast('تم إضافة المادة إلى الصف', 'success');
-                loadClassSubjects();
-                loadClasses();
-                loadSubjects();
-            } else {
-                showToast('حدث خطأ أو المادة موجودة بالفعل', 'error');
+                loadClassSubjects(); // إعادة تحميل القائمة
+                loadClasses(); // تحديث قائمة الصفوف
+                loadSubjects(); // تحديث قائمة المواد
+                
+            } catch (error) {
+                console.error('Error adding subject to class:', error);
+                showToast('حدث خطأ', 'error');
             }
         };
         
+        // إزالة مادة من الصف
         window.removeSubjectFromClass = async function(classSubjectId) {
             showConfirm('هل أنت متأكد من إزالة هذه المادة من الصف؟', async function() {
-                const success = await removeSubjectFromClassId(classSubjectId);
-                if (success) {
+                try {
+                    const { error } = await sb
+                        .from('class_subjects')
+                        .delete()
+                        .eq('id', classSubjectId);
+                    
+                    if (error) throw error;
+                    
                     showToast('تم إزالة المادة من الصف', 'success');
-                    loadClassSubjects();
-                    loadClasses();
-                    loadSubjects();
+                    loadClassSubjects(); // إعادة تحميل القائمة
+                    loadClasses(); // تحديث قائمة الصفوف
+                    loadSubjects(); // تحديث قائمة المواد
+                    
+                } catch (error) {
+                    console.error('Error removing subject from class:', error);
+                    showToast('حدث خطأ', 'error');
                 }
             });
         };
         
-        // ==================== دوال إضافية لقاعدة البيانات ====================
+        // ==================== دوال إضافية ====================
         async function updateSubject(id, subjectData) {
             const { error } = await sb.from('subjects').update(subjectData).eq('id', id);
             if (error) return false;
@@ -705,6 +763,16 @@
         
         function closeSubjectModal() {
             document.getElementById('subjectModal').style.display = 'none';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         // ==================== أحداث البحث ====================
