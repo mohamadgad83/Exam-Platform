@@ -1047,6 +1047,524 @@ async function fetchStudentDetailedStats(studentId) {
         return null;
     }
 }
+// ==================== دوال الامتحانات المتقدمة ====================
+
+// إنشاء امتحان جديد
+async function createExam(examData) {
+    try {
+        const { data, error } = await sb
+            .from('exams')
+            .insert(examData)
+            .select()
+            .single();
+        
+        if (error) throw error;
+        showToast('تم إنشاء الامتحان بنجاح', 'success');
+        return data;
+    } catch (error) {
+        console.error('Error creating exam:', error);
+        showToast('حدث خطأ في إنشاء الامتحان', 'error');
+        return null;
+    }
+}
+
+// تحديث الامتحان
+async function updateExam(examId, examData) {
+    try {
+        const { error } = await sb
+            .from('exams')
+            .update(examData)
+            .eq('id', examId);
+        
+        if (error) throw error;
+        showToast('تم تحديث الامتحان', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error updating exam:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// حذف الامتحان
+async function deleteExam(examId) {
+    try {
+        const { error } = await sb
+            .from('exams')
+            .delete()
+            .eq('id', examId);
+        
+        if (error) throw error;
+        showToast('تم حذف الامتحان', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error deleting exam:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// جلب طلبات الاشتراك
+async function fetchExamRequests(filters = {}) {
+    try {
+        let query = sb.from('exam_requests').select(`
+            *,
+            exam:exam_id(*),
+            student:student_id(id, name, phone),
+            approver:approved_by(id, name)
+        `);
+        
+        if (filters.exam_id) {
+            query = query.eq('exam_id', filters.exam_id);
+        }
+        if (filters.status) {
+            query = query.eq('status', filters.status);
+        }
+        if (filters.student_id) {
+            query = query.eq('student_id', filters.student_id);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching exam requests:', error);
+        return [];
+    }
+}
+
+// تحديث حالة طلب الاشتراك
+async function updateExamRequestStatus(requestId, status, rejectionReason = null) {
+    try {
+        const updateData = { status };
+        if (status === 'approved') {
+            updateData.approved_at = new Date();
+            updateData.approved_by = getUser().id;
+        }
+        if (rejectionReason) {
+            updateData.rejection_reason = rejectionReason;
+        }
+        
+        const { error } = await sb
+            .from('exam_requests')
+            .update(updateData)
+            .eq('id', requestId);
+        
+        if (error) throw error;
+        
+        // إذا تمت الموافقة، أضف الطالب إلى exam_enrollments
+        if (status === 'approved') {
+            const { data: request } = await sb
+                .from('exam_requests')
+                .select('exam_id, student_id')
+                .eq('id', requestId)
+                .single();
+            
+            if (request) {
+                await sb
+                    .from('exam_enrollments')
+                    .insert({
+                        exam_id: request.exam_id,
+                        student_id: request.student_id,
+                        exam_request_id: requestId,
+                        enrolled_by: getUser().id,
+                        enrolled_at: new Date()
+                    })
+                    .select();
+            }
+        }
+        
+        showToast(`تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب`, 'success');
+        return true;
+    } catch (error) {
+        console.error('Error updating request status:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// قبول جميع طلبات امتحان (للمجاني)
+async function approveAllExamRequests(examId) {
+    try {
+        const { data: requests, error } = await sb
+            .from('exam_requests')
+            .select('id, student_id')
+            .eq('exam_id', examId)
+            .eq('status', 'pending_admin');
+        
+        if (error) throw error;
+        
+        for (const request of requests) {
+            await updateExamRequestStatus(request.id, 'approved');
+        }
+        
+        showToast(`تم قبول ${requests.length} طلب`, 'success');
+        return true;
+    } catch (error) {
+        console.error('Error approving all requests:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// جلب المدفوعات
+async function fetchPayments(filters = {}) {
+    try {
+        let query = sb.from('payments').select(`
+            *,
+            student:student_id(id, name, phone),
+            exam:exam_id(id, title),
+            payment_method:payment_method_id(id, name),
+            confirmer:confirmed_by(id, name)
+        `);
+        
+        if (filters.exam_id) {
+            query = query.eq('exam_id', filters.exam_id);
+        }
+        if (filters.status) {
+            query = query.eq('status', filters.status);
+        }
+        if (filters.student_id) {
+            query = query.eq('student_id', filters.student_id);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching payments:', error);
+        return [];
+    }
+}
+
+// تأكيد الدفع
+async function confirmPayment(paymentId, status, rejectionReason = null) {
+    try {
+        const updateData = { 
+            status: status,
+            confirmed_by: getUser().id,
+            confirmed_at: new Date()
+        };
+        if (rejectionReason) {
+            updateData.rejection_reason = rejectionReason;
+        }
+        
+        const { error } = await sb
+            .from('payments')
+            .update(updateData)
+            .eq('id', paymentId);
+        
+        if (error) throw error;
+        
+        // إذا تم تأكيد الدفع، قم بقبول طلب الاشتراك المرتبط
+        if (status === 'confirmed') {
+            const { data: payment } = await sb
+                .from('payments')
+                .select('exam_request_id')
+                .eq('id', paymentId)
+                .single();
+            
+            if (payment && payment.exam_request_id) {
+                await updateExamRequestStatus(payment.exam_request_id, 'approved');
+            }
+        }
+        
+        showToast(`تم ${status === 'confirmed' ? 'تأكيد' : 'رفض'} الدفع`, 'success');
+        return true;
+    } catch (error) {
+        console.error('Error confirming payment:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// جلب طرق الدفع
+async function fetchPaymentMethods() {
+    try {
+        const { data, error } = await sb
+            .from('payment_methods')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching payment methods:', error);
+        return [];
+    }
+}
+
+// إضافة طريقة دفع جديدة
+async function addPaymentMethod(methodData) {
+    try {
+        const { error } = await sb
+            .from('payment_methods')
+            .insert({
+                ...methodData,
+                created_by: getUser().id,
+                created_at: new Date()
+            });
+        
+        if (error) throw error;
+        showToast('تم إضافة طريقة الدفع', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error adding payment method:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// حذف طريقة دفع
+async function deletePaymentMethod(methodId) {
+    try {
+        const { error } = await sb
+            .from('payment_methods')
+            .delete()
+            .eq('id', methodId);
+        
+        if (error) throw error;
+        showToast('تم حذف طريقة الدفع', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error deleting payment method:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// جلب الكوبونات
+async function fetchCoupons(filters = {}) {
+    try {
+        let query = sb.from('coupons').select('*');
+        
+        if (filters.is_active !== undefined) {
+            query = query.eq('is_active', filters.is_active);
+        }
+        if (filters.target_exam_id) {
+            query = query.eq('target_exam_id', filters.target_exam_id);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching coupons:', error);
+        return [];
+    }
+}
+
+// إنشاء كوبون جديد
+async function createCoupon(couponData) {
+    try {
+        const { error } = await sb
+            .from('coupons')
+            .insert({
+                ...couponData,
+                created_by: getUser().id,
+                created_at: new Date()
+            });
+        
+        if (error) throw error;
+        showToast('تم إنشاء الكوبون', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error creating coupon:', error);
+        showToast('حدث خطأ', 'error');
+        return false;
+    }
+}
+
+// التحقق من صحة الكوبون
+async function validateCoupon(code, examId, studentId) {
+    try {
+        const { data: coupon, error } = await sb
+            .from('coupons')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+        
+        if (error || !coupon) {
+            return { valid: false, message: 'الكوبون غير صالح' };
+        }
+        
+        // التحقق من صلاحية التاريخ
+        const now = new Date();
+        if (coupon.valid_from && new Date(coupon.valid_from) > now) {
+            return { valid: false, message: 'الكوبون لم يبدأ بعد' };
+        }
+        if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+            return { valid: false, message: 'انتهت صلاحية الكوبون' };
+        }
+        
+        // التحقق من عدد الاستخدامات
+        if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+            return { valid: false, message: 'تم استخدام الكوبون максимальное عدد المرات' };
+        }
+        
+        // التحقق من الامتحان المستهدف
+        if (coupon.target_exam_id && coupon.target_exam_id !== examId) {
+            return { valid: false, message: 'هذا الكوبون غير صالح لهذا الامتحان' };
+        }
+        
+        // التحقق من الطلاب المستهدفين
+        if (coupon.target_students) {
+            const targetStudents = JSON.parse(coupon.target_students);
+            if (targetStudents.length > 0 && !targetStudents.includes(studentId)) {
+                return { valid: false, message: 'هذا الكوبون غير صالح لك' };
+            }
+        }
+        
+        return { valid: true, coupon: coupon };
+    } catch (error) {
+        console.error('Error validating coupon:', error);
+        return { valid: false, message: 'حدث خطأ' };
+    }
+}
+
+// استخدام كوبون
+async function useCoupon(code, examId, studentId, examRequestId) {
+    try {
+        const validation = await validateCoupon(code, examId, studentId);
+        if (!validation.valid) {
+            return { success: false, message: validation.message };
+        }
+        
+        const coupon = validation.coupon;
+        
+        // تحديث عدد الاستخدامات
+        await sb
+            .from('coupons')
+            .update({ used_count: coupon.used_count + 1 })
+            .eq('id', coupon.id);
+        
+        // تسجيل الاستخدام
+        await sb
+            .from('coupon_usages')
+            .insert({
+                coupon_id: coupon.id,
+                student_id: studentId,
+                exam_request_id: examRequestId,
+                used_at: new Date()
+            });
+        
+        return { success: true, coupon: coupon };
+    } catch (error) {
+        console.error('Error using coupon:', error);
+        return { success: false, message: 'حدث خطأ' };
+    }
+}
+
+// جلب الإشعارات
+async function fetchNotifications(userId, limit = 20) {
+    try {
+        const { data, error } = await sb
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+    }
+}
+
+// تحديث حالة الإشعار (قراءة)
+async function markNotificationAsRead(notificationId) {
+    try {
+        const { error } = await sb
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', notificationId);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        return false;
+    }
+}
+
+// تحديث كل الإشعارات كمقروءة
+async function markAllNotificationsAsRead(userId) {
+    try {
+        const { error } = await sb
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', userId);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        return false;
+    }
+}
+
+// إضافة إشعار جديد
+async function addNotification(userId, title, message, type, relatedId = null) {
+    try {
+        const { error } = await sb
+            .from('notifications')
+            .insert({
+                user_id: userId,
+                title: title,
+                message: message,
+                type: type,
+                related_id: relatedId,
+                created_at: new Date()
+            });
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error adding notification:', error);
+        return false;
+    }
+}
+
+// جلب إحصائيات الامتحان
+async function fetchExamStats(examId) {
+    try {
+        const [requests, enrollments, payments] = await Promise.all([
+            sb.from('exam_requests').select('*', { count: 'exact' }).eq('exam_id', examId),
+            sb.from('exam_enrollments').select('*', { count: 'exact' }).eq('exam_id', examId),
+            sb.from('payments').select('*', { count: 'exact' }).eq('exam_id', examId).eq('status', 'confirmed')
+        ]);
+        
+        const pendingRequests = await sb
+            .from('exam_requests')
+            .select('*', { count: 'exact' })
+            .eq('exam_id', examId)
+            .eq('status', 'pending_admin');
+        
+        return {
+            total_requests: requests.count || 0,
+            pending_count: pendingRequests.count || 0,
+            approved_count: enrollments.count || 0,
+            paid_count: payments.count || 0
+        };
+    } catch (error) {
+        console.error('Error fetching exam stats:', error);
+        return {
+            total_requests: 0,
+            pending_count: 0,
+            approved_count: 0,
+            paid_count: 0
+        };
+    }
+}
+
+console.log('✅ جميع دوال الامتحانات المتقدمة تم تحميلها بنجاح');
 console.log('✅ supabase-config.js updated with all missing functions');
 console.log('✅ supabase-config.js loaded successfully');
 console.log('✅ Available functions: hashPassword, loginUser, getUser, setUser, logout, checkAuth, createGroup, createExam, createQuestion, etc.');
