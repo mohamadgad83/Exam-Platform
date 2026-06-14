@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>امتحاناتي - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div>
+                <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>📝 امتحاناتي</h1>
+            <p>إدارة وإنشاء وتعديل الامتحانات الخاصة بك</p>
+        </div>
+
+        <div class="card">
+            <div class="filter-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث بالعنوان...">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">كل الحالات</option>
+                    <option value="draft">مسودة</option>
+                    <option value="published">منشور</option>
+                    <option value="closed">مغلق</option>
+                </select>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-create-exam.html'">➕ إنشاء امتحان</button>
+            </div>
+            <div id="examsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        if (!checkAuth(['teacher'])) return;
+        
+        const user = getUser();
+        document.getElementById('teacherName').innerHTML = user.name;
+        
+        async function loadExams() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            let exams = await fetchExams({ status }, 'teacher', user.id);
+            if (search) {
+                exams = exams.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('examsList');
+            if (exams.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد امتحانات</div>';
+                return;
+            }
+            
+            container.innerHTML = exams.map(e => `
+                <div class="exam-card">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <div class="exam-title">${e.title}</div>
+                            <p style="color: var(--gray); margin: 8px 0;">${e.description || 'لا يوجد وصف'}</p>
+                            <div class="exam-info">
+                                <span>📖 ${e.subjects?.name || '-'}</span>
+                                <span>🎓 ${e.classes?.name || '-'}</span>
+                                <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                                <span>⭐ درجة النجاح: ${e.passing_score}%</span>
+                                <span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'draft' ? 'badge-warning' : 'badge-danger'}">
+                                    ${e.status === 'published' ? 'منشور' : e.status === 'draft' ? 'مسودة' : 'مغلق'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            ${e.status === 'draft' ? `<button class="btn btn-success btn-sm" onclick="updateExamStatus(${e.id}, 'published')">✅ نشر</button>` : ''}
+                            ${e.status === 'published' ? `<button class="btn btn-warning btn-sm" onclick="updateExamStatus(${e.id}, 'closed')">🔒 إغلاق</button>` : ''}
+                            <button class="btn btn-info btn-sm" onclick="viewSubmissions(${e.id})">📋 التسليمات</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteExamConfirm(${e.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function updateExamStatus(id, status) {
+            const result = await updateExamStatus(id, status);
+            if (result) loadExams();
+        }
+        
+        function viewSubmissions(examId) {
+            window.location.href = `teacher-submissions.html?exam_id=${examId}`;
+        }
+        
+        function deleteExamConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذا الامتحان؟', async () => {
+                await deleteExam(id);
+                loadExams();
+            });
+        }
+        
+        document.getElementById('searchInput').addEventListener('input', () => loadExams());
+        document.getElementById('statusFilter').addEventListener('change', () => loadExams());
+        
+        loadExams();
+    </script>
+</body>
+</html>
