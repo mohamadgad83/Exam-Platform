@@ -119,7 +119,7 @@
             background: white;
             border-radius: 32px;
             padding: 32px;
-            width: 650px;
+            width: 550px;
             max-width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -134,19 +134,19 @@
         }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
-        h4 { margin: 15px 0 10px 0; color: #1e293b; }
         
         .tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 5px;
         }
         .tab-btn {
             background: transparent;
             border: none;
-            padding: 8px 20px;
+            padding: 10px 28px;
             border-radius: 30px;
             cursor: pointer;
             font-weight: 600;
@@ -158,18 +158,21 @@
             color: white;
         }
         
-        .member-table {
+        .requests-table {
             width: 100%;
             border-collapse: collapse;
         }
-        .member-table th, .member-table td {
+        .requests-table th, .requests-table td {
             padding: 12px;
             text-align: right;
             border-bottom: 1px solid #e2e8f0;
         }
-        .member-table th {
+        .requests-table th {
             background: #f8fafc;
             font-weight: 700;
+        }
+        .requests-table tr:hover {
+            background: #f1f5f9;
         }
         
         .toast-notification {
@@ -218,12 +221,32 @@
         .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         
+        .filter-select {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            min-width: 180px;
+            font-family: inherit;
+            background: white;
+        }
+        
+        .pending-count {
+            background: #ef4444;
+            color: white;
+            border-radius: 30px;
+            padding: 2px 10px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        
         @media (max-width: 768px) {
             .filter-bar { flex-direction: column; align-items: stretch; }
-            .search-input { width: 100%; }
+            .search-input, .filter-select { width: 100%; }
             .action-buttons { flex-direction: column; }
             .btn { width: 100%; justify-content: center; }
-            .member-table th, .member-table td { padding: 8px; font-size: 12px; }
+            .requests-table th, .requests-table td { padding: 8px; font-size: 12px; }
+            .tabs { justify-content: center; }
+            .tab-btn { padding: 6px 16px; font-size: 12px; }
         }
     </style>
 </head>
@@ -240,16 +263,58 @@
 
         <div class="card header">
             <h1>👥 إدارة المجموعات</h1>
-            <p>إنشاء وتعديل وحذف المجموعات وإدارة الأعضاء وطلبات الانضمام</p>
+            <p>إنشاء وتعديل المجموعات وإدارة الطلبات والأعضاء</p>
         </div>
 
-        <div class="card">
-            <div class="filter-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم المجموعة...">
-                <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
-                <button class="btn btn-outline" onclick="loadGroups()">🔄 تحديث</button>
+        <!-- التبويبات -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('groups')">📚 كل المجموعات</button>
+            <button class="tab-btn" onclick="showTab('requests')">📋 طلبات الانتظار <span id="pendingBadge" class="pending-count" style="display: none;">0</span></button>
+        </div>
+
+        <!-- تبويب كل المجموعات -->
+        <div id="groupsTab">
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم المجموعة...">
+                    <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
+                    <button class="btn btn-outline" onclick="loadGroups()">🔄 تحديث</button>
+                </div>
+                <div id="groupsList"></div>
             </div>
-            <div id="groupsList"></div>
+        </div>
+
+        <!-- تبويب طلبات الانتظار -->
+        <div id="requestsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" id="requestSearch" class="search-input" placeholder="🔍 بحث باسم الطالب أو رقم الهاتف...">
+                    <select id="filterTeacher" class="filter-select" onchange="loadPendingRequests(); loadGroupsFilter()">
+                        <option value="all">👨‍🏫 كل المعلمين</option>
+                    </select>
+                    <select id="filterGroup" class="filter-select" onchange="loadPendingRequests()">
+                        <option value="all">👥 كل المجموعات</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="loadPendingRequests()">🔄 تحديث</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table class="requests-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>👨‍🎓 الطالب</th>
+                                <th>📞 رقم الهاتف</th>
+                                <th>👥 المجموعة</th>
+                                <th>👨‍🏫 المعلم</th>
+                                <th>📅 تاريخ الطلب</th>
+                                <th>⚡ الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingRequestsTable"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -279,35 +344,36 @@
         </div>
     </div>
 
-    <!-- مودال عرض وإدارة أعضاء المجموعة -->
-    <div id="membersModal" class="modal">
-        <div class="modal-content">
-            <h3 id="membersModalTitle">👥 إدارة أعضاء المجموعة</h3>
-            <div class="tabs" id="membersTabs">
-                <button class="tab-btn active" onclick="showMembersTab('approved')">✅ الأعضاء المقبولون</button>
-                <button class="tab-btn" onclick="showMembersTab('pending')">⏳ طلبات الانتظار</button>
-            </div>
-            <div id="membersListContainer"></div>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="closeMembersModal()">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
     <script src="js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
-        (function() {
-            const user = getUser();
-            if (!user || user.role !== 'admin') {
-                window.location.href = 'index.html';
-                return;
-            }
-            document.getElementById('adminName').innerHTML = user.name;
-        })();
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = 'index.html';
+        }
+        document.getElementById('adminName').innerHTML = currentUser.name;
         
         let currentGroupId = null;
-        let currentGroupMembers = [];
+        let allRequests = [];
+        let teachersList = [];
+        let groupsList = [];
+        
+        // ==================== التبويبات ====================
+        function showTab(tabName) {
+            document.getElementById('groupsTab').style.display = tabName === 'groups' ? 'block' : 'none';
+            document.getElementById('requestsTab').style.display = tabName === 'requests' ? 'block' : 'none';
+            
+            const tabs = document.querySelectorAll('.tabs .tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            if (tabName === 'groups') tabs[0].classList.add('active');
+            else tabs[1].classList.add('active');
+            
+            if (tabName === 'requests') {
+                loadPendingRequests();
+            } else {
+                loadGroups();
+            }
+        }
         
         // ==================== تحميل المجموعات ====================
         async function loadGroups() {
@@ -328,17 +394,12 @@
                 
                 // جلب عدد الأعضاء لكل مجموعة
                 for (let i = 0; i < filtered.length; i++) {
-                    const { count, error: countError } = await sb
+                    const { count } = await sb
                         .from('group_members')
                         .select('*', { count: 'exact', head: true })
                         .eq('group_id', filtered[i].id)
                         .eq('status', 'approved');
-                    
-                    if (!countError) {
-                        filtered[i].member_count = count || 0;
-                    } else {
-                        filtered[i].member_count = 0;
-                    }
+                    filtered[i].member_count = count || 0;
                 }
                 
                 const container = document.getElementById('groupsList');
@@ -372,7 +433,6 @@
                                 </div>
                             </div>
                             <div class="action-buttons">
-                                <button class="btn btn-info btn-sm" onclick="manageGroupMembers(${g.id}, '${escapeHtml(g.name).replace(/'/g, "\\'")}')">👥 إدارة الأعضاء</button>
                                 <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
                             </div>
@@ -383,179 +443,184 @@
                 
             } catch (error) {
                 console.error('Error loading groups:', error);
-                document.getElementById('groupsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل المجموعات</div>';
+                document.getElementById('groupsList').innerHTML = '<div class="empty-state">حدث خطأ</div>';
             }
         }
         
-        // ==================== إدارة أعضاء المجموعة ====================
-        async function manageGroupMembers(groupId, groupName) {
-            currentGroupId = groupId;
+        // ==================== تحميل طلبات الانتظار ====================
+        async function loadPendingRequests() {
+            try {
+                const search = document.getElementById('requestSearch').value;
+                const teacherId = document.getElementById('filterTeacher').value;
+                const groupId = document.getElementById('filterGroup').value;
+                
+                // جلب جميع الطلبات مع معلومات الطالب والمجموعة والمعلم
+                let query = sb
+                    .from('group_members')
+                    .select('*, users:student_id(id, name, phone), groups:group_id(id, name, teacher_id, users:teacher_id(id, name))')
+                    .eq('status', 'pending');
+                
+                const { data: requests, error } = await query.order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allRequests = requests || [];
+                
+                // فلترة حسب المعلم
+                let filtered = allRequests;
+                if (teacherId !== 'all') {
+                    filtered = filtered.filter(r => r.groups?.teacher_id == teacherId);
+                }
+                
+                // فلترة حسب المجموعة
+                if (groupId !== 'all') {
+                    filtered = filtered.filter(r => r.group_id == groupId);
+                }
+                
+                // فلترة حسب البحث
+                if (search) {
+                    filtered = filtered.filter(r => 
+                        (r.users?.name && r.users.name.toLowerCase().includes(search.toLowerCase())) ||
+                        (r.users?.phone && r.users.phone.includes(search))
+                    );
+                }
+                
+                // تحديث عدد الطلبات في التبويب
+                const badge = document.getElementById('pendingBadge');
+                if (allRequests.length > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.innerHTML = allRequests.length;
+                } else {
+                    badge.style.display = 'none';
+                }
+                
+                renderPendingRequestsTable(filtered);
+                
+            } catch (error) {
+                console.error('Error loading pending requests:', error);
+                document.getElementById('pendingRequestsTable').innerHTML = '<tr><td colspan="7" class="empty-state">حدث خطأ</td></tr>';
+            }
+        }
+        
+        function renderPendingRequestsTable(requests) {
+            const tbody = document.getElementById('pendingRequestsTable');
             
-            // جلب جميع أعضاء المجموعة
-            const { data: members, error } = await sb
-                .from('group_members')
-                .select('*, users:student_id(id, name, phone)')
-                .eq('group_id', groupId);
-            
-            if (error) {
-                showToast('حدث خطأ في تحميل الأعضاء', 'error');
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">✨ لا توجد طلبات انتظار</td></tr>';
                 return;
             }
             
-            currentGroupMembers = members || [];
-            document.getElementById('membersModalTitle').innerHTML = `👥 إدارة أعضاء مجموعة "${groupName}"`;
-            showMembersTab('approved');
-            document.getElementById('membersModal').style.display = 'flex';
-        }
-        
-        function showMembersTab(tab) {
-            const tabs = document.querySelectorAll('#membersTabs .tab-btn');
-            tabs.forEach(t => t.classList.remove('active'));
-            
-            let filtered = [];
-            if (tab === 'approved') {
-                if (tabs[0]) tabs[0].classList.add('active');
-                filtered = currentGroupMembers.filter(m => m.status === 'approved');
-            } else {
-                if (tabs[1]) tabs[1].classList.add('active');
-                filtered = currentGroupMembers.filter(m => m.status === 'pending');
-            }
-            
-            const container = document.getElementById('membersListContainer');
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="empty-state">لا يوجد أعضاء</div>';
-                return;
-            }
-            
-            if (tab === 'approved') {
-                // عرض كأعضاء مقبولين
-                let html = '<table class="member-table"><thead><tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>تاريخ الانضمام</th><th>الإجراءات</th></tr></thead><tbody>';
-                for (let i = 0; i < filtered.length; i++) {
-                    const m = filtered[i];
-                    html += `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td><strong>${escapeHtml(m.users?.name || '-')}</strong></td>
-                            <td>${escapeHtml(m.users?.phone || '-')}</td>
-                            <td>${formatDate(m.joined_at)}</td>
-                            <td>
-                                <button class="btn btn-danger btn-sm" onclick="removeMember(${currentGroupId}, ${m.student_id})">🗑️ إزالة</button>
-                            </td>
-                        </tr>
-                    `;
-                }
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            } else {
-                // عرض كطلبات انتظار
-                let html = '<table class="member-table"><thead><tr><th>#</th><th>الاسم</th><th>رقم الهاتف</th><th>تاريخ الطلب</th><th>الإجراءات</th></tr></thead><tbody>';
-                for (let i = 0; i < filtered.length; i++) {
-                    const m = filtered[i];
-                    html += `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td><strong>${escapeHtml(m.users?.name || '-')}</strong></td>
-                            <td>${escapeHtml(m.users?.phone || '-')}</td>
-                            <td>${formatDate(m.created_at)}</td>
-                            <td>
-                                <div class="action-buttons" style="gap: 5px;">
-                                    <button class="btn btn-success btn-sm" onclick="approveMember(${currentGroupId}, ${m.student_id})">✅ قبول</button>
-                                    <button class="btn btn-danger btn-sm" onclick="rejectMember(${currentGroupId}, ${m.student_id})">❌ رفض</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }
-                html += '</tbody></table>';
-                container.innerHTML = html;
+            tbody.innerHTML = '';
+            for (let i = 0; i < requests.length; i++) {
+                const r = requests[i];
+                const studentName = r.users?.name || '-';
+                const studentPhone = r.users?.phone || '-';
+                const groupName = r.groups?.name || '-';
+                const teacherName = r.groups?.users?.name || '-';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i+1}</td>
+                    <td><strong>${escapeHtml(studentName)}</strong></td>
+                    <td>${escapeHtml(studentPhone)}</td>
+                    <td>${escapeHtml(groupName)}</td>
+                    <td>${escapeHtml(teacherName)}</td>
+                    <td>${formatDate(r.created_at)}</td>
+                    <td>
+                        <div class="action-buttons" style="gap: 5px;">
+                            <button class="btn btn-success btn-sm" onclick="approveRequest('${r.id}', ${r.group_id}, ${r.student_id})">✅ قبول</button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectRequest('${r.id}', ${r.group_id}, ${r.student_id})">❌ رفض</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
             }
         }
         
-        // ==================== قبول عضو ====================
-        async function approveMember(groupId, studentId) {
+        // ==================== قبول طلب ====================
+        async function approveRequest(requestId, groupId, studentId) {
             try {
                 const { error } = await sb
                     .from('group_members')
                     .update({ status: 'approved', joined_at: new Date() })
-                    .eq('group_id', groupId)
-                    .eq('student_id', studentId);
+                    .eq('id', requestId);
                 
                 if (error) throw error;
                 
-                showToast('تم قبول الطالب', 'success');
-                
-                // تحديث القائمة
-                const { data: members } = await sb
-                    .from('group_members')
-                    .select('*, users:student_id(id, name, phone)')
-                    .eq('group_id', groupId);
-                
-                currentGroupMembers = members || [];
-                showMembersTab('pending');
+                showToast('✅ تم قبول الطالب', 'success');
+                loadPendingRequests();
                 
             } catch (error) {
-                console.error('Error approving member:', error);
+                console.error('Error approving request:', error);
                 showToast('حدث خطأ', 'error');
             }
         }
         
-        // ==================== رفض عضو ====================
-        async function rejectMember(groupId, studentId) {
+        // ==================== رفض طلب ====================
+        async function rejectRequest(requestId, groupId, studentId) {
+            const reason = prompt('سبب الرفض (اختياري):');
+            
             try {
                 const { error } = await sb
                     .from('group_members')
                     .update({ status: 'rejected' })
-                    .eq('group_id', groupId)
-                    .eq('student_id', studentId);
+                    .eq('id', requestId);
                 
                 if (error) throw error;
                 
-                showToast('تم رفض الطلب', 'success');
-                
-                // تحديث القائمة
-                const { data: members } = await sb
-                    .from('group_members')
-                    .select('*, users:student_id(id, name, phone)')
-                    .eq('group_id', groupId);
-                
-                currentGroupMembers = members || [];
-                showMembersTab('pending');
+                showToast('❌ تم رفض الطلب', 'success');
+                loadPendingRequests();
                 
             } catch (error) {
-                console.error('Error rejecting member:', error);
+                console.error('Error rejecting request:', error);
                 showToast('حدث خطأ', 'error');
             }
         }
         
-        // ==================== إزالة عضو ====================
-        async function removeMember(groupId, studentId) {
-            showConfirm('هل أنت متأكد من إزالة هذا الطالب من المجموعة؟', async () => {
-                try {
-                    const { error } = await sb
-                        .from('group_members')
-                        .delete()
-                        .eq('group_id', groupId)
-                        .eq('student_id', studentId);
-                    
-                    if (error) throw error;
-                    
-                    showToast('تم إزالة الطالب', 'success');
-                    
-                    // تحديث القائمة
-                    const { data: members } = await sb
-                        .from('group_members')
-                        .select('*, users:student_id(id, name, phone)')
-                        .eq('group_id', groupId);
-                    
-                    currentGroupMembers = members || [];
-                    showMembersTab('approved');
-                    
-                } catch (error) {
-                    console.error('Error removing member:', error);
-                    showToast('حدث خطأ', 'error');
+        // ==================== تحميل خيارات الفلاتر ====================
+        async function loadFiltersOptions() {
+            try {
+                // جلب المعلمين
+                const { data: teachers } = await sb
+                    .from('users')
+                    .select('id, name, username')
+                    .eq('role', 'teacher');
+                teachersList = teachers || [];
+                
+                const teacherFilter = document.getElementById('filterTeacher');
+                teacherFilter.innerHTML = '<option value="all">👨‍🏫 كل المعلمين</option>';
+                for (let i = 0; i < teachersList.length; i++) {
+                    teacherFilter.innerHTML += `<option value="${teachersList[i].id}">${escapeHtml(teachersList[i].name)}</option>`;
                 }
-            });
+                
+                await loadGroupsFilter();
+                
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+        
+        async function loadGroupsFilter() {
+            try {
+                const teacherId = document.getElementById('filterTeacher').value;
+                
+                let query = sb.from('groups').select('id, name');
+                if (teacherId !== 'all') {
+                    query = query.eq('teacher_id', teacherId);
+                }
+                
+                const { data: groups } = await query.order('name');
+                groupsList = groups || [];
+                
+                const groupFilter = document.getElementById('filterGroup');
+                groupFilter.innerHTML = '<option value="all">👥 كل المجموعات</option>';
+                for (let i = 0; i < groupsList.length; i++) {
+                    groupFilter.innerHTML += `<option value="${groupsList[i].id}">${escapeHtml(groupsList[i].name)}</option>`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading groups filter:', error);
+            }
         }
         
         // ==================== تحميل الخيارات للمودال ====================
@@ -587,7 +652,7 @@
                 teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
                 if (teachers.data) {
                     for (let i = 0; i < teachers.data.length; i++) {
-                        teacherSelect.innerHTML += `<option value="${teachers.data[i].id}">${escapeHtml(teachers.data[i].name)} (${teachers.data[i].username || teachers.data[i].id})</option>`;
+                        teacherSelect.innerHTML += `<option value="${teachers.data[i].id}">${escapeHtml(teachers.data[i].name)}</option>`;
                     }
                 }
                 
@@ -691,7 +756,7 @@
         
         // ==================== حذف مجموعة ====================
         function deleteGroupConfirm(id) {
-            showConfirm('⚠️ هل أنت متأكد من حذف هذه المجموعة؟ سيتم حذف جميع الأعضاء المرتبطين بها.', async () => {
+            showConfirm('⚠️ هل أنت متأكد من حذف هذه المجموعة؟', async () => {
                 const { error } = await sb
                     .from('groups')
                     .delete()
@@ -707,13 +772,9 @@
             });
         }
         
-        // ==================== إغلاق المودالات ====================
+        // ==================== إغلاق المودال ====================
         function closeGroupModal() {
             document.getElementById('groupModal').style.display = 'none';
-        }
-        
-        function closeMembersModal() {
-            document.getElementById('membersModal').style.display = 'none';
         }
         
         // ==================== دوال مساعدة ====================
@@ -727,12 +788,14 @@
             });
         }
         
-        // ==================== أحداث البحث ====================
-        document.getElementById('searchInput').addEventListener('input', function() {
-            loadGroups();
-        });
+        // ==================== أحداث ====================
+        document.getElementById('searchInput').addEventListener('input', () => loadGroups());
+        document.getElementById('requestSearch').addEventListener('input', () => loadPendingRequests());
+        document.getElementById('filterTeacher').addEventListener('change', () => loadGroupsFilter());
+        document.getElementById('filterGroup').addEventListener('change', () => loadPendingRequests());
         
         // ==================== تحميل أولي ====================
+        loadFiltersOptions();
         loadGroups();
     </script>
 </body>
