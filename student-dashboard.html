@@ -7,30 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* شريط العودة للأدمن */
-        .impersonate-banner {
-            background: linear-gradient(135deg, #fef3c7, #fffbeb);
-            border: 1px solid #f59e0b;
-            border-radius: 20px;
-            padding: 15px 25px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .impersonate-banner-left { display: flex; align-items: center; gap: 12px; }
-        .impersonate-banner-left span:first-child { font-size: 28px; }
-        .impersonate-banner-left strong { color: #d97706; font-size: 16px; }
-        .impersonate-banner-left .badge { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 30px; font-size: 12px; }
-        
-        /* الشريط العلوي الرئيسي */
+        /* الشريط العلوي */
         .main-header {
             background: white;
             border-radius: 24px;
@@ -49,28 +28,6 @@
         .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .user-area { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .user-name { font-weight: 600; color: #1e293b; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; }
-        
-        /* البطاقات */
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .card-header h2 { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .card-header h3 { font-size: 18px; font-weight: 600; color: #1e293b; }
         
         /* إحصائيات */
         .stats-grid {
@@ -111,31 +68,6 @@
         .quick-stat-number { font-size: 28px; font-weight: 800; color: #6366f1; }
         .quick-stat-label { font-size: 13px; color: #64748b; margin-top: 5px; }
         
-        /* الأزرار */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-outline:hover { background: #6366f1; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
-        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
-        
         /* بطاقات الامتحانات */
         .exam-card {
             background: #f8fafc;
@@ -159,7 +91,6 @@
             color: #64748b;
             font-size: 13px;
         }
-        .exam-info span { display: flex; align-items: center; gap: 6px; }
         
         .badge {
             display: inline-flex;
@@ -172,59 +103,52 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
         
-        .empty-state { text-align: center; padding: 60px; color: #64748b; }
-        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
+        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-outline:hover { background: #6366f1; color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
         
-        .nav-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
-        
-        /* الفلاتر */
-        .filter-bar {
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .impersonate-banner {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 1px solid #f59e0b;
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-            margin-bottom: 20px;
-        }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            flex: 1;
-            min-width: 200px;
-            font-family: inherit;
-        }
-        .filter-select {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            min-width: 150px;
-            font-family: inherit;
-            background: white;
-        }
-        
-        /* أقسام إضافية */
-        .notification-bell {
-            position: relative;
-            cursor: pointer;
-        }
-        .notification-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
         @media (max-width: 768px) {
@@ -234,9 +158,6 @@
             .stat-number { font-size: 28px; }
             .main-header { flex-direction: column; text-align: center; }
             .action-buttons { justify-content: center; }
-            .card-header { flex-direction: column; gap: 10px; align-items: flex-start; }
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .search-input, .filter-select { width: 100%; }
         }
     </style>
 </head>
@@ -244,10 +165,10 @@
     <div class="container">
         <!-- شريط العودة للأدمن -->
         <div id="impersonateBanner" class="impersonate-banner" style="display: none;">
-            <div class="impersonate-banner-left">
-                <span>👑</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 28px;">👑</span>
                 <span>أنت تتصفح كـ <strong><span id="impersonateUserName"></span></strong></span>
-                <span class="badge">وضع المشاهدة</span>
+                <span class="badge badge-warning">وضع المشاهدة</span>
             </div>
             <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
         </div>
@@ -260,7 +181,7 @@
             </div>
             <div class="user-area">
                 <span class="user-name">👋 مرحباً <span id="studentName"></span></span>
-                <div class="nav-buttons">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات</button>
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
@@ -269,7 +190,7 @@
             </div>
         </div>
 
-        <!-- ==================== بطاقة الترحيب ==================== -->
+        <!-- بطاقة الترحيب -->
         <div class="card">
             <div class="card-header">
                 <h2>🎓 لوحة تحكم الطالب</h2>
@@ -277,13 +198,30 @@
             </div>
         </div>
 
-        <!-- ==================== الإحصائيات الرئيسية ==================== -->
-        <div class="stats-grid" id="statsArea"></div>
+        <!-- الإحصائيات الرئيسية -->
+        <div class="stats-grid" id="statsArea">
+            <div class="stat-card" onclick="window.location.href='student-results.html'">
+                <div class="stat-number" id="completedExams">0</div>
+                <div class="stat-label">📝 الامتحانات المنجزة</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='student-results.html'">
+                <div class="stat-number" id="avgScore">0%</div>
+                <div class="stat-label">⭐ متوسط الدرجات</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='student-groups.html'">
+                <div class="stat-number" id="groupsCount">0</div>
+                <div class="stat-label">👥 المجموعات</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='student-exams.html'">
+                <div class="stat-number" id="pendingRequests">0</div>
+                <div class="stat-label">⏳ طلبات قيد المراجعة</div>
+            </div>
+        </div>
 
-        <!-- ==================== إحصائيات سريعة ==================== -->
+        <!-- إحصائيات سريعة -->
         <div class="quick-stats" id="quickStats"></div>
 
-        <!-- ==================== الإجراءات السريعة ==================== -->
+        <!-- الإجراءات السريعة -->
         <div class="card">
             <div class="card-header">
                 <h3>⚡ الإجراءات السريعة</h3>
@@ -295,7 +233,7 @@
             </div>
         </div>
 
-        <!-- ==================== آخر الامتحانات المتاحة ==================== -->
+        <!-- آخر الامتحانات المتاحة -->
         <div class="card">
             <div class="card-header">
                 <h3>📝 آخر الامتحانات المتاحة</h3>
@@ -304,7 +242,7 @@
             <div id="availableExamsList"></div>
         </div>
 
-        <!-- ==================== أحدث النتائج ==================== -->
+        <!-- أحدث النتائج -->
         <div class="card">
             <div class="card-header">
                 <h3>📊 أحدث النتائج</h3>
@@ -332,14 +270,10 @@
             console.log('خطأ في قراءة originalUser', e);
         }
         
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
         
         const allowedRoles = ['student', 'admin'];
-        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) {
-            window.location.href = 'index.html';
-        }
+        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) window.location.href = 'index.html';
         
         document.getElementById('studentName').innerHTML = currentUser.name || currentUser.username || 'طالب';
         
@@ -367,7 +301,7 @@
         // ==================== تحميل الإحصائيات الرئيسية ====================
         async function loadStats() {
             try {
-                // إحصائيات الامتحانات
+                // جلب محاولات الطالب
                 const { data: attempts } = await sb
                     .from('exam_attempts')
                     .select('id, score, total_points, status')
@@ -378,48 +312,34 @@
                 
                 let totalPercentage = 0;
                 let passedCount = 0;
-                attempts?.forEach(a => {
+                for (const a of attempts || []) {
                     if (a.total_points && a.total_points > 0) {
                         const percentage = (a.score / a.total_points) * 100;
                         totalPercentage += percentage;
                         if (percentage >= 50) passedCount++;
                     }
-                });
+                }
                 const avgScore = completedAttempts > 0 ? Math.round(totalPercentage / completedAttempts) : 0;
                 const successRate = completedAttempts > 0 ? Math.round((passedCount / completedAttempts) * 100) : 0;
                 
-                // إحصائيات المجموعات
+                // جلب مجموعات الطالب
                 const { count: groupsCount } = await sb
                     .from('group_members')
                     .select('*', { count: 'exact', head: true })
                     .eq('student_id', currentUser.id)
                     .eq('status', 'approved');
                 
-                // طلبات الانتظار
+                // جلب طلبات الانتظار
                 const { count: pendingRequests } = await sb
                     .from('exam_requests')
                     .select('*', { count: 'exact', head: true })
                     .eq('student_id', currentUser.id)
                     .eq('status', 'pending_admin');
                 
-                document.getElementById('statsArea').innerHTML = `
-                    <div class="stat-card" onclick="window.location.href='student-results.html'">
-                        <div class="stat-number">${completedAttempts}</div>
-                        <div class="stat-label">📝 الامتحانات المنجزة</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='student-results.html'">
-                        <div class="stat-number">${avgScore}%</div>
-                        <div class="stat-label">⭐ متوسط الدرجات</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='student-groups.html'">
-                        <div class="stat-number">${groupsCount || 0}</div>
-                        <div class="stat-label">👥 المجموعات</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='student-exams.html'">
-                        <div class="stat-number">${pendingRequests || 0}</div>
-                        <div class="stat-label">⏳ طلبات قيد المراجعة</div>
-                    </div>
-                `;
+                document.getElementById('completedExams').innerHTML = completedAttempts;
+                document.getElementById('avgScore').innerHTML = avgScore + '%';
+                document.getElementById('groupsCount').innerHTML = groupsCount || 0;
+                document.getElementById('pendingRequests').innerHTML = pendingRequests || 0;
                 
                 document.getElementById('quickStats').innerHTML = `
                     <div class="quick-stat-card" onclick="window.location.href='student-results.html'">
@@ -503,18 +423,23 @@
                     return;
                 }
                 
-                container.innerHTML = availableExams.map(e => `
-                    <div class="exam-card">
+                container.innerHTML = '';
+                for (const e of availableExams) {
+                    const examType = e.exam_type === 'paid' ? `💰 ${e.exam_price} جنيه` : '🆓 مجاني';
+                    const card = document.createElement('div');
+                    card.className = 'exam-card';
+                    card.innerHTML = `
                         <div class="exam-title">${escapeHtml(e.title)}</div>
                         <div class="exam-info">
                             <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
                             <span>👨‍🏫 ${e.users?.name || 'بدون معلم'}</span>
                             <span>⏱️ ${e.duration_minutes} دقيقة</span>
-                            <span>${e.exam_type === 'paid' ? `💰 ${e.exam_price} جنيه` : '🆓 مجاني'}</span>
+                            <span>${examType}</span>
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="window.location.href='student-exams.html'">➕ التقديم</button>
-                    </div>
-                `).join('');
+                    `;
+                    container.appendChild(card);
+                }
                 
             } catch (error) {
                 console.error('Error loading available exams:', error);
@@ -541,21 +466,25 @@
                     return;
                 }
                 
-                container.innerHTML = attempts.map(a => {
+                container.innerHTML = '';
+                for (const a of attempts) {
                     const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
                     const passed = percentage >= (a.exams?.passing_score || 50);
                     
-                    return `
-                        <div class="exam-card" onclick="window.location.href='student-result.html?id=${a.id}'" style="cursor: pointer;">
-                            <div class="exam-title">${escapeHtml(a.exams?.title || 'امتحان')}</div>
-                            <div class="exam-info">
-                                <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
-                                <span class="badge ${passed ? 'badge-success' : 'badge-danger'}">${passed ? 'ناجح' : 'راسب'}</span>
-                                <span>📅 ${formatDateTime(a.submitted_at)}</span>
-                            </div>
+                    const card = document.createElement('div');
+                    card.className = 'exam-card';
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => window.location.href = `student-result.html?id=${a.id}`;
+                    card.innerHTML = `
+                        <div class="exam-title">${escapeHtml(a.exams?.title || 'امتحان')}</div>
+                        <div class="exam-info">
+                            <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
+                            <span class="badge ${passed ? 'badge-success' : 'badge-danger'}">${passed ? 'ناجح' : 'راسب'}</span>
+                            <span>📅 ${formatDateTime(a.submitted_at)}</span>
                         </div>
                     `;
-                }).join('');
+                    container.appendChild(card);
+                }
                 
             } catch (error) {
                 console.error('Error loading recent results:', error);
@@ -572,7 +501,7 @@
             });
         }
         
-        // ==================== تحميل أولي ====================
+        // تحميل أولي
         loadStats();
         loadAvailableExams();
         loadRecentResults();
