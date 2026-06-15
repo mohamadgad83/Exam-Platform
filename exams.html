@@ -144,6 +144,16 @@
             padding-bottom: 15px;
             border-bottom: 2px solid #e2e8f0;
         }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+        }
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         
         .pagination {
             display: flex;
@@ -186,6 +196,7 @@
         @media (max-width: 768px) {
             .filter-row { flex-direction: column; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .row-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -585,7 +596,19 @@
             
             const tabs = document.querySelectorAll('.tabs .tab-btn');
             tabs.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            
+            // العثور على الزر النشط
+            for (let i = 0; i < tabs.length; i++) {
+                const btn = tabs[i];
+                if ((tabName === 'exams' && btn.innerText.includes('الامتحانات')) ||
+                    (tabName === 'requests' && btn.innerText.includes('طلبات')) ||
+                    (tabName === 'payments' && btn.innerText.includes('مدفوعات')) ||
+                    (tabName === 'coupons' && btn.innerText.includes('كوبونات')) ||
+                    (tabName === 'settings' && btn.innerText.includes('إعدادات'))) {
+                    btn.classList.add('active');
+                    break;
+                }
+            }
             
             if (tabName === 'exams') loadExams();
             else if (tabName === 'requests') loadRequests();
@@ -627,7 +650,7 @@
                 const startIndex = (examsPage - 1) * itemsPerPage;
                 const paginatedExams = allExams.slice(startIndex, startIndex + itemsPerPage);
                 
-                renderExamsList(paginatedExams);
+                await renderExamsList(paginatedExams);
                 renderExamsPagination(totalPages);
                 
             } catch (error) {
@@ -638,7 +661,7 @@
             }
         }
         
-        function renderExamsList(exams) {
+        async function renderExamsList(exams) {
             const container = document.getElementById('examsList');
             
             if (exams.length === 0) {
@@ -649,7 +672,11 @@
             container.innerHTML = '';
             
             for (const exam of exams) {
-                const stats = await fetchExamStats(exam.id);
+                let stats = { total_requests: 0, approved_count: 0, pending_count: 0 };
+                try {
+                    stats = await fetchExamStats(exam.id);
+                } catch(e) { console.error('Stats error:', e); }
+                
                 const statusClass = exam.status === 'published' ? 'badge-success' : (exam.status === 'draft' ? 'badge-warning' : 'badge-danger');
                 const statusText = exam.status === 'published' ? 'منشور' : (exam.status === 'draft' ? 'مسودة' : 'مغلق');
                 const examType = exam.exam_type === 'paid' ? `💰 ${exam.exam_price} جنيه` : '🆓 مجاني';
@@ -770,15 +797,20 @@
             
             let result;
             if (currentExamId) {
-                result = await updateExam(currentExamId, examData);
+                const { error } = await sb.from('exams').update(examData).eq('id', currentExamId);
+                result = !error;
             } else {
-                result = await createExam(examData);
+                const { error } = await sb.from('exams').insert(examData);
+                result = !error;
             }
             
             if (result) {
                 closeExamModal();
                 examsPage = 1;
                 loadExams();
+                showToast('تم حفظ الامتحان', 'success');
+            } else {
+                showToast('حدث خطأ', 'error');
             }
         }
         
@@ -919,6 +951,7 @@
             closeRequestModal();
             loadRequests();
             loadExams();
+            showToast('تم قبول الطلب', 'success');
         }
         
         async function rejectCurrentRequest() {
@@ -928,6 +961,7 @@
             closeRequestModal();
             loadRequests();
             loadExams();
+            showToast('تم رفض الطلب', 'success');
         }
         
         async function approveAllRequests() {
@@ -937,6 +971,7 @@
                 await approveAllExamRequests(parseInt(examId));
                 loadRequests();
                 loadExams();
+                showToast('تم قبول جميع الطلبات', 'success');
             }
         }
         
@@ -1062,6 +1097,7 @@
             await createCoupon(couponData);
             closeCouponModal();
             loadCoupons();
+            showToast('تم إنشاء الكوبون', 'success');
         }
         
         // ==================== طرق الدفع ====================
@@ -1113,6 +1149,7 @@
             await addPaymentMethod(methodData);
             closePaymentMethodModal();
             loadPaymentMethods();
+            showToast('تم إضافة طريقة الدفع', 'success');
         }
         
         // ==================== دوال مساعدة ====================
@@ -1136,6 +1173,7 @@
                 await deleteExam(id);
                 examsPage = 1;
                 loadExams();
+                showToast('تم حذف الامتحان', 'success');
             }
         }
         
@@ -1143,6 +1181,7 @@
             if (confirm('هل أنت متأكد من حذف طريقة الدفع هذه؟')) {
                 await deletePaymentMethod(id);
                 loadPaymentMethods();
+                showToast('تم حذف طريقة الدفع', 'success');
             }
         }
         
@@ -1155,6 +1194,26 @@
         function exportStudentsData() { showToast('جاري تصدير بيانات الطلاب...', 'info'); }
         function exportPaymentsData() { showToast('جاري تصدير المدفوعات...', 'info'); }
         
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // تصدير الدوال للنطاق العام
         window.showTab = showTab;
         window.goToExamsPage = goToExamsPage;
         window.openCreateExamModal = openCreateExamModal;
@@ -1175,6 +1234,9 @@
         window.closeRequestModal = closeRequestModal;
         window.closeCouponModal = closeCouponModal;
         window.closePaymentMethodModal = closePaymentMethodModal;
+        window.loadExams = loadExams;
+        window.loadRequests = loadRequests;
+        window.loadPayments = loadPayments;
         
         // أحداث البحث
         document.getElementById('examSearch').addEventListener('input', () => {
@@ -1189,7 +1251,16 @@
         document.getElementById('paymentSearch').addEventListener('input', () => loadPayments());
         document.getElementById('couponSearch').addEventListener('input', () => loadCoupons());
         
+        // ==================== تهيئة الإشعارات ====================
+        async function initNotifications() {
+            if (window.notificationSystem) {
+                await window.notificationSystem.init(currentUser);
+            }
+        }
+        
+        // بدء التشغيل
         setupUI();
+        initNotifications();
     </script>
 </body>
 </html>
