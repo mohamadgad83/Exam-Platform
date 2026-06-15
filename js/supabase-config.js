@@ -1563,7 +1563,87 @@ async function fetchExamStats(examId) {
         };
     }
 }
+// ==================== دوال إضافية ناقصة ====================
 
+// حفظ إجابة في محاولة الامتحان
+async function saveAnswerToAttempt(attemptId, questionId, answer) {
+    try {
+        // جلب المحاولة الحالية
+        const { data: attempt, error: fetchError } = await sb
+            .from('exam_attempts')
+            .select('answers')
+            .eq('id', attemptId)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        const answers = attempt?.answers || {};
+        answers[questionId] = answer;
+        
+        const { error: updateError } = await sb
+            .from('exam_attempts')
+            .update({ answers: answers })
+            .eq('id', attemptId);
+        
+        if (updateError) throw updateError;
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving answer:', error);
+        return false;
+    }
+}
+
+// جلب إحصائيات الامتحان
+async function fetchExamStats(examId) {
+    try {
+        const [requests, attempts] = await Promise.all([
+            sb.from('exam_requests').select('*', { count: 'exact', head: true }).eq('exam_id', examId),
+            sb.from('exam_attempts').select('*', { count: 'exact', head: true }).eq('exam_id', examId)
+        ]);
+        
+        const pendingRequests = await sb
+            .from('exam_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('exam_id', examId)
+            .eq('status', 'pending_admin');
+        
+        return {
+            total_requests: requests.count || 0,
+            pending_count: pendingRequests.count || 0,
+            total_attempts: attempts.count || 0,
+            approved_count: (requests.count || 0) - (pendingRequests.count || 0)
+        };
+    } catch (error) {
+        console.error('Error fetching exam stats:', error);
+        return { total_requests: 0, pending_count: 0, total_attempts: 0, approved_count: 0 };
+    }
+}
+
+// جلب آخر n من الامتحانات لمعلم معين
+async function fetchRecentExams(teacherId, limit = 5) {
+    try {
+        const { data, error } = await sb
+            .from('exams')
+            .select('*, subjects:subject_id(name), classes:class_id(name)')
+            .eq('teacher_id', teacherId)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching recent exams:', error);
+        return [];
+    }
+}
+
+// تصدير الدوال الجديدة للنطاق العام
+window.saveAnswerToAttempt = saveAnswerToAttempt;
+window.fetchExamStats = fetchExamStats;
+window.fetchRecentExams = fetchRecentExams;
+
+console.log('✅ supabase-config.js updated with missing functions');
 console.log('✅ جميع دوال الامتحانات المتقدمة تم تحميلها بنجاح');
 console.log('✅ supabase-config.js updated with all missing functions');
 console.log('✅ supabase-config.js loaded successfully');
