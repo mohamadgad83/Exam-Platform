@@ -7,6 +7,130 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .result-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .result-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        
+        .stats-summary {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            min-width: 140px;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #6366f1;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .chart-container {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; }
+            .stats-summary { flex-direction: column; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -15,7 +139,8 @@
             <div>
                 <span style="margin-left: 15px;">👋 مرحباً <span id="studentName"></span></span>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
-                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
         </div>
 
@@ -24,68 +149,279 @@
             <p>قائمة بجميع الامتحانات التي أديتها ونتائجها</p>
         </div>
 
-        <div class="card">
-            <div class="filter-bar">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
+        <!-- إحصائيات سريعة -->
+        <div class="stats-summary" id="statsSummary">
+            <div class="stat-card">
+                <div class="stat-number" id="totalExams">0</div>
+                <div class="stat-label">📝 إجمالي الامتحانات</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgScore">0%</div>
+                <div class="stat-label">⭐ متوسط الدرجات</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="passedExams">0</div>
+                <div class="stat-label">✅ امتحانات ناجحة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="bestScore">0%</div>
+                <div class="stat-label">🏆 أعلى درجة</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>🔍 بحث</label>
+                    <input type="text" id="searchInput" placeholder="بحث باسم الامتحان...">
+                </div>
+                <div class="filter-group">
+                    <label>📋 الحالة</label>
+                    <select id="statusFilter">
+                        <option value="all">كل النتائج</option>
+                        <option value="passed">✅ ناجح</option>
+                        <option value="failed">❌ راسب</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="btn btn-outline" onclick="loadResults()">🔄 تحديث</button>
+                </div>
+            </div>
+
+            <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
             <div id="resultsList"></div>
+            <div id="pagination" class="pagination"></div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
-        if (!checkAuth(['student'])) return;
+        // ==================== التحقق من صلاحية الدخول ====================
+        if (!checkAuth(['student', 'admin'])) return;
         
         const user = getUser();
-        document.getElementById('studentName').innerHTML = user.name;
+        let allAttempts = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
         
-        async function loadResults() {
-            const search = document.getElementById('searchInput').value;
-            let attempts = await fetchExamAttempts({}, 'student', user.id);
+        document.getElementById('studentName').innerHTML = user.name || user.username || 'طالب';
+        
+        // ==================== تحميل الإحصائيات ====================
+        async function loadStats(attempts) {
+            const completed = attempts.filter(a => a.status === 'submitted' || a.status === 'graded');
+            const totalExams = completed.length;
             
-            // فلترة المحاولات المكتملة فقط
-            let completed = attempts.filter(a => a.status === 'submitted' || a.status === 'graded');
+            let totalPercentage = 0;
+            let passedCount = 0;
+            let bestPercentage = 0;
             
-            if (search) {
-                completed = completed.filter(a => a.exams?.title.toLowerCase().includes(search.toLowerCase()));
+            for (const a of completed) {
+                if (a.total_points && a.total_points > 0) {
+                    const percentage = (a.score / a.total_points) * 100;
+                    totalPercentage += percentage;
+                    if (percentage >= (a.exam?.passing_score || 50)) passedCount++;
+                    if (percentage > bestPercentage) bestPercentage = percentage;
+                }
             }
             
+            const avgScore = totalExams > 0 ? Math.round(totalPercentage / totalExams) : 0;
+            
+            document.getElementById('totalExams').innerHTML = totalExams;
+            document.getElementById('avgScore').innerHTML = avgScore + '%';
+            document.getElementById('passedExams').innerHTML = passedCount;
+            document.getElementById('bestScore').innerHTML = Math.round(bestPercentage) + '%';
+        }
+        
+        // ==================== تحميل النتائج مع Pagination ====================
+        async function loadResults() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
+            try {
+                const search = document.getElementById('searchInput').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                
+                // جلب جميع محاولات الطالب
+                let query = sb
+                    .from('exam_attempts')
+                    .select('*, exam:exam_id(id, title, passing_score)')
+                    .eq('student_id', user.id)
+                    .in('status', ['submitted', 'graded'])
+                    .order('submitted_at', { ascending: false });
+                
+                const { data: attempts, error } = await query;
+                
+                if (error) throw error;
+                
+                let filtered = attempts || [];
+                
+                // فلترة حسب البحث
+                if (search) {
+                    filtered = filtered.filter(a => 
+                        a.exam?.title?.toLowerCase().includes(search.toLowerCase())
+                    );
+                }
+                
+                // فلترة حسب الحالة (ناجح/راسب)
+                if (statusFilter !== 'all') {
+                    filtered = filtered.filter(a => {
+                        if (a.total_points && a.total_points > 0) {
+                            const percentage = (a.score / a.total_points) * 100;
+                            const passed = percentage >= (a.exam?.passing_score || 50);
+                            return statusFilter === 'passed' ? passed : !passed;
+                        }
+                        return false;
+                    });
+                }
+                
+                allAttempts = filtered;
+                
+                // تحديث الإحصائيات
+                await loadStats(allAttempts);
+                
+                // Pagination
+                const totalPages = Math.ceil(allAttempts.length / itemsPerPage);
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedAttempts = allAttempts.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderResultsList(paginatedAttempts);
+                renderPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('resultsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل النتائج</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        function renderResultsList(attempts) {
             const container = document.getElementById('resultsList');
-            if (completed.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 لا توجد نتائج بعد</div>';
+            
+            if (attempts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد نتائج بعد</p><button class="btn btn-primary" onclick="window.location.href=\'student-exams.html\'" style="margin-top: 15px;">📝 استعرض الامتحانات المتاحة</button></div>';
                 return;
             }
             
-            container.innerHTML = completed.map(a => {
+            container.innerHTML = '';
+            
+            for (const a of attempts) {
                 const percentage = a.total_points ? Math.round((a.score / a.total_points) * 100) : 0;
-                const passed = percentage >= (a.exams?.passing_score || 50);
+                const passingScore = a.exam?.passing_score || 50;
+                const passed = percentage >= passingScore;
                 
-                return `
-                    <div class="exam-card">
-                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-                            <div style="flex: 1;">
-                                <div class="exam-title">${a.exams?.title || '-'}</div>
-                                <div class="exam-info">
-                                    <span>📅 ${formatDateTime(a.submitted_at)}</span>
-                                    <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
-                                    <span class="badge ${passed ? 'badge-success' : 'badge-danger'}">${passed ? 'ناجح' : 'راسب'}</span>
-                                </div>
+                // تحديد لون وحالة النتيجة
+                let statusClass = passed ? 'badge-success' : 'badge-danger';
+                let statusText = passed ? '✅ ناجح' : '❌ راسب';
+                
+                // نص إضافي حسب المستوى
+                let levelText = '';
+                if (passed) {
+                    if (percentage >= 90) levelText = 'ممتاز';
+                    else if (percentage >= 75) levelText = 'جيد جداً';
+                    else if (percentage >= 60) levelText = 'جيد';
+                    else levelText = 'مقبول';
+                } else {
+                    levelText = 'راسب';
+                }
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.onclick = () => viewResult(a.id);
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <h3>${escapeHtml(a.exam?.title || 'امتحان')}</h3>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin: 12px 0; font-size: 13px; color: #64748b;">
+                                <span>📅 ${formatDateTime(a.submitted_at)}</span>
+                                <span>⭐ ${a.score}/${a.total_points} (${percentage}%)</span>
+                                <span>🎯 درجة النجاح: ${passingScore}%</span>
                             </div>
-                            <div>
-                                <button class="btn btn-primary btn-sm" onclick="viewResult(${a.id})">📊 عرض التفاصيل</button>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <span class="badge ${statusClass}">${statusText}</span>
+                                <span class="badge badge-info">📊 المستوى: ${levelText}</span>
                             </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); viewResult(${a.id})">📊 عرض التفاصيل</button>
                         </div>
                     </div>
                 `;
-            }).join('');
+                container.appendChild(card);
+            }
         }
         
-        window.viewResult = (attemptId) => {
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            loadResults();
+        }
+        
+        function viewResult(attemptId) {
             window.location.href = `student-result.html?id=${attemptId}`;
-        };
+        }
         
-        document.getElementById('searchInput').addEventListener('input', () => loadResults());
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
         
+        // ==================== أحداث الفلاتر ====================
+        document.getElementById('searchInput').addEventListener('input', () => {
+            currentPage = 1;
+            loadResults();
+        });
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            currentPage = 1;
+            loadResults();
+        });
+        
+        window.goToPage = goToPage;
+        window.viewResult = viewResult;
+        
+        // تحميل أولي
         loadResults();
     </script>
 </body>
