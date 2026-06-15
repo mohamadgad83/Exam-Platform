@@ -193,6 +193,36 @@
             font-size: 12px;
             color: #475569;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
         @media (max-width: 768px) {
             .filter-row { flex-direction: column; }
             .stats-summary { flex-direction: column; }
@@ -257,6 +287,10 @@
                     <div class="stat-summary-number" id="mcqCount">0</div>
                     <div>✅ اختيار من متعدد</div>
                 </div>
+                <div class="stat-summary-card" onclick="filterByType('multi_select')">
+                    <div class="stat-summary-number" id="multiSelectCount">0</div>
+                    <div>✅✅ اختيار متعدد</div>
+                </div>
                 <div class="stat-summary-card" onclick="filterByType('true_false')">
                     <div class="stat-summary-number" id="trueFalseCount">0</div>
                     <div>صح/خطأ</div>
@@ -292,7 +326,7 @@
                     <select id="filterType" onchange="loadQuestions()">
                         <option value="all">كل الأنواع</option>
                         <option value="mcq">اختيار من متعدد</option>
-                        <option value="multi_select">اختيار متعدد</option>
+                        <option value="multi_select">اختيار متعدد (إجابات متعددة)</option>
                         <option value="true_false">صح/خطأ</option>
                         <option value="essay">مقالي</option>
                     </select>
@@ -336,8 +370,11 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
+        // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
-        if (!currentUser) window.location.href = 'index.html';
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
         
         const isAdmin = (currentUser.role === 'admin');
         let allQuestions = [];
@@ -350,19 +387,72 @@
         let currentPage = 1;
         let itemsPerPage = 10;
         
+        // ==================== دوال مساعدة ====================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function formatDate(date) {
+            if (!date) return '-';
+            return new Date(date).toLocaleDateString('ar-EG');
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function getTypeText(type) {
+            const types = {
+                'mcq': 'اختيار من متعدد',
+                'multi_select': 'اختيار متعدد',
+                'true_false': 'صح/خطأ',
+                'essay': 'مقالي'
+            };
+            return types[type] || type;
+        }
+        
+        function getTypeClass(type) {
+            const classes = {
+                'mcq': 'badge-primary',
+                'multi_select': 'badge-info',
+                'true_false': 'badge-warning',
+                'essay': 'badge-success'
+            };
+            return classes[type] || 'badge-gray';
+        }
+        
         // ==================== دالة تحميل المواد حسب الصف ====================
         async function loadSubjectsByClass(classId) {
             const subjectFilter = document.getElementById('filterSubject');
             
             if (!classId || classId === 'all') {
-                // عرض جميع المواد
                 subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
                 const subjects = await fetchSubjects();
                 for (const subject of subjects) {
                     subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
                 }
             } else {
-                // عرض مواد الصف فقط
                 subjectFilter.innerHTML = '<option value="all">📖 المواد المرتبطة بالصف</option>';
                 const classSubjects = await fetchClassSubjects(parseInt(classId));
                 const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
@@ -407,7 +497,7 @@
         // ==================== تحميل الأسئلة قيد المراجعة ====================
         async function loadPendingQuestions() {
             try {
-                let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name, username)').eq('status', 'pending');
+                let query = sb.from('questions').select('*, users:teacher_id(id, name, username)').eq('status', 'pending');
                 
                 if (!isAdmin) {
                     query = query.eq('teacher_id', currentUser.id);
@@ -500,44 +590,56 @@
         
         // ==================== تحميل الخيارات ====================
         async function loadFiltersOptions() {
-            const classes = await fetchClasses();
-            classesList = classes;
-            const classFilter = document.getElementById('filterClass');
-            classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
-            classes.forEach(c => {
-                classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
-            });
-            
-            // تحميل المواد الأولية
-            await loadSubjectsByClass('all');
-            
-            if (isAdmin) {
-                const teachers = await fetchUsers({ role: 'teacher' });
-                teachersList = teachers;
-                const teacherFilter = document.getElementById('filterTeacher');
-                teacherFilter.innerHTML = '<option value="all">👨‍🏫 كل المعلمين</option>';
-                teachers.forEach(t => {
-                    teacherFilter.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)} (${t.username || t.phone})</option>`;
+            try {
+                const classes = await fetchClasses();
+                classesList = classes;
+                const classFilter = document.getElementById('filterClass');
+                classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
+                classes.forEach(c => {
+                    classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
                 });
+                
+                // تحميل المواد الأولية
+                await loadSubjectsByClass('all');
+                
+                if (isAdmin) {
+                    const teachers = await fetchUsers({ role: 'teacher' });
+                    teachersList = teachers;
+                    const teacherFilter = document.getElementById('filterTeacher');
+                    teacherFilter.innerHTML = '<option value="all">👨‍🏫 كل المعلمين</option>';
+                    teachers.forEach(t => {
+                        teacherFilter.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)} (${t.username || t.phone})</option>`;
+                    });
+                }
+                
+                // جلب المواد للعرض في التفاصيل
+                const subjects = await fetchSubjects();
+                subjectsList = subjects;
+                
+            } catch (error) {
+                console.error('Error loading filters:', error);
             }
         }
         
         // ==================== فلتر حسب النوع من الإحصائيات ====================
         function filterByType(type) {
+            const filterType = document.getElementById('filterType');
             if (type === 'all') {
-                document.getElementById('filterType').value = 'all';
+                filterType.value = 'all';
             } else if (type === 'mcq') {
-                document.getElementById('filterType').value = 'mcq';
+                filterType.value = 'mcq';
+            } else if (type === 'multi_select') {
+                filterType.value = 'multi_select';
             } else if (type === 'true_false') {
-                document.getElementById('filterType').value = 'true_false';
+                filterType.value = 'true_false';
             } else if (type === 'essay') {
-                document.getElementById('filterType').value = 'essay';
+                filterType.value = 'essay';
             }
             currentPage = 1;
             loadQuestions();
         }
         
-        // ==================== تحميل الأسئلة مع Pagination ====================
+        // ==================== تحميل الأسئلة ====================
         async function loadQuestions() {
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.style.display = 'block';
@@ -548,7 +650,9 @@
                 const type = document.getElementById('filterType').value;
                 const search = document.getElementById('searchInput').value;
                 
-                let query = sb.from('questions').select('*, users!questions_teacher_id_fkey(id, name, username)');
+                console.log('🔍 جاري تحميل الأسئلة...', { classId, subjectId, type, search });
+                
+                let query = sb.from('questions').select('*, users:teacher_id(id, name, username)');
                 
                 if (!isAdmin) {
                     query = query.eq('teacher_id', currentUser.id);
@@ -567,7 +671,12 @@
                 
                 const { data: questions, error } = await query.order('created_at', { ascending: false });
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error in query:', error);
+                    throw error;
+                }
+                
+                console.log(`📊 تم جلب ${questions?.length || 0} سؤال من قاعدة البيانات`);
                 
                 allQuestions = questions || [];
                 
@@ -580,8 +689,10 @@
                     filtered = filtered.filter(q => q.subject_id == subjectId);
                 }
                 if (search) {
-                    filtered = filtered.filter(q => q.text?.toLowerCase().includes(search.toLowerCase()));
+                    filtered = filtered.filter(q => q.text && q.text.toLowerCase().includes(search.toLowerCase()));
                 }
+                
+                console.log(`📊 بعد التصفية: ${filtered.length} سؤال`);
                 
                 // Pagination
                 const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -595,7 +706,7 @@
                 
             } catch (error) {
                 console.error('Error loading questions:', error);
-                document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
+                document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة: ' + error.message + '</div>';
             } finally {
                 loadingIndicator.style.display = 'none';
             }
@@ -603,12 +714,14 @@
         
         function updateStats(questions) {
             const total = questions.length;
-            const mcq = questions.filter(q => q.type === 'mcq' || q.type === 'multi_select').length;
+            const mcq = questions.filter(q => q.type === 'mcq').length;
+            const multiSelect = questions.filter(q => q.type === 'multi_select').length;
             const tf = questions.filter(q => q.type === 'true_false').length;
             const essay = questions.filter(q => q.type === 'essay').length;
             
             document.getElementById('totalQuestions').innerHTML = total;
             document.getElementById('mcqCount').innerHTML = mcq;
+            document.getElementById('multiSelectCount').innerHTML = multiSelect;
             document.getElementById('trueFalseCount').innerHTML = tf;
             document.getElementById('essayCount').innerHTML = essay;
         }
@@ -618,12 +731,13 @@
             const easy = questions.filter(q => q.difficulty === 'easy').length;
             const medium = questions.filter(q => q.difficulty === 'medium').length;
             const hard = questions.filter(q => q.difficulty === 'hard').length;
+            const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
             
             container.innerHTML = `
                 <div class="quick-stat">🟢 سهل: ${easy}</div>
                 <div class="quick-stat">🟡 متوسط: ${medium}</div>
                 <div class="quick-stat">🔴 صعب: ${hard}</div>
-                <div class="quick-stat">⭐ مجموع الدرجات: ${questions.reduce((sum, q) => sum + (q.points || 0), 0)}</div>
+                <div class="quick-stat">⭐ مجموع الدرجات: ${totalPoints}</div>
             `;
         }
         
@@ -659,7 +773,7 @@
                             opts = [q.options];
                         }
                     }
-                    if (opts.length > 0) {
+                    if (opts && opts.length > 0) {
                         optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">📋 الخيارات: ${opts.slice(0, 3).join(' | ')}${opts.length > 3 ? ' ...' : ''}</div>`;
                     }
                 }
@@ -742,26 +856,6 @@
         function goToPage(page) {
             currentPage = page;
             loadQuestions();
-        }
-        
-        function getTypeText(type) {
-            const types = {
-                'mcq': 'اختيار من متعدد',
-                'multi_select': 'اختيار متعدد',
-                'true_false': 'صح/خطأ',
-                'essay': 'مقالي'
-            };
-            return types[type] || type;
-        }
-        
-        function getTypeClass(type) {
-            const classes = {
-                'mcq': 'badge-primary',
-                'multi_select': 'badge-info',
-                'true_false': 'badge-warning',
-                'essay': 'badge-success'
-            };
-            return classes[type] || 'badge-gray';
         }
         
         async function viewQuestionDetails(questionId) {
@@ -868,41 +962,7 @@
             document.getElementById('questionModal').style.display = 'none';
         }
         
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
-        function formatDate(date) {
-            if (!date) return '-';
-            return new Date(date).toLocaleDateString('ar-EG');
-        }
-        
-        function showToast(message, type = 'success') {
-            const existing = document.querySelector('.toast-notification');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = `toast-notification toast-${type}`;
-            toast.innerHTML = `
-                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
-                <div class="toast-message">${message}</div>
-                <div class="toast-progress"></div>
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // أحداث الفلاتر
+        // ==================== ربط الأحداث ====================
         document.getElementById('filterClass').addEventListener('change', onClassChange);
         document.getElementById('filterSubject').addEventListener('change', () => {
             currentPage = 1;
@@ -913,6 +973,7 @@
             loadQuestions();
         });
         
+        // ==================== تصدير الدوال للنطاق العام ====================
         window.filterByType = filterByType;
         window.goToPage = goToPage;
         window.viewQuestionDetails = viewQuestionDetails;
@@ -922,18 +983,16 @@
         window.deleteQuestionConfirm = deleteQuestionConfirm;
         window.closeModal = closeModal;
         window.onClassChange = onClassChange;
+        window.loadQuestions = loadQuestions;
         
-        const editId = localStorage.getItem('editQuestionId');
-        if (editId && !isAdmin) {
-            localStorage.removeItem('editQuestionId');
-            setTimeout(() => editQuestion(editId), 500);
-        }
-        
+        // ==================== تحميل أولي ====================
         async function init() {
+            console.log('🚀 بدء تهيئة بنك الأسئلة...');
             setupUI();
             await loadFiltersOptions();
             await loadPendingQuestions();
             await loadQuestions();
+            console.log('✅ تم تهيئة بنك الأسئلة بنجاح');
         }
         
         init();
