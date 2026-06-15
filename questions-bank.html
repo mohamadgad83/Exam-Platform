@@ -6,75 +6,36 @@
     <title>بنك الأسئلة - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* الشريط العلوي */
-        .top-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
+        .filter-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-        }
-        .admin-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
+            align-items: flex-end;
             margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
         }
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
         }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .user-name {
+        .filter-group label {
+            display: block;
+            font-size: 13px;
             font-weight: 600;
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 40px;
+            color: #64748b;
+            margin-bottom: 5px;
         }
-        
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
             border: 1px solid #e2e8f0;
-        }
-        .card-header {
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .card-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
         }
         
-        /* بطاقة الأسئلة قيد المراجعة */
         .pending-card {
             background: linear-gradient(135deg, #fef3c7, #fffbeb);
             border: 1px solid #f59e0b;
@@ -111,97 +72,39 @@
             transform: translateX(-5px);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .pending-question-info {
-            flex: 1;
-        }
-        .pending-question-text {
-            font-weight: 600;
-            color: #1e293b;
-        }
-        .pending-question-meta {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 5px;
-        }
-        .pending-actions {
-            display: flex;
-            gap: 8px;
-        }
         
-        .filter-row {
+        .stats-summary {
             display: flex;
-            flex-wrap: wrap;
             gap: 15px;
-            align-items: flex-end;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
-        .filter-group {
+        .stat-summary-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 16px;
+            padding: 15px 20px;
+            text-align: center;
             flex: 1;
-            min-width: 160px;
-        }
-        .filter-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 5px;
-        }
-        .filter-group select, .filter-group input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 14px;
-            background: white;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 12px;
+            min-width: 120px;
             cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-            font-size: 14px;
+            transition: all 0.2s;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
-            color: white;
+        .stat-summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-        }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-info { background: #3b82f6; color: white; }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #6366f1;
+        .stat-summary-number {
+            font-size: 28px;
+            font-weight: 800;
             color: #6366f1;
         }
-        .btn-outline:hover {
-            background: #6366f1;
-            color: white;
-        }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
         
-        .questions-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
         .question-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 20px;
             padding: 20px;
+            margin-bottom: 15px;
             transition: all 0.2s;
         }
         .question-card:hover {
@@ -228,6 +131,7 @@
             gap: 12px;
             margin: 12px 0;
         }
+        
         .badge {
             display: inline-flex;
             align-items: center;
@@ -244,108 +148,43 @@
         .badge-info { background: #dbeafe; color: #1e40af; }
         .badge-gray { background: #f1f5f9; color: #475569; }
         
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #64748b;
-        }
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-        
-        .stats-summary {
+        .pagination {
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .stat-summary-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 16px;
-            padding: 15px 20px;
-            text-align: center;
-            flex: 1;
-            min-width: 120px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .stat-summary-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .stat-summary-number {
-            font-size: 28px;
-            font-weight: 800;
-            color: #6366f1;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
             justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
         }
-        .modal-content {
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
             background: white;
-            border-radius: 28px;
-            padding: 30px;
-            width: 600px;
-            max-width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
         }
-        .modal-header h3 {
-            font-size: 22px;
-            color: #1e293b;
-        }
-        .question-detail {
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f8fafc;
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
             border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
         }
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            border-right: 4px solid;
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
-        
-        /* عرض سريع لعدد الأسئلة */
         .quick-stats {
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         .quick-stat {
             background: #f1f5f9;
@@ -354,13 +193,10 @@
             font-size: 12px;
             color: #475569;
         }
-        
         @media (max-width: 768px) {
             .filter-row { flex-direction: column; }
             .stats-summary { flex-direction: column; }
-            .question-header { flex-direction: column; }
             .pending-question-item { flex-direction: column; align-items: stretch; }
-            .pending-actions { justify-content: flex-start; }
         }
     </style>
 </head>
@@ -387,7 +223,7 @@
             </div>
         </div>
 
-        <!-- ==================== قسم الأسئلة قيد المراجعة (للمعلم والأدمن) ==================== -->
+        <!-- ==================== قسم الأسئلة قيد المراجعة ==================== -->
         <div id="pendingQuestionsSection" class="card pending-card" style="display: none;">
             <div class="pending-header">
                 <div>
@@ -473,8 +309,14 @@
             <!-- إحصائيات سريعة إضافية -->
             <div class="quick-stats" id="quickStats"></div>
 
+            <!-- مؤشر تحميل -->
+            <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+
             <!-- قائمة الأسئلة -->
             <div id="questionsList" class="questions-grid"></div>
+            
+            <!-- Pagination -->
+            <div id="pagination" class="pagination"></div>
         </div>
     </div>
 
@@ -495,9 +337,7 @@
     <script src="js/supabase-config.js"></script>
     <script>
         const currentUser = getUser();
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
         
         const isAdmin = (currentUser.role === 'admin');
         let allQuestions = [];
@@ -505,6 +345,10 @@
         let teachersList = [];
         let classesList = [];
         let subjectsList = [];
+        
+        // Pagination
+        let currentPage = 1;
+        let itemsPerPage = 10;
         
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
@@ -659,11 +503,15 @@
             } else if (type === 'essay') {
                 document.getElementById('filterType').value = 'essay';
             }
+            currentPage = 1;
             loadQuestions();
         }
         
-        // ==================== تحميل الأسئلة ====================
+        // ==================== تحميل الأسئلة مع Pagination ====================
         async function loadQuestions() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
             try {
                 const classId = document.getElementById('filterClass').value;
                 const subjectId = document.getElementById('filterSubject').value;
@@ -705,13 +553,21 @@
                     filtered = filtered.filter(q => q.text?.toLowerCase().includes(search.toLowerCase()));
                 }
                 
-                renderQuestionsList(filtered);
+                // Pagination
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedQuestions = filtered.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderQuestionsList(paginatedQuestions);
+                renderPagination(totalPages);
                 updateStats(filtered);
                 updateQuickStats(filtered);
                 
             } catch (error) {
                 console.error('Error loading questions:', error);
                 document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
         }
         
@@ -737,6 +593,7 @@
                 <div class="quick-stat">🟢 سهل: ${easy}</div>
                 <div class="quick-stat">🟡 متوسط: ${medium}</div>
                 <div class="quick-stat">🔴 صعب: ${hard}</div>
+                <div class="quick-stat">⭐ مجموع الدرجات: ${questions.reduce((sum, q) => sum + (q.points || 0), 0)}</div>
             `;
         }
         
@@ -756,14 +613,25 @@
             }
             
             container.innerHTML = '';
+            
             for (const q of questions) {
                 const classInfo = classesList.find(c => c.id === q.class_id);
                 const subjectInfo = subjectsList.find(s => s.id === q.subject_id);
                 const teacherInfo = teachersList.find(t => t.id === q.teacher_id);
                 
                 let optionsHtml = '';
-                if (q.options && q.options.length > 0) {
-                    optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">📋 الخيارات: ${q.options.slice(0, 3).join(' | ')}${q.options.length > 3 ? ' ...' : ''}</div>`;
+                if (q.options) {
+                    let opts = q.options;
+                    if (typeof q.options === 'string') {
+                        try {
+                            opts = JSON.parse(q.options);
+                        } catch(e) {
+                            opts = [q.options];
+                        }
+                    }
+                    if (opts.length > 0) {
+                        optionsHtml = `<div style="margin-top: 8px; font-size: 13px; color: #64748b;">📋 الخيارات: ${opts.slice(0, 3).join(' | ')}${opts.length > 3 ? ' ...' : ''}</div>`;
+                    }
                 }
                 
                 let statusHtml = '';
@@ -803,6 +671,49 @@
             }
         }
         
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            loadQuestions();
+        }
+        
         function getTypeText(type) {
             const types = {
                 'mcq': 'اختيار من متعدد',
@@ -836,26 +747,34 @@
             
             let optionsHtml = '';
             if (q.type === 'mcq' || q.type === 'multi_select') {
-                if (q.options && q.options.length > 0) {
+                let opts = q.options;
+                if (typeof q.options === 'string') {
+                    try {
+                        opts = JSON.parse(q.options);
+                    } catch(e) {
+                        opts = [q.options];
+                    }
+                }
+                if (opts && opts.length > 0) {
                     optionsHtml = '<div class="question-detail"><strong>🔘 الخيارات:</strong></div>';
-                    q.options.forEach((opt, i) => {
+                    for (let i = 0; i < opts.length; i++) {
                         let isCorrect = false;
                         if (q.type === 'mcq') {
-                            isCorrect = q.correct_answer === opt;
+                            isCorrect = q.correct_answer === opts[i];
                         } else if (q.type === 'multi_select') {
                             try {
                                 const correctAnswers = JSON.parse(q.correct_answer);
-                                isCorrect = correctAnswers.includes(opt);
+                                isCorrect = correctAnswers.includes(opts[i]);
                             } catch(e) {
-                                isCorrect = q.correct_answer === opt;
+                                isCorrect = q.correct_answer === opts[i];
                             }
                         }
                         optionsHtml += `
-                            <div style="padding: 8px; margin: 5px 0; border-radius: 10px; background: ${isCorrect ? '#d1fae5' : 'white'}; color: ${isCorrect ? '#065f46' : '#1e293b'};">
-                                ${String.fromCharCode(65 + i)}. ${escapeHtml(opt)} ${isCorrect ? ' ✓ (صحيح)' : ''}
+                            <div style="padding: 8px; margin: 5px 0; border-radius: 10px; background: ${isCorrect ? '#d1fae5' : '#f8fafc'};">
+                                ${String.fromCharCode(65 + i)}. ${escapeHtml(opts[i])} ${isCorrect ? ' ✓ (صحيح)' : ''}
                             </div>
                         `;
-                    });
+                    }
                 }
             }
             
@@ -909,6 +828,7 @@
                     return;
                 }
                 showToast('تم حذف السؤال', 'success');
+                currentPage = 1;
                 loadQuestions();
                 loadPendingQuestions();
             });
@@ -927,6 +847,29 @@
                 return m;
             });
         }
+        
+        // أحداث الفلاتر
+        document.getElementById('filterClass').addEventListener('change', () => {
+            currentPage = 1;
+            loadQuestions();
+        });
+        document.getElementById('filterSubject').addEventListener('change', () => {
+            currentPage = 1;
+            loadQuestions();
+        });
+        document.getElementById('filterType').addEventListener('change', () => {
+            currentPage = 1;
+            loadQuestions();
+        });
+        
+        window.filterByType = filterByType;
+        window.goToPage = goToPage;
+        window.viewQuestionDetails = viewQuestionDetails;
+        window.approveQuestion = approveQuestion;
+        window.rejectQuestionPrompt = rejectQuestionPrompt;
+        window.editQuestion = editQuestion;
+        window.deleteQuestionConfirm = deleteQuestionConfirm;
+        window.closeModal = closeModal;
         
         const editId = localStorage.getItem('editQuestionId');
         if (editId && !isAdmin) {
