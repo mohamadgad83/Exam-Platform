@@ -6,104 +6,121 @@
     <title>إدارة الصفوف والمواد - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .admin-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
+        .filter-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-        }
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
+            align-items: flex-end;
             margin-bottom: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
         }
-        .header h1 {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
         }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 5px;
-        }
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 30px;
-            cursor: pointer;
+        .filter-group label {
+            display: block;
+            font-size: 13px;
             font-weight: 600;
             color: #64748b;
-            transition: all 0.2s;
+            margin-bottom: 5px;
         }
-        .tab-btn.active {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .stats-summary {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            flex: 1;
+            min-width: 140px;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #6366f1;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .btn {
-            padding: 10px 20px;
+            padding: 8px 14px;
             border: none;
-            border-radius: 14px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-family: inherit;
+            font-size: 12px;
         }
         .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-info { background: #3b82f6; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        .filter-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            width: 260px;
-            font-family: inherit;
-        }
-        .filter-select {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            min-width: 180px;
-            font-family: inherit;
-            background: white;
-        }
-        .table-wrapper { overflow-x: auto; border-radius: 20px; }
-        table { width: 100%; border-collapse: collapse; min-width: 500px; }
-        th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
-        th { background: #f8fafc; font-weight: 700; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-outline { background: transparent; border: 1px solid #6366f1; color: #6366f1; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+        
         .modal {
             display: none;
             position: fixed;
@@ -119,117 +136,84 @@
         }
         .modal-content {
             background: white;
-            border-radius: 32px;
-            padding: 32px;
+            border-radius: 28px;
+            padding: 30px;
             width: 550px;
             max-width: 90%;
             max-height: 85vh;
             overflow-y: auto;
         }
-        .modal-content input, .modal-content select, .modal-content textarea {
-            width: 100%;
-            padding: 12px 16px;
-            margin: 10px 0;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            font-family: inherit;
-        }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
-        .subject-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 10px 15px;
-            margin-bottom: 8px;
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
         }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
             font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            font-size: 14px;
         }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .empty-state { text-align: center; padding: 40px; color: #64748b; }
-        
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            direction: rtl;
-            border-right: 4px solid;
-        }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
-        .toast-message { flex: 1; font-size: 14px; color: #333; }
-        .toast-progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            animation: progress 3s linear forwards;
-        }
-        @keyframes progress { from { width: 100%; } to { width: 0%; } }
-        
-        .confirm-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10001;
-        }
-        .confirm-content {
-            background: white;
-            border-radius: 28px;
-            padding: 32px;
-            text-align: center;
-            width: 320px;
-        }
-        .confirm-buttons { display: flex; gap: 12px; margin-top: 20px; }
-        .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
-        .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
-        
-        .linked-subject {
-            background: #e8f5e9;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 10px 15px;
-            display: inline-flex;
-            align-items: center;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
             gap: 10px;
-            border: 1px solid #c8e6c9;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
         
         @media (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .search-input, .filter-select { width: 100%; }
+            .filter-row { flex-direction: column; }
+            .row-2 { grid-template-columns: 1fr; }
             .action-buttons { flex-direction: column; }
             .btn { width: 100%; justify-content: center; }
+            .stats-summary { flex-direction: column; }
         }
     </style>
 </head>
@@ -248,6 +232,27 @@
             <p>إضافة وتعديل الصفوف - إدارة المواد لكل صف - تعيين المواد للصفوف</p>
         </div>
 
+        <!-- إحصائيات سريعة -->
+        <div class="stats-summary" id="statsSummary">
+            <div class="stat-card">
+                <div class="stat-number" id="totalClasses">0</div>
+                <div class="stat-label">🏫 إجمالي الصفوف</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalSubjects">0</div>
+                <div class="stat-label">📚 إجمالي المواد</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalTeachers">0</div>
+                <div class="stat-label">👨‍🏫 المعلمين</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalStudents">0</div>
+                <div class="stat-label">👨‍🎓 الطلاب</div>
+            </div>
+        </div>
+
+        <!-- التبويبات -->
         <div class="tabs">
             <button class="tab-btn active" onclick="showTab('classes')">🏫 الصفوف الدراسية</button>
             <button class="tab-btn" onclick="showTab('subjects')">📖 المواد الدراسية</button>
@@ -257,11 +262,17 @@
         <!-- ==================== تبويب الصفوف ==================== -->
         <div id="classesTab">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="classSearch" class="search-input" placeholder="🔍 بحث باسم الصف...">
-                    <button class="btn btn-primary" onclick="openClassModal()">➕ إضافة صف جديد</button>
-                    <button class="btn btn-outline" onclick="loadClasses()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="classSearch" placeholder="بحث باسم الصف...">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openClassModal()">➕ إضافة صف جديد</button>
+                        <button class="btn btn-outline" onclick="loadClasses()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="classLoadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -270,17 +281,24 @@
                         <tbody id="classesTableBody"></tbody>
                     </table>
                 </div>
+                <div id="classesPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب المواد ==================== -->
-        <div id="subjectsTab" style="display:none;">
+        <div id="subjectsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="subjectSearch" class="search-input" placeholder="🔍 بحث باسم المادة...">
-                    <button class="btn btn-primary" onclick="openSubjectModal()">➕ إضافة مادة جديدة</button>
-                    <button class="btn btn-outline" onclick="loadSubjects()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="subjectSearch" placeholder="بحث باسم المادة...">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openSubjectModal()">➕ إضافة مادة جديدة</button>
+                        <button class="btn btn-outline" onclick="loadSubjects()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="subjectLoadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -289,34 +307,37 @@
                         <tbody id="subjectsTableBody"></tbody>
                     </table>
                 </div>
+                <div id="subjectsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب ربط المواد بالصفوف ==================== -->
-        <div id="classSubjectsTab" style="display:none;">
+        <div id="classSubjectsTab" style="display: none;">
             <div class="card">
                 <h3>🔗 ربط المواد بالصفوف</h3>
                 <p style="margin-bottom: 15px; color: #64748b;">اختر صفاً ثم اختر المواد التي يدرسها هذا الصف</p>
                 
-                <div class="filter-bar">
-                    <select id="classForSubjects" class="filter-select" style="width: 100%;" onchange="loadClassSubjects()">
-                        <option value="">-- اختر الصف --</option>
-                    </select>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🎓 اختر الصف</label>
+                        <select id="classForSubjects" onchange="loadClassSubjects()">
+                            <option value="">-- اختر الصف --</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <!-- المواد المرتبطة حالياً -->
                 <div id="classSubjectsList" style="margin-top: 20px;"></div>
                 
-                <!-- إضافة مواد جديدة -->
-                <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 16px;">
-                    <h4>➕ إضافة مادة جديدة لهذا الصف</h4>
-                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-                        <select id="availableSubjects" style="flex: 2; padding: 12px; border-radius: 16px; border: 1px solid #e2e8f0;">
-                            <option value="">-- اختر مادة للإضافة --</option>
+                <div class="filter-row" style="margin-top: 20px;">
+                    <div class="filter-group">
+                        <label>📖 اختر مادة للإضافة</label>
+                        <select id="availableSubjects">
+                            <option value="">-- اختر مادة --</option>
                         </select>
+                    </div>
+                    <div>
                         <button class="btn btn-success" onclick="addSubjectToClass()">➕ إضافة</button>
                     </div>
-                    <p style="font-size: 12px; color: #64748b; margin-top: 8px;">* يمكنك إضافة مواد جديدة من تبويب "المواد الدراسية" أولاً</p>
                 </div>
             </div>
         </div>
@@ -325,10 +346,22 @@
     <!-- ==================== مودال إضافة/تعديل صف ==================== -->
     <div id="classModal" class="modal">
         <div class="modal-content">
-            <h3 id="classModalTitle">➕ إضافة صف جديد</h3>
-            <input type="text" id="className" placeholder="اسم الصف (مثال: الصف الأول الثانوي - أ)">
-            <input type="text" id="classGradeLevel" placeholder="المرحلة الدراسية (مثال: الأول الثانوي)">
-            <textarea id="classDesc" rows="3" placeholder="وصف الصف (اختياري)"></textarea>
+            <div class="modal-header">
+                <h3 id="classModalTitle">➕ إضافة صف جديد</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeClassModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>📌 اسم الصف *</label>
+                <input type="text" id="className" placeholder="مثال: الصف الأول الثانوي - أ">
+            </div>
+            <div class="form-group">
+                <label>🎓 المرحلة الدراسية</label>
+                <input type="text" id="classGradeLevel" placeholder="مثال: الأول الثانوي">
+            </div>
+            <div class="form-group">
+                <label>📝 وصف الصف (اختياري)</label>
+                <textarea id="classDesc" rows="3" placeholder="وصف الصف"></textarea>
+            </div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveClass()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeClassModal()">إلغاء</button>
@@ -339,9 +372,18 @@
     <!-- ==================== مودال إضافة/تعديل مادة ==================== -->
     <div id="subjectModal" class="modal">
         <div class="modal-content">
-            <h3 id="subjectModalTitle">➕ إضافة مادة جديدة</h3>
-            <input type="text" id="subjectName" placeholder="اسم المادة (مثال: الرياضيات)">
-            <textarea id="subjectDesc" rows="3" placeholder="وصف المادة (اختياري)"></textarea>
+            <div class="modal-header">
+                <h3 id="subjectModalTitle">➕ إضافة مادة جديدة</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeSubjectModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>📌 اسم المادة *</label>
+                <input type="text" id="subjectName" placeholder="مثال: الرياضيات">
+            </div>
+            <div class="form-group">
+                <label>📝 وصف المادة (اختياري)</label>
+                <textarea id="subjectDesc" rows="3" placeholder="وصف المادة"></textarea>
+            </div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveSubject()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeSubjectModal()">إلغاء</button>
@@ -349,45 +391,98 @@
         </div>
     </div>
 
-    <script src="../js/supabase-config.js"></script>
+    <script src="js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         (function() {
             const user = getUser();
             if (!user || user.role !== 'admin') {
-                window.location.href = '../index.html';
+                window.location.href = 'index.html';
                 return;
             }
             document.getElementById('adminName').innerHTML = user.name;
         })();
         
+        // ==================== المتغيرات العامة ====================
         let currentClassId = null;
         let currentSubjectId = null;
+        let currentClassSubjects = [];
+        
+        // Pagination variables
+        let allClasses = [];
+        let classesPage = 1;
+        let itemsPerPage = 10;
+        
+        let allSubjects = [];
+        let subjectsPage = 1;
         
         // ==================== التبويبات ====================
-        window.showTab = function(tab) {
-            document.getElementById('classesTab').style.display = tab === 'classes' ? 'block' : 'none';
-            document.getElementById('subjectsTab').style.display = tab === 'subjects' ? 'block' : 'none';
-            document.getElementById('classSubjectsTab').style.display = tab === 'classSubjects' ? 'block' : 'none';
+        function showTab(tabName) {
+            document.getElementById('classesTab').style.display = tabName === 'classes' ? 'block' : 'none';
+            document.getElementById('subjectsTab').style.display = tabName === 'subjects' ? 'block' : 'none';
+            document.getElementById('classSubjectsTab').style.display = tabName === 'classSubjects' ? 'block' : 'none';
             
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            if (event && event.target) event.target.classList.add('active');
+            if (tabName === 'classes') document.querySelector('.tab-btn').classList.add('active');
+            else if (tabName === 'subjects') document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            else document.querySelectorAll('.tab-btn')[2].classList.add('active');
             
-            if (tab === 'classes') loadClasses();
-            else if (tab === 'subjects') loadSubjects();
-            else if (tab === 'classSubjects') loadClassSubjectsSelect();
-        };
+            if (tabName === 'classes') loadClasses();
+            else if (tabName === 'subjects') loadSubjects();
+            else if (tabName === 'classSubjects') loadClassSubjectsSelect();
+        }
+        
+        // ==================== تحميل الإحصائيات ====================
+        async function loadStats() {
+            try {
+                const classes = await fetchClasses();
+                const subjects = await fetchSubjects();
+                const teachers = await fetchUsers({ role: 'teacher' });
+                const students = await fetchUsers({ role: 'student' });
+                
+                document.getElementById('totalClasses').innerHTML = classes.length;
+                document.getElementById('totalSubjects').innerHTML = subjects.length;
+                document.getElementById('totalTeachers').innerHTML = teachers.length;
+                document.getElementById('totalStudents').innerHTML = students.length;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
         
         // ==================== الصفوف ====================
         async function loadClasses() {
-            const search = document.getElementById('classSearch').value;
-            let classes = await fetchClasses();
+            const loadingIndicator = document.getElementById('classLoadingIndicator');
+            loadingIndicator.style.display = 'block';
             
-            if (search) {
-                classes = classes.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+            try {
+                const search = document.getElementById('classSearch').value;
+                let classes = await fetchClasses();
+                
+                if (search) {
+                    classes = classes.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                allClasses = classes;
+                
+                // Pagination
+                const totalPages = Math.ceil(allClasses.length / itemsPerPage);
+                const startIndex = (classesPage - 1) * itemsPerPage;
+                const paginatedClasses = allClasses.slice(startIndex, startIndex + itemsPerPage);
+                
+                await renderClassesTable(paginatedClasses);
+                renderClassesPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                document.getElementById('classesTableBody').innerHTML = '<tr><td colspan="6" class="empty-state">حدث خطأ</td></tr>';
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
-            
+        }
+        
+        async function renderClassesTable(classes) {
             const tbody = document.getElementById('classesTableBody');
+            
             if (!classes || classes.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="empty-state">لا توجد صفوف</td></tr>';
                 return;
@@ -396,20 +491,15 @@
             tbody.innerHTML = '';
             for (let i = 0; i < classes.length; i++) {
                 const c = classes[i];
-                // جلب مواد هذا الصف
-                const { data: classSubjects } = await sb
-                    .from('class_subjects')
-                    .select('*, subjects(*)')
-                    .eq('class_id', c.id);
-                
-                const subjectsNames = (classSubjects || []).map(cs => cs.subjects?.name).filter(n => n).join(', ');
+                const classSubjects = await fetchClassSubjects(c.id);
+                const subjectsNames = classSubjects.map(cs => cs.subjects?.name).filter(n => n).join(', ');
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${i+1}</td>
+                    <td>${((classesPage - 1) * itemsPerPage) + i + 1}</td>
                     <td><strong>${escapeHtml(c.name)}</strong></td>
                     <td>${c.grade_level || '-'}</td>
-                    <td><small>${subjectsNames || '-'}</small></td>
+                    <td>${subjectsNames || '-'}</td>
                     <td>${formatDate(c.created_at)}</td>
                     <td>
                         <div class="action-buttons">
@@ -422,16 +512,41 @@
             }
         }
         
-        window.openClassModal = function() {
+        function renderClassesPagination(totalPages) {
+            const container = document.getElementById('classesPagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (classesPage > 1) html += `<button class="page-btn" onclick="goToClassesPage(${classesPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === classesPage ? 'active' : ''}" onclick="goToClassesPage(${i})">${i}</button>`;
+            }
+            
+            if (classesPage < totalPages) html += `<button class="page-btn" onclick="goToClassesPage(${classesPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToClassesPage(page) {
+            classesPage = page;
+            loadClasses();
+        }
+        
+        function openClassModal() {
             currentClassId = null;
             document.getElementById('classModalTitle').innerHTML = '➕ إضافة صف جديد';
             document.getElementById('className').value = '';
             document.getElementById('classGradeLevel').value = '';
             document.getElementById('classDesc').value = '';
             document.getElementById('classModal').style.display = 'flex';
-        };
+        }
         
-        window.editClass = async function(id) {
+        async function editClass(id) {
             const classes = await fetchClasses();
             const c = classes.find(c => c.id === id);
             if (!c) return;
@@ -442,9 +557,9 @@
             document.getElementById('classGradeLevel').value = c.grade_level || '';
             document.getElementById('classDesc').value = c.description || '';
             document.getElementById('classModal').style.display = 'flex';
-        };
+        }
         
-        window.saveClass = async function() {
+        async function saveClass() {
             const name = document.getElementById('className').value;
             const gradeLevel = document.getElementById('classGradeLevel').value;
             const description = document.getElementById('classDesc').value;
@@ -469,29 +584,61 @@
             
             if (result) {
                 closeClassModal();
+                classesPage = 1;
                 loadClasses();
+                loadStats();
                 showToast('تم ' + (currentClassId ? 'تعديل' : 'إضافة') + ' الصف', 'success');
             }
-        };
+        }
         
-        window.deleteClassConfirm = function(id) {
+        function deleteClassConfirm(id) {
             showConfirm('هل أنت متأكد من حذف هذا الصف؟ سيتم حذف جميع المواد المرتبطة به', async function() {
                 await deleteClass(id);
+                classesPage = 1;
                 loadClasses();
+                loadStats();
                 showToast('تم حذف الصف', 'success');
             });
-        };
+        }
+        
+        function closeClassModal() {
+            document.getElementById('classModal').style.display = 'none';
+        }
         
         // ==================== المواد ====================
         async function loadSubjects() {
-            const search = document.getElementById('subjectSearch').value;
-            let subjects = await fetchSubjects();
+            const loadingIndicator = document.getElementById('subjectLoadingIndicator');
+            loadingIndicator.style.display = 'block';
             
-            if (search) {
-                subjects = subjects.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+            try {
+                const search = document.getElementById('subjectSearch').value;
+                let subjects = await fetchSubjects();
+                
+                if (search) {
+                    subjects = subjects.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                allSubjects = subjects;
+                
+                // Pagination
+                const totalPages = Math.ceil(allSubjects.length / itemsPerPage);
+                const startIndex = (subjectsPage - 1) * itemsPerPage;
+                const paginatedSubjects = allSubjects.slice(startIndex, startIndex + itemsPerPage);
+                
+                await renderSubjectsTable(paginatedSubjects);
+                renderSubjectsPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                document.getElementById('subjectsTableBody').innerHTML = '<tr><td colspan="5" class="empty-state">حدث خطأ</td></tr>';
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
-            
+        }
+        
+        async function renderSubjectsTable(subjects) {
             const tbody = document.getElementById('subjectsTableBody');
+            
             if (!subjects || subjects.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="empty-state">لا توجد مواد</td></tr>';
                 return;
@@ -500,20 +647,15 @@
             tbody.innerHTML = '';
             for (let i = 0; i < subjects.length; i++) {
                 const s = subjects[i];
-                // جلب الصفوف المرتبطة بهذه المادة
-                const { data: subjectClasses } = await sb
-                    .from('class_subjects')
-                    .select('*, classes(*)')
-                    .eq('subject_id', s.id);
-                
-                const classesNames = (subjectClasses || []).map(sc => sc.classes?.name).filter(n => n).join(', ');
+                const subjectClasses = await fetchSubjectClasses(s.id);
+                const classesNames = subjectClasses.map(sc => sc.classes?.name).filter(n => n).join(', ');
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${i+1}</td>
+                    <td>${((subjectsPage - 1) * itemsPerPage) + i + 1}</td>
                     <td><strong>${escapeHtml(s.name)}</strong></td>
                     <td>${s.description || '-'}</td>
-                    <td><small>${classesNames || '-'}</small></td>
+                    <td>${classesNames || '-'}</td>
                     <td>${formatDate(s.created_at)}</td>
                     <td>
                         <div class="action-buttons">
@@ -526,15 +668,40 @@
             }
         }
         
-        window.openSubjectModal = function() {
+        function renderSubjectsPagination(totalPages) {
+            const container = document.getElementById('subjectsPagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (subjectsPage > 1) html += `<button class="page-btn" onclick="goToSubjectsPage(${subjectsPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === subjectsPage ? 'active' : ''}" onclick="goToSubjectsPage(${i})">${i}</button>`;
+            }
+            
+            if (subjectsPage < totalPages) html += `<button class="page-btn" onclick="goToSubjectsPage(${subjectsPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToSubjectsPage(page) {
+            subjectsPage = page;
+            loadSubjects();
+        }
+        
+        function openSubjectModal() {
             currentSubjectId = null;
             document.getElementById('subjectModalTitle').innerHTML = '➕ إضافة مادة جديدة';
             document.getElementById('subjectName').value = '';
             document.getElementById('subjectDesc').value = '';
             document.getElementById('subjectModal').style.display = 'flex';
-        };
+        }
         
-        window.editSubject = async function(id) {
+        async function editSubject(id) {
             const subjects = await fetchSubjects();
             const s = subjects.find(s => s.id === id);
             if (!s) return;
@@ -544,9 +711,9 @@
             document.getElementById('subjectName').value = s.name;
             document.getElementById('subjectDesc').value = s.description || '';
             document.getElementById('subjectModal').style.display = 'flex';
-        };
+        }
         
-        window.saveSubject = async function() {
+        async function saveSubject() {
             const name = document.getElementById('subjectName').value;
             const description = document.getElementById('subjectDesc').value;
             
@@ -569,120 +736,74 @@
             
             if (result) {
                 closeSubjectModal();
+                subjectsPage = 1;
                 loadSubjects();
+                loadStats();
                 showToast('تم ' + (currentSubjectId ? 'تعديل' : 'إضافة') + ' المادة', 'success');
-            }
-        };
-        
-        window.deleteSubjectConfirm = function(id) {
-            showConfirm('هل أنت متأكد من حذف هذه المادة؟', async function() {
-                await deleteSubject(id);
-                loadSubjects();
-                showToast('تم حذف المادة', 'success');
-            });
-        };
-        
-        // ==================== ربط المواد بالصفوف (محسن) ====================
-        
-        // تحميل قائمة الصفوف والمواد المتاحة
-        async function loadClassSubjectsSelect() {
-            try {
-                // تحميل الصفوف
-                const classes = await fetchClasses();
-                const classSelect = document.getElementById('classForSubjects');
-                classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-                for (let i = 0; i < classes.length; i++) {
-                    const option = document.createElement('option');
-                    option.value = classes[i].id;
-                    option.textContent = classes[i].name;
-                    classSelect.appendChild(option);
-                }
-                
-                // تحميل جميع المواد المتاحة للإضافة
-                const subjects = await fetchSubjects();
-                const subjectsSelect = document.getElementById('availableSubjects');
-                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
-                for (let i = 0; i < subjects.length; i++) {
-                    subjectsSelect.innerHTML += `<option value="${subjects[i].id}">${escapeHtml(subjects[i].name)}</option>`;
-                }
-                
-            } catch (error) {
-                console.error('Error loading class subjects select:', error);
             }
         }
         
-        // تحميل المواد المرتبطة بصف محدد
-        window.loadClassSubjects = async function() {
-            const classId = document.getElementById('classForSubjects').value;
+        function deleteSubjectConfirm(id) {
+            showConfirm('هل أنت متأكد من حذف هذه المادة؟', async function() {
+                await deleteSubject(id);
+                subjectsPage = 1;
+                loadSubjects();
+                loadStats();
+                showToast('تم حذف المادة', 'success');
+            });
+        }
+        
+        function closeSubjectModal() {
+            document.getElementById('subjectModal').style.display = 'none';
+        }
+        
+        // ==================== ربط المواد بالصفوف ====================
+        async function loadClassSubjectsSelect() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('classForSubjects');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>';
+            for (const c of classes) {
+                select.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            }
             
+            const subjects = await fetchSubjects();
+            const subjectsSelect = document.getElementById('availableSubjects');
+            subjectsSelect.innerHTML = '<option value="">-- اختر مادة --</option>';
+            for (const s of subjects) {
+                subjectsSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+            }
+        }
+        
+        async function loadClassSubjects() {
+            const classId = document.getElementById('classForSubjects').value;
             if (!classId) {
-                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">📭 اختر صفاً أولاً</div>';
-                // تحديث قائمة المواد المتاحة للإضافة
-                const subjects = await fetchSubjects();
-                const subjectsSelect = document.getElementById('availableSubjects');
-                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
-                for (let i = 0; i < subjects.length; i++) {
-                    subjectsSelect.innerHTML += `<option value="${subjects[i].id}">${escapeHtml(subjects[i].name)}</option>`;
-                }
-                subjectsSelect.disabled = false;
+                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">اختر صفاً أولاً</div>';
                 return;
             }
             
-            try {
-                // جلب المواد المرتبطة بهذا الصف
-                const { data: classSubjects, error } = await sb
-                    .from('class_subjects')
-                    .select('*, subjects(*)')
-                    .eq('class_id', parseInt(classId));
-                
-                if (error) throw error;
-                
-                const container = document.getElementById('classSubjectsList');
-                const subjectsSelect = document.getElementById('availableSubjects');
-                
-                // عرض المواد المرتبطة
-                if (!classSubjects || classSubjects.length === 0) {
-                    container.innerHTML = '<div class="empty-state">📭 لا توجد مواد مرتبطة بهذا الصف</div>';
-                } else {
-                    let html = '<h4>📚 المواد المرتبطة بهذا الصف:</h4><div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">';
-                    for (let i = 0; i < classSubjects.length; i++) {
-                        const cs = classSubjects[i];
-                        html += `
-                            <div class="linked-subject">
-                                <span>📖 ${escapeHtml(cs.subjects?.name)}</span>
-                                <button class="btn btn-danger btn-sm" onclick="removeSubjectFromClass(${cs.id})">🗑️</button>
-                            </div>
-                        `;
-                    }
-                    html += '</div>';
-                    container.innerHTML = html;
-                }
-                
-                // تحديث قائمة المواد المتاحة للإضافة (إزالة المواد المرتبطة بالفعل)
-                const allSubjects = await fetchSubjects();
-                const linkedSubjectIds = new Set(classSubjects.map(cs => cs.subject_id));
-                const availableSubjects = allSubjects.filter(s => !linkedSubjectIds.has(s.id));
-                
-                subjectsSelect.innerHTML = '<option value="">-- اختر مادة للإضافة --</option>';
-                for (let i = 0; i < availableSubjects.length; i++) {
-                    subjectsSelect.innerHTML += `<option value="${availableSubjects[i].id}">${escapeHtml(availableSubjects[i].name)}</option>`;
-                }
-                
-                if (availableSubjects.length === 0) {
-                    subjectsSelect.innerHTML = '<option value="">-- لا توجد مواد متاحة للإضافة --</option>';
-                    subjectsSelect.disabled = true;
-                } else {
-                    subjectsSelect.disabled = false;
-                }
-                
-            } catch (error) {
-                console.error('Error loading class subjects:', error);
-                document.getElementById('classSubjectsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل البيانات</div>';
+            const subjects = await fetchClassSubjects(parseInt(classId));
+            currentClassSubjects = subjects;
+            const container = document.getElementById('classSubjectsList');
+            
+            if (!subjects || subjects.length === 0) {
+                container.innerHTML = '<div class="empty-state">لا توجد مواد مرتبطة بهذا الصف</div>';
+                return;
             }
-        };
+            
+            let html = '<h4>📚 المواد المرتبطة بهذا الصف:</h4><div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+            for (const cs of subjects) {
+                html += `
+                    <div style="background: #f1f5f9; border-radius: 12px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 10px;">
+                        <span>📖 ${cs.subjects?.name}</span>
+                        <button class="btn btn-danger btn-sm" onclick="removeSubjectFromClass(${cs.id})">🗑️</button>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
         
-        // إضافة مادة للصف
-        window.addSubjectToClass = async function() {
+        async function addSubjectToClass() {
             const classId = document.getElementById('classForSubjects').value;
             const subjectId = document.getElementById('availableSubjects').value;
             
@@ -695,74 +816,52 @@
                 return;
             }
             
-            try {
-                const { error } = await sb
-                    .from('class_subjects')
-                    .insert({ class_id: parseInt(classId), subject_id: parseInt(subjectId) });
-                
-                if (error) {
-                    if (error.code === '23505') {
-                        showToast('هذه المادة مرتبطة بالفعل بهذا الصف', 'warning');
-                    } else {
-                        showToast('حدث خطأ: ' + error.message, 'error');
-                    }
-                    return;
-                }
-                
+            const success = await addSubjectToClassId(parseInt(classId), parseInt(subjectId));
+            if (success) {
                 showToast('تم إضافة المادة إلى الصف', 'success');
-                loadClassSubjects(); // إعادة تحميل القائمة
-                loadClasses(); // تحديث قائمة الصفوف
-                loadSubjects(); // تحديث قائمة المواد
-                
-            } catch (error) {
-                console.error('Error adding subject to class:', error);
-                showToast('حدث خطأ', 'error');
+                loadClassSubjects();
+                loadClasses();
+                loadSubjects();
+            } else {
+                showToast('حدث خطأ أو المادة موجودة بالفعل', 'error');
             }
-        };
+        }
         
-        // إزالة مادة من الصف
-        window.removeSubjectFromClass = async function(classSubjectId) {
+        async function removeSubjectFromClass(classSubjectId) {
             showConfirm('هل أنت متأكد من إزالة هذه المادة من الصف؟', async function() {
-                try {
-                    const { error } = await sb
-                        .from('class_subjects')
-                        .delete()
-                        .eq('id', classSubjectId);
-                    
-                    if (error) throw error;
-                    
+                const success = await removeSubjectFromClassId(classSubjectId);
+                if (success) {
                     showToast('تم إزالة المادة من الصف', 'success');
-                    loadClassSubjects(); // إعادة تحميل القائمة
-                    loadClasses(); // تحديث قائمة الصفوف
-                    loadSubjects(); // تحديث قائمة المواد
-                    
-                } catch (error) {
-                    console.error('Error removing subject from class:', error);
-                    showToast('حدث خطأ', 'error');
+                    loadClassSubjects();
+                    loadClasses();
+                    loadSubjects();
                 }
             });
-        };
-        
-        // ==================== دوال إضافية ====================
-        async function updateSubject(id, subjectData) {
-            const { error } = await sb.from('subjects').update(subjectData).eq('id', id);
-            if (error) return false;
-            return true;
         }
         
-        async function deleteSubject(id) {
-            const { error } = await sb.from('subjects').delete().eq('id', id);
-            if (error) return false;
-            return true;
+        // ==================== دوال مساعدة ====================
+        async function addSubjectToClassId(classId, subjectId) {
+            const { error } = await sb
+                .from('class_subjects')
+                .insert({ class_id: classId, subject_id: subjectId });
+            return !error;
         }
         
-        // ==================== إغلاق المودالات ====================
-        function closeClassModal() {
-            document.getElementById('classModal').style.display = 'none';
+        async function removeSubjectFromClassId(classSubjectId) {
+            const { error } = await sb
+                .from('class_subjects')
+                .delete()
+                .eq('id', classSubjectId);
+            return !error;
         }
         
-        function closeSubjectModal() {
-            document.getElementById('subjectModal').style.display = 'none';
+        async function fetchSubjectClasses(subjectId) {
+            const { data, error } = await sb
+                .from('class_subjects')
+                .select('*, classes(*)')
+                .eq('subject_id', subjectId);
+            if (error) return [];
+            return data || [];
         }
         
         function escapeHtml(str) {
@@ -776,10 +875,34 @@
         }
         
         // ==================== أحداث البحث ====================
-        document.getElementById('classSearch').addEventListener('input', function() { loadClasses(); });
-        document.getElementById('subjectSearch').addEventListener('input', function() { loadSubjects(); });
+        document.getElementById('classSearch').addEventListener('input', () => {
+            classesPage = 1;
+            loadClasses();
+        });
+        document.getElementById('subjectSearch').addEventListener('input', () => {
+            subjectsPage = 1;
+            loadSubjects();
+        });
+        
+        window.showTab = showTab;
+        window.goToClassesPage = goToClassesPage;
+        window.goToSubjectsPage = goToSubjectsPage;
+        window.openClassModal = openClassModal;
+        window.editClass = editClass;
+        window.saveClass = saveClass;
+        window.deleteClassConfirm = deleteClassConfirm;
+        window.closeClassModal = closeClassModal;
+        window.openSubjectModal = openSubjectModal;
+        window.editSubject = editSubject;
+        window.saveSubject = saveSubject;
+        window.deleteSubjectConfirm = deleteSubjectConfirm;
+        window.closeSubjectModal = closeSubjectModal;
+        window.addSubjectToClass = addSubjectToClass;
+        window.removeSubjectFromClass = removeSubjectFromClass;
+        window.loadClassSubjects = loadClassSubjects;
         
         // ==================== تحميل أولي ====================
+        loadStats();
         loadClasses();
     </script>
 </body>
