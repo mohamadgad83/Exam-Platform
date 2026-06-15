@@ -6,6 +6,7 @@
     <title>إضافة سؤال جديد - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); padding: 20px; }
@@ -597,7 +598,7 @@
             document.getElementById('previewModal').style.display = 'none';
         }
         
-        // حفظ السؤال
+        // حفظ السؤال - التصحيح الرئيسي هنا ✅
         async function saveQuestion() {
             const teacherValue = document.getElementById('questionTeacher').value;
             const classId = document.getElementById('questionClass').value;
@@ -637,13 +638,17 @@
                 // التحقق من صحة الاختيارات
                 const correctChoices = choices.filter(c => c.isCorrect && c.text.trim());
                 
-                if (type === 'mcq' && correctChoices.length !== 1) {
-                    showToast('يجب اختيار إجابة واحدة صحيحة بالضبط', 'error');
-                    return;
+                if (type === 'mcq') {
+                    if (correctChoices.length !== 1) {
+                        showToast('يجب اختيار إجابة واحدة صحيحة بالضبط', 'error');
+                        return;
+                    }
                 }
-                if (type === 'multi_select' && correctChoices.length !== 2) {
-                    showToast('يجب اختيار إجابتين صحيحتين بالضبط', 'error');
-                    return;
+                if (type === 'multi_select') {
+                    if (correctChoices.length !== 2) {
+                        showToast('يجب اختيار إجابتين صحيحتين بالضبط', 'error');
+                        return;
+                    }
                 }
                 
                 const minChoices = (type === 'multi_select') ? 5 : 4;
@@ -655,7 +660,13 @@
                 }
                 
                 questionData.options = JSON.stringify(choices.map(c => c.text));
-                questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
+                
+                // ✅ التصحيح الرئيسي: MCQ يتم حفظه كنص عادي، Multi-Select كـ JSON
+                if (type === 'mcq') {
+                    questionData.correct_answer = correctChoices[0].text;  // نص عادي
+                } else {
+                    questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));  // JSON array
+                }
                 questionData.is_multi_select = (type === 'multi_select');
             }
             
