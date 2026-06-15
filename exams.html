@@ -249,6 +249,18 @@
                             <option value="closed">مغلق</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <label>🎓 الصف</label>
+                        <select id="classFilter" onchange="onClassChange()">
+                            <option value="all">كل الصفوف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📖 المادة</label>
+                        <select id="subjectFilter" onchange="loadExams()">
+                            <option value="all">كل المواد</option>
+                        </select>
+                    </div>
                     <div>
                         <button class="btn btn-primary" onclick="openCreateExamModal()">➕ إنشاء امتحان</button>
                         <button class="btn btn-outline" onclick="loadExams()">🔄 تحديث</button>
@@ -548,6 +560,41 @@
         let allRequests = [];
         let requestsPage = 1;
         
+        // ==================== دالة تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass(classId) {
+            const subjectFilter = document.getElementById('subjectFilter');
+            
+            if (!classId || classId === 'all') {
+                // عرض جميع المواد
+                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
+                const subjects = await fetchSubjects();
+                for (const subject of subjects) {
+                    subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                }
+            } else {
+                // عرض مواد الصف فقط
+                subjectFilter.innerHTML = '<option value="all">📖 المواد المرتبطة بالصف</option>';
+                const classSubjects = await fetchClassSubjects(parseInt(classId));
+                const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
+                
+                if (subjects.length === 0) {
+                    subjectFilter.innerHTML = '<option value="all">📖 لا توجد مواد لهذا الصف</option>';
+                } else {
+                    for (const subject of subjects) {
+                        subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                    }
+                }
+            }
+        }
+        
+        // ==================== عند تغيير الصف ====================
+        async function onClassChange() {
+            const classId = document.getElementById('classFilter').value;
+            await loadSubjectsByClass(classId);
+            examsPage = 1;
+            loadExams();
+        }
+        
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
             if (isAdmin) {
@@ -572,18 +619,27 @@
         // ==================== تحميل الصفوف والمواد ====================
         async function loadClassesAndSubjects() {
             const classes = await fetchClasses();
+            const classFilter = document.getElementById('classFilter');
+            classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
+            for (const c of classes) {
+                classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            }
+            
+            // تحميل المواد الأولية
+            await loadSubjectsByClass('all');
+            
             const classSelect = document.getElementById('examClass');
             classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-            classes.forEach(c => {
+            for (const c of classes) {
                 classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
-            });
+            }
             
             const subjects = await fetchSubjects();
             const subjectSelect = document.getElementById('examSubject');
             subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            subjects.forEach(s => {
+            for (const s of subjects) {
                 subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-            });
+            }
         }
         
         // ==================== التبويبات ====================
@@ -597,7 +653,6 @@
             const tabs = document.querySelectorAll('.tabs .tab-btn');
             tabs.forEach(btn => btn.classList.remove('active'));
             
-            // العثور على الزر النشط
             for (let i = 0; i < tabs.length; i++) {
                 const btn = tabs[i];
                 if ((tabName === 'exams' && btn.innerText.includes('الامتحانات')) ||
@@ -625,6 +680,8 @@
             try {
                 const search = document.getElementById('examSearch').value;
                 const status = document.getElementById('examStatusFilter').value;
+                const classId = document.getElementById('classFilter').value;
+                const subjectId = document.getElementById('subjectFilter').value;
                 
                 let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)');
                 
@@ -633,6 +690,12 @@
                 }
                 if (status !== 'all') {
                     query = query.eq('status', status);
+                }
+                if (classId !== 'all') {
+                    query = query.eq('class_id', parseInt(classId));
+                }
+                if (subjectId !== 'all') {
+                    query = query.eq('subject_id', parseInt(subjectId));
                 }
                 
                 const { data: exams, error } = await query.order('created_at', { ascending: false });
@@ -645,7 +708,6 @@
                 
                 allExams = filtered;
                 
-                // Pagination
                 const totalPages = Math.ceil(allExams.length / itemsPerPage);
                 const startIndex = (examsPage - 1) * itemsPerPage;
                 const paginatedExams = allExams.slice(startIndex, startIndex + itemsPerPage);
@@ -846,7 +908,6 @@
             
             allRequests = requests;
             
-            // إحصائيات
             const pendingCount = requests.filter(r => r.status === 'pending_admin').length;
             const approvedCount = requests.filter(r => r.status === 'approved').length;
             const rejectedCount = requests.filter(r => r.status === 'rejected').length;
@@ -1213,7 +1274,7 @@
             }, 3000);
         }
         
-        // تصدير الدوال للنطاق العام
+        // ==================== ربط الدوال للنطاق العام ====================
         window.showTab = showTab;
         window.goToExamsPage = goToExamsPage;
         window.openCreateExamModal = openCreateExamModal;
@@ -1237,6 +1298,7 @@
         window.loadExams = loadExams;
         window.loadRequests = loadRequests;
         window.loadPayments = loadPayments;
+        window.onClassChange = onClassChange;
         
         // أحداث البحث
         document.getElementById('examSearch').addEventListener('input', () => {
@@ -1244,6 +1306,11 @@
             loadExams();
         });
         document.getElementById('examStatusFilter').addEventListener('change', () => {
+            examsPage = 1;
+            loadExams();
+        });
+        document.getElementById('classFilter').addEventListener('change', onClassChange);
+        document.getElementById('subjectFilter').addEventListener('change', () => {
             examsPage = 1;
             loadExams();
         });
