@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طلابي - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
@@ -110,6 +111,46 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            width: 260px;
+            font-family: inherit;
+        }
+        .filter-select {
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            min-width: 150px;
+            font-family: inherit;
+            background: white;
+        }
+        .btn-excel {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-excel:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
         @media (max-width: 768px) {
             .stats-summary {
                 grid-template-columns: repeat(2, 1fr);
@@ -117,6 +158,13 @@
             .student-stats {
                 flex-direction: column;
                 gap: 8px;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-input, .filter-select {
+                width: 100%;
             }
         }
     </style>
@@ -134,8 +182,15 @@
         </div>
 
         <div class="card header">
-            <h1>👨‍🎓 طلابي</h1>
-            <p>قائمة الطلاب المسجلين في صفوفك وموادك مع إحصائيات الأداء</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>👨‍🎓 طلابي</h1>
+                    <p>قائمة الطلاب المسجلين في صفوفك وموادك مع إحصائيات الأداء</p>
+                </div>
+                <button class="btn-excel" onclick="exportToExcel()">
+                    📊 تصدير إلى Excel
+                </button>
+            </div>
         </div>
 
         <!-- إحصائيات سريعة -->
@@ -179,6 +234,7 @@
     </div>
 
     <script src="js/supabase-config.js"></script>
+    <script src="js/notifications.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         if (!checkAuth(['teacher', 'admin'])) return;
@@ -192,7 +248,7 @@
         
         document.getElementById('teacherName').innerHTML = user.name || user.username || 'معلم';
         
-        // تحميل خيارات الفلاتر
+        // ==================== تحميل خيارات الفلاتر ====================
         async function loadFiltersOptions() {
             try {
                 // جلب الصفوف والمواد الخاصة بالمعلم
@@ -230,7 +286,7 @@
             }
         }
         
-        // تحميل الطلاب - محسّن بدون N+1 queries
+        // ==================== تحميل الطلاب (محسّن بدون N+1 queries) ====================
         async function loadStudents() {
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.style.display = 'block';
@@ -250,7 +306,7 @@
                     return;
                 }
                 
-                // ✅ التحسين: جلب جميع الطلاب في الصفوف دفعة واحدة
+                // جلب جميع الطلاب في الصفوف دفعة واحدة
                 let query = sb
                     .from('users')
                     .select('id, name, phone, class_id, created_at')
@@ -276,7 +332,7 @@
                     );
                 }
                 
-                // ✅ التحسين: جلب جميع محاولات الامتحانات للطلاب دفعة واحدة (بدون N+1)
+                // جلب جميع محاولات الامتحانات للطلاب دفعة واحدة
                 const studentIds = filteredStudents.map(s => s.id);
                 let allAttempts = [];
                 
@@ -290,7 +346,6 @@
                     const teacherExamIds = (teacherExams || []).map(e => e.id);
                     
                     if (teacherExamIds.length > 0) {
-                        // جلب جميع المحاولات دفعة واحدة
                         const { data: attempts } = await sb
                             .from('exam_attempts')
                             .select('*, exam:exam_id(id, title, passing_score)')
@@ -302,7 +357,7 @@
                     }
                 }
                 
-                // ✅ التحسين: تجميع البيانات لكل طالب في الذاكرة (بدون طلبات إضافية)
+                // تجميع البيانات لكل طالب
                 const studentsWithStats = [];
                 let totalScoreSum = 0;
                 let totalScoreCount = 0;
@@ -310,7 +365,6 @@
                 let totalPassedExams = 0;
                 
                 for (const student of filteredStudents) {
-                    // تصفية محاولات هذا الطالب
                     const studentAttempts = allAttempts.filter(a => a.student_id === student.id);
                     
                     let examCount = studentAttempts.length;
@@ -345,10 +399,9 @@
                     });
                 }
                 
-                // فلترة حسب المادة (تتطلب فلترة بعد الجلب لأن المادة مرتبطة بالامتحانات)
+                // فلترة حسب المادة
                 let finalStudents = studentsWithStats;
                 if (subjectId !== 'all') {
-                    // جلب الامتحانات التي تحتوي على هذه المادة
                     const { data: subjectExams } = await sb
                         .from('exams')
                         .select('id')
@@ -357,7 +410,6 @@
                     
                     const subjectExamIds = (subjectExams || []).map(e => e.id);
                     
-                    // تصفية الطلاب الذين لديهم محاولات في هذه الامتحانات
                     finalStudents = studentsWithStats.filter(s => {
                         const studentAttempts = allAttempts.filter(a => 
                             a.student_id === s.id && subjectExamIds.includes(a.exam_id)
@@ -385,7 +437,7 @@
             }
         }
         
-        // تحديث الإحصائيات
+        // ==================== تحديث الإحصائيات ====================
         function updateStatsSummary(totalStudents, totalScoreSum, totalScoreCount, totalCompletedExams, totalPassedExams) {
             document.getElementById('totalStudents').innerHTML = totalStudents;
             
@@ -398,7 +450,7 @@
             document.getElementById('passRate').innerHTML = passRate + '%';
         }
         
-        // عرض قائمة الطلاب
+        // ==================== عرض قائمة الطلاب ====================
         function renderStudentsList(students) {
             const container = document.getElementById('studentsList');
             
@@ -412,7 +464,6 @@
             for (let i = 0; i < students.length; i++) {
                 const s = students[i];
                 
-                // تحديد لون شريط التقدم
                 let progressColor = '';
                 let progressText = '';
                 if (s.avgPercentage >= 70) {
@@ -458,10 +509,9 @@
             }
         }
         
-        // عرض تفاصيل الطالب
+        // ==================== عرض تفاصيل الطالب ====================
         async function viewStudentDetails(studentId, studentName) {
             try {
-                // جلب محاولات الطالب
                 const { data: attempts } = await sb
                     .from('exam_attempts')
                     .select('*, exam:exam_id(id, title, passing_score)')
@@ -487,7 +537,6 @@
                     message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
                 }
                 
-                // إحصائيات عامة
                 let totalPercentage = 0;
                 let passedCount = 0;
                 for (const a of attempts) {
@@ -512,7 +561,53 @@
             }
         }
         
-        // عرض أزرار التصفح
+        // ==================== تصدير إلى Excel ====================
+        function exportToExcel() {
+            // البحث عن الجدول أو جمع البيانات من البطاقات
+            const students = allStudentsData;
+            
+            if (!students || students.length === 0) {
+                showToast('لا توجد بيانات للتصدير', 'error');
+                return;
+            }
+            
+            // تجهيز البيانات للتصدير
+            const exportData = students.map((s, index) => ({
+                '#': index + 1,
+                'اسم الطالب': s.name,
+                'رقم الهاتف': s.phone || '-',
+                'عدد الامتحانات': s.examCount || 0,
+                'متوسط الدرجات': s.avgPercentage ? `${s.avgPercentage}%` : '0%',
+                'الامتحانات الناجحة': s.passedCount || 0,
+                'تاريخ التسجيل': formatDate(s.created_at)
+            }));
+            
+            // إنشاء ورقة عمل
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            
+            // ضبط عرض الأعمدة
+            ws['!cols'] = [
+                { wch: 5 },   // #
+                { wch: 25 },  // اسم الطالب
+                { wch: 15 },  // رقم الهاتف
+                { wch: 15 },  // عدد الامتحانات
+                { wch: 15 },  // متوسط الدرجات
+                { wch: 18 },  // الامتحانات الناجحة
+                { wch: 20 }   // تاريخ التسجيل
+            ];
+            
+            // إنشاء ملف Excel
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'الطلاب');
+            
+            // تحميل الملف
+            const fileName = `students_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            showToast('✅ تم تصدير البيانات بنجاح', 'success');
+        }
+        
+        // ==================== أزرار التصفح ====================
         function renderPagination(totalPages, currentPage) {
             const container = document.getElementById('pagination');
             
@@ -523,12 +618,10 @@
             
             let html = '';
             
-            // Previous button
             if (currentPage > 1) {
                 html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← السابق</button>`;
             }
             
-            // Page numbers
             const startPage = Math.max(1, currentPage - 2);
             const endPage = Math.min(totalPages, currentPage + 2);
             
@@ -546,7 +639,6 @@
                 html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
             }
             
-            // Next button
             if (currentPage < totalPages) {
                 html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">التالي →</button>`;
             }
@@ -554,12 +646,12 @@
             container.innerHTML = html;
         }
         
-        // الانتقال إلى صفحة محددة
-        window.goToPage = (page) => {
+        function goToPage(page) {
             currentPage = page;
             loadStudents();
-        };
+        }
         
+        // ==================== دوال مساعدة ====================
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/[&<>]/g, function(m) {
@@ -570,7 +662,36 @@
             });
         }
         
-        // أحداث البحث والفلاتر
+        function formatDate(date) {
+            if (!date) return '-';
+            return new Date(date).toLocaleDateString('ar-EG');
+        }
+        
+        function formatDateTime(date) {
+            if (!date) return '-';
+            return new Date(date).toLocaleString('ar-EG');
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ==================== أحداث البحث والفلاتر ====================
         document.getElementById('searchInput').addEventListener('input', () => {
             currentPage = 1;
             loadStudents();
@@ -586,11 +707,21 @@
         
         // تصدير الدوال للنطاق العام
         window.viewStudentDetails = viewStudentDetails;
+        window.goToPage = goToPage;
+        window.exportToExcel = exportToExcel;
         
-        // تحميل أولي
+        // ==================== تهيئة الإشعارات ====================
+        async function initNotifications() {
+            if (window.notificationSystem) {
+                await window.notificationSystem.init(user);
+            }
+        }
+        
+        // ==================== تحميل أولي ====================
         async function init() {
             await loadFiltersOptions();
             await loadStudents();
+            await initNotifications();
         }
         
         init();
