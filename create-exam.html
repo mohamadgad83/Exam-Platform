@@ -6,152 +6,50 @@
     <title>إنشاء امتحان جديد - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        .admin-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
+        .filter-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-        }
-        .top-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .logo { font-size: 22px; font-weight: 800; }
-        .user-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-        .user-name { font-weight: 600; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px; }
-        
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .card-header {
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
+            align-items: flex-end;
             margin-bottom: 20px;
         }
-        .card-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #334155; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #6366f1;
-        }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-        }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-info { background: #3b82f6; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
-        .filter-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
+        .filter-group {
             flex: 1;
-            min-width: 200px;
-            font-family: inherit;
+            min-width: 160px;
         }
-        .filter-select {
-            padding: 10px 18px;
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
             border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            min-width: 150px;
+            border-radius: 12px;
             font-family: inherit;
+            font-size: 14px;
             background: white;
         }
         
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
-        .badge-gray { background: #f1f5f9; color: #475569; }
-        
-        .question-card, .student-card {
+        .question-card {
             background: #f8fafc;
             border-radius: 20px;
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
             border: 1px solid #e2e8f0;
             transition: all 0.2s;
         }
-        .question-card:hover, .student-card:hover {
+        .question-card:hover {
             transform: translateX(-5px);
             border-right: 4px solid #6366f1;
             background: white;
         }
-        .selected {
+        .question-card.selected {
             background: #d1fae5;
             border-color: #10b981;
         }
@@ -161,17 +59,11 @@
             bottom: 20px;
             background: white;
             border-radius: 20px;
-            padding: 15px;
+            padding: 15px 20px;
             margin-top: 20px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             z-index: 100;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #64748b;
         }
         
         .tabs {
@@ -192,40 +84,61 @@
             color: #64748b;
             transition: all 0.2s;
         }
-        .tab-btn:hover {
-            background: rgba(99,102,241,0.1);
-            color: #6366f1;
-        }
         .tab-btn.active {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
         }
         
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 14px 20px;
-            display: flex;
+        .badge {
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            border-right: 4px solid;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
         }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
+        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
         
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
         @media (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .grid { grid-template-columns: 1fr; }
-            .tabs { justify-content: center; }
-            .tab-btn { padding: 6px 16px; font-size: 12px; }
+            .filter-row { flex-direction: column; }
+            .selected-summary { position: relative; }
         }
     </style>
 </head>
@@ -261,54 +174,50 @@
                 <p>املأ بيانات الامتحان، ثم اختر الأسئلة والطلاب</p>
             </div>
 
-            <form id="createExamForm">
-                <div class="grid">
-                    <div class="form-group">
-                        <label>📝 عنوان الامتحان *</label>
-                        <input type="text" id="examTitle" placeholder="مثال: اختبار الرياضيات - الفصل الأول">
-                    </div>
-                    <div class="form-group" id="teacherSelectGroup" style="display: none;">
-                        <label>👨‍🏫 اختر المعلم *</label>
-                        <select id="examTeacher" onchange="onTeacherChange()">
-                            <option value="">-- اختر المعلم --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>🎓 الصف *</label>
-                        <select id="examClass" onchange="onClassChange()">
-                            <option value="">-- اختر الصف --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>📖 المادة *</label>
-                        <select id="examSubject">
-                            <option value="">-- اختر الصف أولاً --</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>⏱️ المدة (دقائق) *</label>
-                        <input type="number" id="examDuration" value="60" min="1" max="180">
-                    </div>
-                    <div class="form-group">
-                        <label>⭐ درجة النجاح (%)</label>
-                        <input type="number" id="examPassingScore" value="50" min="0" max="100">
-                    </div>
-                </div>
-                <div class="grid">
-                    <div class="form-group">
-                        <label>📅 تاريخ البدء (اختياري)</label>
-                        <input type="datetime-local" id="examStartDate">
-                    </div>
-                    <div class="form-group">
-                        <label>📅 تاريخ الانتهاء (اختياري)</label>
-                        <input type="datetime-local" id="examEndDate">
-                    </div>
+            <div class="row-2">
+                <div class="form-group" id="teacherSelectGroup" style="display: none;">
+                    <label>👨‍🏫 اختر المعلم *</label>
+                    <select id="examTeacher" onchange="onTeacherChange()">
+                        <option value="">-- اختر المعلم --</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label>📖 وصف الامتحان</label>
-                    <textarea id="examDesc" rows="3" placeholder="وصف الامتحان (اختياري)"></textarea>
+                    <label>🎓 الصف *</label>
+                    <select id="examClass" onchange="onClassChange()">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
                 </div>
-            </form>
+                <div class="form-group">
+                    <label>📖 المادة *</label>
+                    <select id="examSubject">
+                        <option value="">-- اختر الصف أولاً --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>⏱️ المدة (دقائق) *</label>
+                    <input type="number" id="examDuration" value="60" min="1" max="180">
+                </div>
+                <div class="form-group">
+                    <label>⭐ درجة النجاح (%)</label>
+                    <input type="number" id="examPassingScore" value="50" min="0" max="100">
+                </div>
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📅 تاريخ البدء (اختياري)</label>
+                    <input type="datetime-local" id="examStartDate">
+                </div>
+                <div class="form-group">
+                    <label>📅 تاريخ الانتهاء (اختياري)</label>
+                    <input type="datetime-local" id="examEndDate">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>📖 وصف الامتحان</label>
+                <textarea id="examDesc" rows="3" placeholder="وصف الامتحان (اختياري)"></textarea>
+            </div>
         </div>
 
         <!-- التبويبات -->
@@ -320,27 +229,40 @@
         <!-- تبويب الأسئلة -->
         <div id="questionsTab">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="questionSearch" class="search-input" placeholder="🔍 بحث في الأسئلة...">
-                    <select id="typeFilter" class="filter-select">
-                        <option value="all">كل الأنواع</option>
-                        <option value="mcq">اختيار من متعدد</option>
-                        <option value="multi_select">اختيار متعدد</option>
-                        <option value="true_false">صح/خطأ</option>
-                        <option value="essay">مقالي</option>
-                    </select>
-                    <button class="btn btn-primary btn-sm" onclick="window.location.href='teacher-questions.html'">➕ إضافة سؤال</button>
-                    <button class="btn btn-outline btn-sm" onclick="loadQuestions()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="questionSearch" placeholder="بحث في الأسئلة...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 نوع السؤال</label>
+                        <select id="typeFilter">
+                            <option value="all">كل الأنواع</option>
+                            <option value="mcq">اختيار من متعدد</option>
+                            <option value="multi_select">اختيار متعدد</option>
+                            <option value="true_false">صح/خطأ</option>
+                            <option value="essay">مقالي</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='teacher-questions.html'">➕ إضافة سؤال</button>
+                        <button class="btn btn-outline btn-sm" onclick="loadQuestions()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div id="questionsList"></div>
+                <div id="questionsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- تبويب الطلاب -->
         <div id="studentsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="studentSearch" class="search-input" placeholder="🔍 بحث باسم الطالب أو رقم الهاتف...">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="studentSearch" placeholder="بحث باسم الطالب أو رقم الهاتف...">
+                    </div>
                     <div>
                         <button class="btn btn-outline btn-sm" onclick="selectAllStudents()">✅ تحديد الكل</button>
                         <button class="btn btn-outline btn-sm" onclick="deselectAllStudents()">⬜ إلغاء الكل</button>
@@ -351,7 +273,7 @@
         </div>
 
         <!-- ملخص الاختيارات -->
-        <div class="selected-summary">
+        <div class="selected-summary" id="selectedSummary" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div>
                     <span>✅ الأسئلة: <strong id="selectedQuestionsCount">0</strong></span>
@@ -367,9 +289,7 @@
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
         
         const isAdmin = (currentUser.role === 'admin');
         let currentTeacherId = isAdmin ? null : currentUser.id;
@@ -381,6 +301,10 @@
         let selectedStudents = new Set();
         let teacherAssignments = [];
         let teachersList = [];
+        
+        // Pagination
+        let questionsPage = 1;
+        let itemsPerPage = 10;
         
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
@@ -461,7 +385,6 @@
                 document.getElementById('examSubject').innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
                 document.getElementById('examSubject').disabled = true;
                 
-                // تحميل الأسئلة للمعلم المختار
                 await loadQuestions();
                 
             } catch (error) {
@@ -492,24 +415,35 @@
                 }
             });
             
+            questionsPage = 1;
+            await loadQuestions();
             await loadStudents();
         }
         
-        // ==================== تحميل الأسئلة ====================
+        // ==================== تحميل الأسئلة مع Pagination ====================
         async function loadQuestions() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
             try {
                 const search = document.getElementById('questionSearch').value;
                 const type = document.getElementById('typeFilter').value;
                 const classId = document.getElementById('examClass').value;
+                const subjectId = document.getElementById('examSubject').value;
                 
                 let query = sb.from('questions').select('*').eq('status', 'approved');
                 
                 if (currentTeacherId) {
                     query = query.eq('teacher_id', currentTeacherId);
                 }
-                
                 if (type !== 'all') {
                     query = query.eq('type', type);
+                }
+                if (classId) {
+                    query = query.eq('class_id', parseInt(classId));
+                }
+                if (subjectId && subjectId !== 'all') {
+                    query = query.eq('subject_id', parseInt(subjectId));
                 }
                 
                 const { data: questions, error } = await query.order('created_at', { ascending: false });
@@ -518,20 +452,24 @@
                 
                 allQuestions = questions || [];
                 
-                // فلترة حسب الصف إذا تم اختياره
                 let filtered = allQuestions;
-                if (classId) {
-                    filtered = filtered.filter(q => q.class_id == classId);
-                }
                 if (search) {
                     filtered = filtered.filter(q => q.text && q.text.toLowerCase().includes(search.toLowerCase()));
                 }
                 
-                renderQuestionsList(filtered);
+                // Pagination
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                const startIndex = (questionsPage - 1) * itemsPerPage;
+                const paginatedQuestions = filtered.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderQuestionsList(paginatedQuestions);
+                renderQuestionsPagination(totalPages);
                 
             } catch (error) {
                 console.error('Error loading questions:', error);
                 document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
+            } finally {
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         }
         
@@ -541,7 +479,7 @@
             if (!questions || questions.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                        <div class="empty-state-icon">📭</div>
                         <p>لا توجد أسئلة معتمدة</p>
                         <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'" style="margin-top: 15px;">➕ أضف سؤالاً جديداً</button>
                     </div>
@@ -550,6 +488,7 @@
             }
             
             container.innerHTML = '';
+            
             for (const q of questions) {
                 const isSelected = selectedQuestions.find(s => s.id === q.id);
                 const typeText = getTypeText(q.type);
@@ -577,6 +516,32 @@
                 `;
                 container.appendChild(card);
             }
+        }
+        
+        function renderQuestionsPagination(totalPages) {
+            const container = document.getElementById('questionsPagination');
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (questionsPage > 1) html += `<button class="page-btn" onclick="goToQuestionsPage(${questionsPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === questionsPage ? 'active' : ''}" onclick="goToQuestionsPage(${i})">${i}</button>`;
+            }
+            
+            if (questionsPage < totalPages) html += `<button class="page-btn" onclick="goToQuestionsPage(${questionsPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToQuestionsPage(page) {
+            questionsPage = page;
+            loadQuestions();
         }
         
         function getTypeText(type) {
@@ -676,7 +641,7 @@
                 const isSelected = selectedStudents.has(s.id);
                 
                 const card = document.createElement('div');
-                card.className = `student-card ${isSelected ? 'selected' : ''}`;
+                card.className = `question-card ${isSelected ? 'selected' : ''}`;
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div>
@@ -727,6 +692,8 @@
             document.getElementById('selectedQuestionsCount').innerHTML = questionsCount;
             document.getElementById('totalPoints').innerHTML = totalPoints;
             document.getElementById('selectedStudentsCount').innerHTML = studentsCount;
+            
+            document.getElementById('selectedSummary').style.display = questionsCount > 0 ? 'flex' : 'none';
         }
         
         function updateTabCounts() {
@@ -800,7 +767,10 @@
                 passing_score: parseInt(passingScore),
                 start_date: startDate || null,
                 end_date: endDate || null,
-                status: 'published'
+                status: 'published',
+                exam_type: 'free',
+                exam_price: 0,
+                is_announced: true
             };
             
             const { data: exam, error: examError } = await sb
@@ -862,9 +832,25 @@
         }
         
         // ==================== أحداث ====================
-        document.getElementById('questionSearch').addEventListener('input', () => loadQuestions());
-        document.getElementById('typeFilter').addEventListener('change', () => loadQuestions());
+        document.getElementById('questionSearch').addEventListener('input', () => {
+            questionsPage = 1;
+            loadQuestions();
+        });
+        document.getElementById('typeFilter').addEventListener('change', () => {
+            questionsPage = 1;
+            loadQuestions();
+        });
         document.getElementById('studentSearch').addEventListener('input', () => loadStudents());
+        
+        window.showTab = showTab;
+        window.onTeacherChange = onTeacherChange;
+        window.onClassChange = onClassChange;
+        window.toggleSelectQuestion = toggleSelectQuestion;
+        window.toggleSelectStudent = toggleSelectStudent;
+        window.selectAllStudents = selectAllStudents;
+        window.deselectAllStudents = deselectAllStudents;
+        window.goToQuestionsPage = goToQuestionsPage;
+        window.createExam = createExam;
         
         // ==================== تحميل أولي ====================
         setupUI();
