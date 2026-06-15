@@ -84,7 +84,7 @@
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
             color: white;
             border: none;
             border-radius: 16px;
@@ -97,13 +97,30 @@
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+            box-shadow: 0 5px 15px rgba(99,102,241,0.4);
         }
 
         .btn-login:disabled {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .forgot-password {
+            text-align: left;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
         }
 
         .register-link {
@@ -268,6 +285,12 @@
                     <label>🔒 كلمة السر</label>
                     <input type="password" id="password" placeholder="أدخل كلمة السر" autocomplete="off">
                 </div>
+                
+                <!-- رابط نسيت كلمة السر -->
+                <div class="forgot-password">
+                    <a href="reset-password.html">🔐 نسيت كلمة السر؟</a>
+                </div>
+                
                 <button type="submit" class="btn-login" id="loginBtn">دخول</button>
             </form>
 
