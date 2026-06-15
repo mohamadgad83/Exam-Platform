@@ -6,48 +6,8 @@
     <title>الامتحانات - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        .top-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .logo { font-size: 22px; font-weight: 800; }
-        .user-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-        .user-name { font-weight: 600; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px; }
-        
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .card-header {
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .card-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
         .tabs {
             display: flex;
             gap: 10px;
@@ -69,38 +29,32 @@
         .tab-btn:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
         .tab-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
         
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-        }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
-        .filter-bar {
+        .filter-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            align-items: flex-end;
             margin-bottom: 20px;
         }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
+        .filter-group {
             flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             font-family: inherit;
+            font-size: 14px;
+            background: white;
         }
         
         .exam-card {
@@ -128,8 +82,8 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
         
         .modal {
             display: none;
@@ -174,30 +128,42 @@
         .empty-state { text-align: center; padding: 60px; color: #64748b; }
         .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
         
-        .screenshot-img { max-width: 100%; border-radius: 12px; margin: 10px 0; }
+        .screenshot-img { max-width: 100%; border-radius: 12px; margin: 10px 0; cursor: pointer; }
         
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 14px 20px;
+        .pagination {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            border-right: 4px solid;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
         
         @media (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-row { flex-direction: column; align-items: stretch; }
             .tabs { justify-content: center; }
             .tab-btn { padding: 6px 16px; font-size: 12px; }
         }
@@ -211,6 +177,7 @@
                 <span class="user-name">👋 مرحباً <span id="studentName"></span></span>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
                 <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
         </div>
@@ -224,38 +191,57 @@
         <!-- تبويب الامتحانات المتاحة -->
         <div id="availableTab">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
-                    <button class="btn btn-outline" onclick="loadAvailableExams()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="searchInput" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadAvailableExams()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div id="availableExamsList"></div>
+                <div id="availablePagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- تبويب امتحاناتي (المقبول فيها) -->
         <div id="myExamsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="myExamsSearch" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
-                    <button class="btn btn-outline" onclick="loadMyExams()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="myExamsSearch" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadMyExams()">🔄 تحديث</button>
+                    </div>
                 </div>
                 <div id="myExamsList"></div>
+                <div id="myExamsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- تبويب طلباتي -->
         <div id="requestsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <select id="requestStatusFilter" class="search-input" style="width: auto;" onchange="loadMyRequests()">
-                        <option value="all">كل الطلبات</option>
-                        <option value="pending_admin">⏳ قيد المراجعة</option>
-                        <option value="approved">✅ مقبول</option>
-                        <option value="rejected">❌ مرفوض</option>
-                    </select>
-                    <button class="btn btn-outline" onclick="loadMyRequests()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="requestStatusFilter" class="search-input" style="width: auto;" onchange="loadMyRequests()">
+                            <option value="all">كل الطلبات</option>
+                            <option value="pending_admin">⏳ قيد المراجعة</option>
+                            <option value="approved">✅ مقبول</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadMyRequests()">🔄 تحديث</button>
+                    </div>
                 </div>
                 <div id="myRequestsList"></div>
+                <div id="requestsPagination" class="pagination"></div>
             </div>
         </div>
     </div>
@@ -277,16 +263,27 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
+        // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
-        if (!currentUser || currentUser.role !== 'student') {
+        if (!currentUser || (currentUser.role !== 'student' && currentUser.role !== 'admin')) {
             window.location.href = 'index.html';
         }
         document.getElementById('studentName').innerHTML = currentUser.name || currentUser.username || 'طالب';
         
+        // ==================== المتغيرات العامة ====================
         let currentExam = null;
         let currentCoupon = null;
-        let selectedPaymentMethod = null;
         
+        // Pagination variables
+        let availableExamsList = [];
+        let availablePage = 1;
+        let myExamsList = [];
+        let myExamsPage = 1;
+        let requestsList = [];
+        let requestsPage = 1;
+        let itemsPerPage = 10;
+        
+        // ==================== التبويبات ====================
         function showTab(tabName) {
             document.getElementById('availableTab').style.display = tabName === 'available' ? 'block' : 'none';
             document.getElementById('myExamsTab').style.display = tabName === 'myExams' ? 'block' : 'none';
@@ -303,38 +300,73 @@
         
         // ==================== الامتحانات المتاحة ====================
         async function loadAvailableExams() {
-            const search = document.getElementById('searchInput').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
             
-            // جلب الامتحانات المنشورة والمعلن عنها
-            let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)')
-                .eq('status', 'published')
-                .eq('is_announced', true);
-            
-            // جلب طلبات الطالب الحالية
-            const { data: myRequests } = await sb
-                .from('exam_requests')
-                .select('exam_id')
-                .eq('student_id', currentUser.id);
-            
-            const requestedExamIds = new Set((myRequests || []).map(r => r.exam_id));
-            
-            const { data: exams, error } = await query;
-            if (error) throw error;
-            
-            let available = (exams || []).filter(e => !requestedExamIds.has(e.id));
-            
-            if (search) {
-                available = available.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+            try {
+                const search = document.getElementById('searchInput').value;
+                
+                // جلب الامتحانات المنشورة والمعلن عنها
+                let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)')
+                    .eq('status', 'published')
+                    .eq('is_announced', true);
+                
+                // جلب صف الطالب
+                const { data: student } = await sb
+                    .from('users')
+                    .select('class_id')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (student?.class_id) {
+                    query = query.eq('class_id', student.class_id);
+                }
+                
+                // جلب طلبات الطالب الحالية
+                const { data: myRequests } = await sb
+                    .from('exam_requests')
+                    .select('exam_id')
+                    .eq('student_id', currentUser.id);
+                
+                const requestedExamIds = new Set((myRequests || []).map(r => r.exam_id));
+                
+                const { data: exams, error } = await query;
+                if (error) throw error;
+                
+                let available = (exams || []).filter(e => !requestedExamIds.has(e.id));
+                
+                if (search) {
+                    available = available.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                availableExamsList = available;
+                
+                // Pagination
+                const totalPages = Math.ceil(availableExamsList.length / itemsPerPage);
+                const startIndex = (availablePage - 1) * itemsPerPage;
+                const paginatedExams = availableExamsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderAvailableExams(paginatedExams);
+                renderPagination('availablePagination', totalPages, availablePage, (page) => goToAvailablePage(page));
+                
+            } catch (error) {
+                console.error('Error loading available exams:', error);
+                document.getElementById('availableExamsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
-            
+        }
+        
+        function renderAvailableExams(exams) {
             const container = document.getElementById('availableExamsList');
-            if (available.length === 0) {
+            
+            if (exams.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد امتحانات متاحة</p></div>';
                 return;
             }
             
             container.innerHTML = '';
-            for (const exam of available) {
+            for (const exam of exams) {
                 const examType = exam.exam_type === 'paid' ? `💰 ${exam.exam_price} جنيه` : '🆓 مجاني';
                 const card = document.createElement('div');
                 card.className = 'exam-card';
@@ -354,6 +386,11 @@
                 `;
                 container.appendChild(card);
             }
+        }
+        
+        function goToAvailablePage(page) {
+            availablePage = page;
+            loadAvailableExams();
         }
         
         // ==================== فتح مودال التقديم ====================
@@ -395,7 +432,6 @@
             document.getElementById('applyContent').innerHTML = content;
             document.getElementById('applyModal').style.display = 'flex';
             
-            // إضافة معاينة الصورة
             if (exam.exam_type === 'paid') {
                 document.getElementById('paymentScreenshot').addEventListener('change', function(e) {
                     const file = e.target.files[0];
@@ -516,7 +552,19 @@
                 exams = exams.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
             }
             
+            myExamsList = exams;
+            
+            const totalPages = Math.ceil(myExamsList.length / itemsPerPage);
+            const startIndex = (myExamsPage - 1) * itemsPerPage;
+            const paginatedExams = myExamsList.slice(startIndex, startIndex + itemsPerPage);
+            
+            renderMyExams(paginatedExams);
+            renderPagination('myExamsPagination', totalPages, myExamsPage, (page) => goToMyExamsPage(page));
+        }
+        
+        function renderMyExams(exams) {
             const container = document.getElementById('myExamsList');
+            
             if (exams.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لم يتم قبولك في أي امتحان بعد</p></div>';
                 return;
@@ -541,6 +589,11 @@
             }
         }
         
+        function goToMyExamsPage(page) {
+            myExamsPage = page;
+            loadMyExams();
+        }
+        
         function startExam(examId) {
             localStorage.setItem('currentExamId', examId);
             window.location.href = 'student-exam-attempt.html';
@@ -560,7 +613,19 @@
             const { data: requests, error } = await query.order('created_at', { ascending: false });
             if (error) throw error;
             
+            requestsList = requests || [];
+            
+            const totalPages = Math.ceil(requestsList.length / itemsPerPage);
+            const startIndex = (requestsPage - 1) * itemsPerPage;
+            const paginatedRequests = requestsList.slice(startIndex, startIndex + itemsPerPage);
+            
+            renderMyRequests(paginatedRequests);
+            renderPagination('requestsPagination', totalPages, requestsPage, (page) => goToRequestsPage(page));
+        }
+        
+        function renderMyRequests(requests) {
             const container = document.getElementById('myRequestsList');
+            
             if (!requests || requests.length === 0) {
                 container.innerHTML = '<div class="empty-state">📭 لا توجد طلبات</div>';
                 return;
@@ -594,9 +659,58 @@
             }
         }
         
+        function goToRequestsPage(page) {
+            requestsPage = page;
+            loadMyRequests();
+        }
+        
+        // ==================== دوال مساعدة ====================
+        function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="(${onPageChange})(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="(${onPageChange})(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         function closeApplyModal() {
@@ -605,6 +719,27 @@
             currentCoupon = null;
         }
         
+        window.showTab = showTab;
+        window.openApplyModal = openApplyModal;
+        window.applyCoupon = applyCoupon;
+        window.submitApplication = submitApplication;
+        window.startExam = startExam;
+        window.closeApplyModal = closeApplyModal;
+        window.goToAvailablePage = goToAvailablePage;
+        window.goToMyExamsPage = goToMyExamsPage;
+        window.goToRequestsPage = goToRequestsPage;
+        
+        // أحداث البحث
+        document.getElementById('searchInput').addEventListener('input', () => {
+            availablePage = 1;
+            loadAvailableExams();
+        });
+        document.getElementById('myExamsSearch').addEventListener('input', () => {
+            myExamsPage = 1;
+            loadMyExams();
+        });
+        
+        // تحميل أولي
         loadAvailableExams();
         loadMyExams();
         loadMyRequests();
