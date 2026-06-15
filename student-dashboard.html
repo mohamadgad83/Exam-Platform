@@ -9,134 +9,190 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* الشريط العلوي */
-        .main-header {
+        /* أنماط إضافية للرسم البياني وإعدادات الأمان */
+        .chart-card {
+            margin-top: 25px;
             background: white;
-            border-radius: 24px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .settings-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .settings-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { font-size: 32px; }
-        .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-area { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .user-name { font-weight: 600; color: #1e293b; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; }
-        
-        /* إحصائيات */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: 24px;
-            padding: 22px;
-            color: white;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(99,102,241,0.3); }
-        .stat-number { font-size: 42px; font-weight: 800; }
-        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
-        
-        /* إحصائيات سريعة */
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .quick-stat-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 20px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .quick-stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .quick-stat-number { font-size: 28px; font-weight: 800; color: #6366f1; }
-        .quick-stat-label { font-size: 13px; color: #64748b; margin-top: 5px; }
-        
-        /* بطاقات الامتحانات */
-        .exam-card {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s;
-        }
-        .exam-card:hover {
-            transform: translateX(-5px);
-            border-right: 4px solid #6366f1;
-            background: white;
-        }
-        .exam-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-        .exam-info {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin: 12px 0;
-            color: #64748b;
-            font-size: 13px;
-        }
-        
-        .badge {
+        .security-status {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
+            gap: 8px;
+            padding: 6px 14px;
             border-radius: 40px;
             font-size: 12px;
             font-weight: 600;
         }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
+        .status-set {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-not-set {
+            background: #fef3c7;
+            color: #d97706;
+        }
         
-        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
+        /* أنماط قائمة الأسئلة */
+        .question-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .question-option {
+            padding: 12px 15px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
+            text-align: right;
+            transition: all 0.2s;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-option:hover {
+            background: #eef2ff;
+            border-color: #6366f1;
+        }
+        .question-option.selected {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+        .q-num {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+        }
+        .question-option.selected .q-num {
+            background: white;
+            color: #6366f1;
+        }
+        
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 600px) {
+            .question-options {
+                grid-template-columns: 1fr;
+            }
+            .settings-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        /* أنماط المودال */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 550px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .modal-header h3 {
+            font-size: 20px;
+            color: #1e293b;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
             font-family: inherit;
             font-size: 14px;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-outline:hover { background: #6366f1; color: white; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
-        .loading-skeleton {
-            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 12px;
-            height: 80px;
-            margin-bottom: 15px;
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
         }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #6366f1;
+            color: #6366f1;
+        }
+        .btn-outline:hover {
+            background: #6366f1;
+            color: white;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
         }
         .impersonate-banner {
             background: linear-gradient(135deg, #fef3c7, #fffbeb);
@@ -149,15 +205,6 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-        }
-        
-        @media (max-width: 768px) {
-            body { padding: 12px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .quick-stats { grid-template-columns: repeat(2, 1fr); }
-            .stat-number { font-size: 28px; }
-            .main-header { flex-direction: column; text-align: center; }
-            .action-buttons { justify-content: center; }
         }
     </style>
 </head>
@@ -221,6 +268,21 @@
         <!-- إحصائيات سريعة -->
         <div class="quick-stats" id="quickStats"></div>
 
+        <!-- الرسم البياني لتقدم الطالب -->
+        <div class="progress-chart-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 style="margin: 0;"><i class="fas fa-chart-line"></i> 📈 تقدمك في الامتحانات</h3>
+                    <select id="chartPeriod" style="padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; background: white;">
+                        <option value="week">آخر 7 أيام</option>
+                        <option value="month" selected>آخر 30 يوم</option>
+                        <option value="all">كل الفترة</option>
+                    </select>
+                </div>
+                <canvas id="studentProgressChart" style="max-height: 280px; width: 100%;"></canvas>
+            </div>
+        </div>
+
         <!-- الإجراءات السريعة -->
         <div class="card">
             <div class="card-header">
@@ -230,6 +292,22 @@
                 <button class="btn btn-primary" onclick="window.location.href='student-exams.html'">📝 استعراض الامتحانات المتاحة</button>
                 <button class="btn btn-primary" onclick="window.location.href='student-groups.html'">👥 استعراض المجموعات</button>
                 <button class="btn btn-outline" onclick="window.location.href='student-results.html'">📊 عرض نتائجي</button>
+            </div>
+        </div>
+
+        <!-- إعدادات الأمان والحساب -->
+        <div class="settings-card">
+            <div class="settings-header">
+                <h3><i class="fas fa-shield-alt"></i> 🔐 إعدادات الأمان والحساب</h3>
+                <span id="securityStatus" class="security-status status-not-set">⚠️ لم يتم تعيين سؤال الأمان</span>
+            </div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" onclick="openSecurityModal()">
+                    <i class="fas fa-question-circle"></i> تعيين / تعديل سؤال الأمان
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="openChangePasswordModal()">
+                    <i class="fas fa-key"></i> تغيير كلمة المرور
+                </button>
             </div>
         </div>
 
@@ -252,13 +330,102 @@
         </div>
     </div>
 
+    <!-- مودال تعيين سؤال الأمان -->
+    <div id="securityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔐 تعيين سؤال الأمان</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeSecurityModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>📋 اختر سؤال الأمان من القائمة</label>
+                <div class="question-options" id="questionList">
+                    <div class="question-option" data-question="ما هو اسم والدتك؟" onclick="selectQuestion('ما هو اسم والدتك؟')">
+                        <span class="q-num">1</span> ما هو اسم والدتك؟
+                    </div>
+                    <div class="question-option" data-question="ما هو اسم والدك؟" onclick="selectQuestion('ما هو اسم والدك؟')">
+                        <span class="q-num">2</span> ما هو اسم والدك؟
+                    </div>
+                    <div class="question-option" data-question="ما هو اسم مدرستك الثانوية؟" onclick="selectQuestion('ما هو اسم مدرستك الثانوية؟')">
+                        <span class="q-num">3</span> ما هو اسم مدرستك الثانوية؟
+                    </div>
+                    <div class="question-option" data-question="ما هو لونك المفضل؟" onclick="selectQuestion('ما هو لونك المفضل؟')">
+                        <span class="q-num">4</span> ما هو لونك المفضل؟
+                    </div>
+                    <div class="question-option" data-question="ما هو اسم حيوانك الأليف؟" onclick="selectQuestion('ما هو اسم حيوانك الأليف؟')">
+                        <span class="q-num">5</span> ما هو اسم حيوانك الأليف؟
+                    </div>
+                    <div class="question-option" data-question="ما هي مدينتك المفضلة؟" onclick="selectQuestion('ما هي مدينتك المفضلة؟')">
+                        <span class="q-num">6</span> ما هي مدينتك المفضلة؟
+                    </div>
+                    <div class="question-option" data-question="ما هو تاريخ ميلادك؟" onclick="selectQuestion('ما هو تاريخ ميلادك؟')">
+                        <span class="q-num">7</span> ما هو تاريخ ميلادك؟ (يوم-شهر)
+                    </div>
+                    <div class="question-option" data-question="ما هو اسم أفضل صديق لك؟" onclick="selectQuestion('ما هو اسم أفضل صديق لك؟')">
+                        <span class="q-num">8</span> ما هو اسم أفضل صديق لك؟
+                    </div>
+                    <div class="question-option" data-question="ما هو اسم أول معلم لك؟" onclick="selectQuestion('ما هو اسم أول معلم لك؟')">
+                        <span class="q-num">9</span> ما هو اسم أول معلم لك؟
+                    </div>
+                    <div class="question-option" data-question="ما هي هوايتك المفضلة؟" onclick="selectQuestion('ما هي هوايتك المفضلة؟')">
+                        <span class="q-num">10</span> ما هي هوايتك المفضلة؟
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>✏️ أو اكتب سؤالك الخاص</label>
+                <input type="text" id="customQuestion" placeholder="اكتب سؤال الأمان الخاص بك">
+            </div>
+            <div class="form-group">
+                <label>🔒 الإجابة</label>
+                <input type="text" id="securityAnswer" placeholder="أدخل إجابتك">
+                <small style="color: #64748b; display: block; margin-top: 8px;">
+                    💡 <strong>تذكير:</strong> تأكد من كتابة الإجابة بشكل صحيح، سيتم استخدامها لاستعادة كلمة المرور.
+                </small>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveSecurityQuestion()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeSecurityModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تغيير كلمة المرور -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 تغيير كلمة المرور</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeChangePasswordModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور الحالية</label>
+                <input type="password" id="currentPassword" placeholder="أدخل كلمة المرور الحالية">
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور الجديدة</label>
+                <input type="password" id="newPassword" placeholder="6 أحرف على الأقل">
+            </div>
+            <div class="form-group">
+                <label>تأكيد كلمة المرور الجديدة</label>
+                <input type="password" id="confirmNewPassword" placeholder="أعد كتابة كلمة المرور الجديدة">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="changePassword()">✅ تغيير</button>
+                <button class="btn btn-outline" onclick="closeChangePasswordModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/supabase-config.js"></script>
+    <script src="js/notifications.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
         
         let originalUser = null;
         let isImpersonating = false;
+        let studentChart = null;
+        let selectedQuestionText = '';
         
         try {
             const storedOriginal = localStorage.getItem('originalUser');
@@ -298,10 +465,268 @@
             }
         };
         
-        // ==================== تحميل الإحصائيات الرئيسية ====================
+        // ==================== تحميل حالة سؤال الأمان ====================
+        async function loadSecurityStatus() {
+            try {
+                const { data: user, error } = await sb
+                    .from('users')
+                    .select('security_question, security_answer')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const statusSpan = document.getElementById('securityStatus');
+                if (user.security_question && user.security_answer) {
+                    statusSpan.innerHTML = '✅ سؤال الأمان مُعيّن';
+                    statusSpan.className = 'security-status status-set';
+                } else {
+                    statusSpan.innerHTML = '⚠️ لم يتم تعيين سؤال الأمان (مهم لاستعادة كلمة المرور)';
+                    statusSpan.className = 'security-status status-not-set';
+                }
+            } catch (error) {
+                console.error('Error loading security status:', error);
+            }
+        }
+        
+        // ==================== دوال سؤال الأمان ====================
+        function selectQuestion(question) {
+            selectedQuestionText = question;
+            document.querySelectorAll('#questionList .question-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-question') === question || opt.innerText.includes(question)) {
+                    opt.classList.add('selected');
+                }
+            });
+            document.getElementById('customQuestion').value = '';
+        }
+        
+        function openSecurityModal() {
+            selectedQuestionText = '';
+            document.getElementById('customQuestion').value = '';
+            document.getElementById('securityAnswer').value = '';
+            document.querySelectorAll('#questionList .question-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            loadCurrentSecurityQuestion();
+            document.getElementById('securityModal').style.display = 'flex';
+        }
+        
+        async function loadCurrentSecurityQuestion() {
+            try {
+                const { data: user, error } = await sb
+                    .from('users')
+                    .select('security_question')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                if (user.security_question) {
+                    const existingOption = Array.from(document.querySelectorAll('#questionList .question-option'))
+                        .find(opt => opt.getAttribute('data-question') === user.security_question || 
+                                   opt.innerText.includes(user.security_question));
+                    
+                    if (existingOption) {
+                        existingOption.classList.add('selected');
+                        selectedQuestionText = user.security_question;
+                    } else {
+                        document.getElementById('customQuestion').value = user.security_question;
+                        selectedQuestionText = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading current question:', error);
+            }
+        }
+        
+        function closeSecurityModal() {
+            document.getElementById('securityModal').style.display = 'none';
+        }
+        
+        async function saveSecurityQuestion() {
+            let question = selectedQuestionText;
+            const customQuestion = document.getElementById('customQuestion').value.trim();
+            const answer = document.getElementById('securityAnswer').value.trim();
+            
+            if (customQuestion) {
+                question = customQuestion;
+            }
+            
+            if (!question) {
+                showToast('⚠️ الرجاء اختيار سؤال من القائمة أو كتابة سؤال خاص', 'error');
+                return;
+            }
+            if (!answer) {
+                showToast('⚠️ الرجاء إدخال الإجابة', 'error');
+                return;
+            }
+            if (answer.length < 3) {
+                showToast('⚠️ الإجابة قصيرة جداً (3 أحرف على الأقل)', 'error');
+                return;
+            }
+            
+            const hashedAnswer = await hashPassword(answer.toLowerCase().trim());
+            
+            try {
+                const { error } = await sb
+                    .from('users')
+                    .update({
+                        security_question: question,
+                        security_answer: hashedAnswer
+                    })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showToast('✅ تم حفظ سؤال الأمان بنجاح!', 'success');
+                closeSecurityModal();
+                loadSecurityStatus();
+                
+            } catch (error) {
+                console.error(error);
+                showToast('❌ حدث خطأ في حفظ سؤال الأمان', 'error');
+            }
+        }
+        
+        // ==================== دوال تغيير كلمة المرور ====================
+        function openChangePasswordModal() {
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            document.getElementById('changePasswordModal').style.display = 'flex';
+        }
+        
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        }
+        
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+            
+            if (!currentPassword) {
+                showToast('الرجاء إدخال كلمة المرور الحالية', 'error');
+                return;
+            }
+            if (!newPassword) {
+                showToast('الرجاء إدخال كلمة المرور الجديدة', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showToast('كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showToast('كلمة المرور الجديدة غير متطابقة', 'error');
+                return;
+            }
+            
+            const hashedCurrent = await hashPassword(currentPassword);
+            const hashedNew = await hashPassword(newPassword);
+            
+            try {
+                const { data: user, error: checkError } = await sb
+                    .from('users')
+                    .select('id')
+                    .eq('id', currentUser.id)
+                    .eq('password_hash', hashedCurrent)
+                    .single();
+                
+                if (checkError || !user) {
+                    showToast('كلمة المرور الحالية غير صحيحة', 'error');
+                    return;
+                }
+                
+                const { error: updateError } = await sb
+                    .from('users')
+                    .update({ password_hash: hashedNew })
+                    .eq('id', currentUser.id);
+                
+                if (updateError) throw updateError;
+                
+                showToast('✅ تم تغيير كلمة المرور بنجاح!', 'success');
+                closeChangePasswordModal();
+                
+            } catch (error) {
+                console.error(error);
+                showToast('حدث خطأ', 'error');
+            }
+        }
+        
+        // ==================== الرسم البياني لتقدم الطالب ====================
+        async function loadProgressChart() {
+            try {
+                const { data: attempts } = await sb
+                    .from('exam_attempts')
+                    .select('score, total_points, submitted_at, exams:exam_id(title)')
+                    .eq('student_id', currentUser.id)
+                    .in('status', ['submitted', 'graded'])
+                    .order('submitted_at', { ascending: true });
+                
+                if (!attempts || attempts.length === 0) {
+                    console.log('لا توجد بيانات للرسم البياني');
+                    return;
+                }
+                
+                const period = document.getElementById('chartPeriod')?.value || 'month';
+                let filtered = [...attempts];
+                const now = new Date();
+                
+                if (period === 'week') {
+                    const weekAgo = new Date(now.setDate(now.getDate() - 7));
+                    filtered = attempts.filter(a => new Date(a.submitted_at) >= weekAgo);
+                } else if (period === 'month') {
+                    const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                    filtered = attempts.filter(a => new Date(a.submitted_at) >= monthAgo);
+                }
+                
+                if (filtered.length === 0) return;
+                
+                const labels = filtered.map(a => new Date(a.submitted_at).toLocaleDateString('ar'));
+                const percentages = filtered.map(a => {
+                    if (a.total_points && a.total_points > 0) {
+                        return Math.round((a.score / a.total_points) * 100);
+                    }
+                    return 0;
+                });
+                
+                const ctx = document.getElementById('studentProgressChart')?.getContext('2d');
+                if (!ctx) return;
+                
+                if (window.studentChart) window.studentChart.destroy();
+                
+                window.studentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'نسبة النجاح %',
+                            data: percentages,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: { y: { beginAtZero: true, max: 100 } },
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading progress chart:', error);
+            }
+        }
+        
+        // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
             try {
-                // جلب محاولات الطالب
                 const { data: attempts } = await sb
                     .from('exam_attempts')
                     .select('id, score, total_points, status')
@@ -322,14 +747,12 @@
                 const avgScore = completedAttempts > 0 ? Math.round(totalPercentage / completedAttempts) : 0;
                 const successRate = completedAttempts > 0 ? Math.round((passedCount / completedAttempts) * 100) : 0;
                 
-                // جلب مجموعات الطالب
                 const { count: groupsCount } = await sb
                     .from('group_members')
                     .select('*', { count: 'exact', head: true })
                     .eq('student_id', currentUser.id)
                     .eq('status', 'approved');
                 
-                // جلب طلبات الانتظار
                 const { count: pendingRequests } = await sb
                     .from('exam_requests')
                     .select('*', { count: 'exact', head: true })
@@ -360,7 +783,6 @@
                     </div>
                 `;
                 
-                // جلب عدد الامتحانات المتاحة
                 const { data: allExams } = await sb
                     .from('exams')
                     .select('id')
@@ -376,7 +798,6 @@
                 const availableExams = (allExams || []).filter(e => !requestedIds.has(e.id));
                 document.getElementById('availableExamsCount').innerHTML = availableExams.length;
                 
-                // جلب عدد المجموعات المتاحة
                 const { data: myGroups } = await sb
                     .from('group_members')
                     .select('group_id')
@@ -491,6 +912,7 @@
             }
         }
         
+        // ==================== دوال مساعدة ====================
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -501,10 +923,56 @@
             });
         }
         
-        // تحميل أولي
-        loadStats();
-        loadAvailableExams();
-        loadRecentResults();
+        function formatDateTime(date) {
+            if (!date) return '-';
+            return new Date(date).toLocaleString('ar-EG');
+        }
+        
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ==================== أحداث الرسم البياني ====================
+        document.getElementById('chartPeriod')?.addEventListener('change', () => {
+            loadProgressChart();
+        });
+        
+        // ==================== تحميل أولي ====================
+        async function init() {
+            await loadStats();
+            await loadAvailableExams();
+            await loadRecentResults();
+            await loadProgressChart();
+            await loadSecurityStatus();
+            
+            if (window.notificationSystem) {
+                await window.notificationSystem.init(currentUser);
+            }
+        }
+        
+        init();
     </script>
 </body>
 </html>
