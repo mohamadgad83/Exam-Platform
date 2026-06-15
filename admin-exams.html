@@ -289,6 +289,13 @@
 
     <script src="js/supabase-config.js"></script>
     <script>
+        // ==================== المتغيرات العامة ====================
+        let allExams = [];
+        let currentExamId = null;
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let isLoading = false;
+        
         // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
         if (!currentUser || currentUser.role !== 'admin') {
@@ -296,45 +303,30 @@
         }
         document.getElementById('adminName').innerHTML = currentUser.name;
         
-        let allExams = [];
-        let currentExamId = null;
-        let currentPage = 1;
-        let itemsPerPage = 10;
-        let classesList = [];
-        let subjectsList = [];
-        let teachersList = [];
-        
         // ==================== تحميل خيارات الفلاتر ====================
         async function loadFiltersOptions() {
             try {
-                // جلب الصفوف
                 const classes = await fetchClasses();
-                classesList = classes;
                 const classFilter = document.getElementById('classFilter');
                 classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
                 classes.forEach(c => {
                     classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
                 });
                 
-                // جلب المواد
                 const subjects = await fetchSubjects();
-                subjectsList = subjects;
                 const subjectFilter = document.getElementById('subjectFilter');
                 subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
                 subjects.forEach(s => {
                     subjectFilter.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
                 });
                 
-                // جلب المعلمين
                 const teachers = await fetchUsers({ role: 'teacher' });
-                teachersList = teachers;
                 const teacherFilter = document.getElementById('teacherFilter');
                 teacherFilter.innerHTML = '<option value="all">👨‍🏫 كل المعلمين</option>';
                 teachers.forEach(t => {
                     teacherFilter.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
                 });
                 
-                // خيارات المودال
                 const classSelect = document.getElementById('examClass');
                 classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
                 classes.forEach(c => {
@@ -358,10 +350,17 @@
             }
         }
         
-        // ==================== تحميل الامتحانات مع Pagination ====================
+        // ==================== تحميل الامتحانات ====================
         async function loadExams() {
+            // منع التحميل المتكرر
+            if (isLoading) {
+                console.log('جاري التحميل بالفعل...');
+                return;
+            }
+            isLoading = true;
+            
             const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.style.display = 'block';
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
             
             try {
                 const search = document.getElementById('searchInput').value;
@@ -372,7 +371,26 @@
                 
                 let query = sb
                     .from('exams')
-                    .select('*, subjects:subject_id(name), classes:class_id(name), users:teacher_id(name, username)');
+                    .select(`
+                        id,
+                        title,
+                        description,
+                        class_id,
+                        subject_id,
+                        teacher_id,
+                        duration_minutes,
+                        passing_score,
+                        exam_type,
+                        exam_price,
+                        start_date,
+                        end_date,
+                        status,
+                        is_announced,
+                        created_at,
+                        subjects:subject_id(name),
+                        classes:class_id(name),
+                        users:teacher_id(name, username)
+                    `);
                 
                 if (status !== 'all') {
                     query = query.eq('status', status);
@@ -394,10 +412,24 @@
                 let filtered = exams || [];
                 
                 if (search) {
-                    filtered = filtered.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+                    filtered = filtered.filter(e => e.title && e.title.toLowerCase().includes(search.toLowerCase()));
                 }
                 
-                allExams = filtered;
+                // إزالة أي تكرار محتمل (للتأكد)
+                const uniqueExams = [];
+                const examIds = new Set();
+                for (const exam of filtered) {
+                    if (!examIds.has(exam.id)) {
+                        examIds.add(exam.id);
+                        uniqueExams.push(exam);
+                    }
+                }
+                
+                if (uniqueExams.length !== filtered.length) {
+                    console.warn(`⚠️ تمت إزالة ${filtered.length - uniqueExams.length} امتحان مكرر`);
+                }
+                
+                allExams = uniqueExams;
                 
                 // Pagination
                 const totalPages = Math.ceil(allExams.length / itemsPerPage);
@@ -409,21 +441,31 @@
                 
             } catch (error) {
                 console.error('Error loading exams:', error);
-                document.getElementById('examsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+                const examsList = document.getElementById('examsList');
+                if (examsList) {
+                    examsList.innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+                }
             } finally {
-                loadingIndicator.style.display = 'none';
+                isLoading = false;
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
         }
         
+        // ==================== عرض قائمة الامتحانات ====================
         async function renderExamsList(exams) {
             const container = document.getElementById('examsList');
+            if (!container) return;
             
-            if (exams.length === 0) {
+            // تفريغ الحاوية تماماً قبل إعادة الملء
+            container.innerHTML = '';
+            
+            if (!exams || exams.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد امتحانات</p><button class="btn btn-primary" onclick="openCreateExamModal()" style="margin-top: 15px;">➕ إنشاء أول امتحان</button></div>';
                 return;
             }
             
-            container.innerHTML = '';
+            // عرض عدد الامتحانات في الكونسول للتحقق
+            console.log(`📊 عرض ${exams.length} امتحان(ات) فريدة`);
             
             for (const exam of exams) {
                 const statusClass = exam.status === 'published' ? 'badge-success' : (exam.status === 'draft' ? 'badge-warning' : 'badge-danger');
@@ -438,6 +480,7 @@
                 
                 const card = document.createElement('div');
                 card.className = 'exam-card';
+                card.setAttribute('data-exam-id', exam.id);
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div style="flex: 1;">
@@ -471,8 +514,10 @@
             }
         }
         
+        // ==================== أزرار التصفح ====================
         function renderPagination(totalPages) {
             const container = document.getElementById('pagination');
+            if (!container) return;
             
             if (totalPages <= 1) {
                 container.innerHTML = '';
@@ -480,7 +525,6 @@
             }
             
             let html = '';
-            
             if (currentPage > 1) {
                 html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← السابق</button>`;
             }
@@ -514,7 +558,7 @@
             loadExams();
         }
         
-        // ==================== تغيير حالة الامتحان ====================
+        // ==================== دوال الامتحانات ====================
         async function changeExamStatus(examId, status) {
             try {
                 const { error } = await sb
@@ -524,21 +568,15 @@
                 
                 if (error) throw error;
                 
-                let message = '';
-                if (status === 'published') message = 'تم نشر الامتحان';
-                else if (status === 'closed') message = 'تم إغلاق الامتحان';
-                else message = 'تم حفظ الامتحان كمسودة';
-                
+                let message = status === 'published' ? 'تم نشر الامتحان' : (status === 'closed' ? 'تم إغلاق الامتحان' : 'تم حفظ الامتحان كمسودة');
                 showToast(message, 'success');
                 loadExams();
-                
             } catch (error) {
-                console.error('Error changing exam status:', error);
+                console.error('Error:', error);
                 showToast('حدث خطأ', 'error');
             }
         }
         
-        // ==================== فتح مودال إنشاء امتحان ====================
         function openCreateExamModal() {
             currentExamId = null;
             document.getElementById('examModalTitle').innerHTML = '➕ إنشاء امتحان جديد';
@@ -557,7 +595,6 @@
             document.getElementById('examModal').style.display = 'flex';
         }
         
-        // ==================== تعديل امتحان ====================
         async function editExam(id) {
             try {
                 const { data: exam, error } = await sb
@@ -582,16 +619,13 @@
                 document.getElementById('examClass').value = exam.class_id || '';
                 document.getElementById('examSubject').value = exam.subject_id || '';
                 document.getElementById('examTeacher').value = exam.teacher_id || '';
-                
                 document.getElementById('examModal').style.display = 'flex';
-                
             } catch (error) {
-                console.error('Error editing exam:', error);
+                console.error('Error:', error);
                 showToast('حدث خطأ', 'error');
             }
         }
         
-        // ==================== حفظ الامتحان ====================
         async function saveExam() {
             const examData = {
                 title: document.getElementById('examTitle').value,
@@ -625,18 +659,11 @@
             
             let result;
             if (currentExamId) {
-                const { error } = await sb
-                    .from('exams')
-                    .update(examData)
-                    .eq('id', currentExamId);
+                const { error } = await sb.from('exams').update(examData).eq('id', currentExamId);
                 result = !error;
-                if (error) console.error('Update error:', error);
             } else {
-                const { error } = await sb
-                    .from('exams')
-                    .insert(examData);
+                const { error } = await sb.from('exams').insert(examData);
                 result = !error;
-                if (error) console.error('Insert error:', error);
             }
             
             if (result) {
@@ -649,26 +676,21 @@
             }
         }
         
-        // ==================== حذف امتحان ====================
         function deleteExamConfirm(examId) {
-            showConfirm('⚠️ هل أنت متأكد من حذف هذا الامتحان؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
-                const { error } = await sb
-                    .from('exams')
-                    .delete()
-                    .eq('id', examId);
-                
-                if (error) {
-                    showToast('حدث خطأ', 'error');
-                    return;
-                }
-                
-                showToast('تم حذف الامتحان', 'success');
-                currentPage = 1;
-                loadExams();
-            });
+            if (confirm('⚠️ هل أنت متأكد من حذف هذا الامتحان؟')) {
+                (async () => {
+                    const { error } = await sb.from('exams').delete().eq('id', examId);
+                    if (error) {
+                        showToast('حدث خطأ', 'error');
+                        return;
+                    }
+                    showToast('تم حذف الامتحان', 'success');
+                    currentPage = 1;
+                    loadExams();
+                })();
+            }
         }
         
-        // ==================== عرض تسليمات الامتحان ====================
         function viewExamSubmissions(examId) {
             window.location.href = `teacher-submissions.html?exam_id=${examId}`;
         }
@@ -679,6 +701,10 @@
             document.getElementById('examPriceGroup').style.display = type === 'paid' ? 'block' : 'none';
         }
         
+        function closeExamModal() {
+            document.getElementById('examModal').style.display = 'none';
+        }
+        
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -687,10 +713,6 @@
                 if (m === '>') return '&gt;';
                 return m;
             });
-        }
-        
-        function closeExamModal() {
-            document.getElementById('examModal').style.display = 'none';
         }
         
         function showToast(message, type = 'success') {
@@ -734,25 +756,23 @@
             loadExams();
         });
         
-        // تصدير الدوال للنطاق العام
-        window.goToPage = goToPage;
-        window.changeExamStatus = changeExamStatus;
+        // ==================== ربط الدوال للنطاق العام ====================
         window.openCreateExamModal = openCreateExamModal;
         window.editExam = editExam;
         window.saveExam = saveExam;
         window.deleteExamConfirm = deleteExamConfirm;
         window.viewExamSubmissions = viewExamSubmissions;
+        window.changeExamStatus = changeExamStatus;
         window.togglePriceField = togglePriceField;
         window.closeExamModal = closeExamModal;
         window.loadExams = loadExams;
+        window.goToPage = goToPage;
         
         // ==================== تحميل أولي ====================
-        async function init() {
+        (async function init() {
             await loadFiltersOptions();
             await loadExams();
-        }
-        
-        init();
+        })();
     </script>
 </body>
 </html>
