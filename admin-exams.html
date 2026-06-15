@@ -303,56 +303,86 @@
         }
         document.getElementById('adminName').innerHTML = currentUser.name;
         
+        // ==================== دالة تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass(classId) {
+            const subjectFilter = document.getElementById('subjectFilter');
+            
+            if (!classId || classId === 'all') {
+                // عرض جميع المواد
+                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
+                const subjects = await fetchSubjects();
+                for (const subject of subjects) {
+                    subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                }
+            } else {
+                // عرض مواد الصف فقط
+                subjectFilter.innerHTML = '<option value="all">📖 المواد المرتبطة بالصف</option>';
+                const classSubjects = await fetchClassSubjects(parseInt(classId));
+                const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
+                
+                if (subjects.length === 0) {
+                    subjectFilter.innerHTML = '<option value="all">📖 لا توجد مواد لهذا الصف</option>';
+                } else {
+                    for (const subject of subjects) {
+                        subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                    }
+                }
+            }
+        }
+        
         // ==================== تحميل خيارات الفلاتر ====================
         async function loadFiltersOptions() {
             try {
                 const classes = await fetchClasses();
                 const classFilter = document.getElementById('classFilter');
                 classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
-                classes.forEach(c => {
+                for (const c of classes) {
                     classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
-                });
+                }
                 
-                const subjects = await fetchSubjects();
-                const subjectFilter = document.getElementById('subjectFilter');
-                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
-                subjects.forEach(s => {
-                    subjectFilter.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-                });
+                // تحميل المواد الأولية
+                await loadSubjectsByClass('all');
                 
                 const teachers = await fetchUsers({ role: 'teacher' });
                 const teacherFilter = document.getElementById('teacherFilter');
                 teacherFilter.innerHTML = '<option value="all">👨‍🏫 كل المعلمين</option>';
-                teachers.forEach(t => {
+                for (const t of teachers) {
                     teacherFilter.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
-                });
+                }
                 
                 const classSelect = document.getElementById('examClass');
                 classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-                classes.forEach(c => {
+                for (const c of classes) {
                     classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
-                });
+                }
                 
                 const subjectSelect = document.getElementById('examSubject');
                 subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-                subjects.forEach(s => {
+                const subjects = await fetchSubjects();
+                for (const s of subjects) {
                     subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-                });
+                }
                 
                 const teacherSelect = document.getElementById('examTeacher');
                 teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
-                teachers.forEach(t => {
+                for (const t of teachers) {
                     teacherSelect.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
-                });
+                }
                 
             } catch (error) {
                 console.error('Error loading filters:', error);
             }
         }
         
+        // ==================== ربط حدث تغيير الصف ====================
+        document.getElementById('classFilter').addEventListener('change', async () => {
+            currentPage = 1;
+            await loadSubjectsByClass(document.getElementById('classFilter').value);
+            loadExams();
+        });
+        
         // ==================== تحميل الامتحانات ====================
         async function loadExams() {
-            // منع التحميل المتكرر
             if (isLoading) {
                 console.log('جاري التحميل بالفعل...');
                 return;
@@ -415,7 +445,7 @@
                     filtered = filtered.filter(e => e.title && e.title.toLowerCase().includes(search.toLowerCase()));
                 }
                 
-                // إزالة أي تكرار محتمل (للتأكد)
+                // إزالة أي تكرار محتمل
                 const uniqueExams = [];
                 const examIds = new Set();
                 for (const exam of filtered) {
@@ -431,7 +461,6 @@
                 
                 allExams = uniqueExams;
                 
-                // Pagination
                 const totalPages = Math.ceil(allExams.length / itemsPerPage);
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const paginatedExams = allExams.slice(startIndex, startIndex + itemsPerPage);
@@ -456,7 +485,6 @@
             const container = document.getElementById('examsList');
             if (!container) return;
             
-            // تفريغ الحاوية تماماً قبل إعادة الملء
             container.innerHTML = '';
             
             if (!exams || exams.length === 0) {
@@ -464,7 +492,6 @@
                 return;
             }
             
-            // عرض عدد الامتحانات في الكونسول للتحقق
             console.log(`📊 عرض ${exams.length} امتحان(ات) فريدة`);
             
             for (const exam of exams) {
@@ -472,7 +499,6 @@
                 const statusText = exam.status === 'published' ? 'منشور' : (exam.status === 'draft' ? 'مسودة' : 'مغلق');
                 const examType = exam.exam_type === 'paid' ? `💰 ${exam.exam_price} جنيه` : '🆓 مجاني';
                 
-                // جلب إحصائيات سريعة للامتحان
                 let stats = { total_requests: 0, approved_count: 0, pending_count: 0, total_attempts: 0 };
                 try {
                     stats = await fetchExamStats(exam.id);
@@ -740,14 +766,6 @@
             loadExams();
         });
         document.getElementById('statusFilter').addEventListener('change', () => {
-            currentPage = 1;
-            loadExams();
-        });
-        document.getElementById('classFilter').addEventListener('change', () => {
-            currentPage = 1;
-            loadExams();
-        });
-        document.getElementById('subjectFilter').addEventListener('change', () => {
             currentPage = 1;
             loadExams();
         });
