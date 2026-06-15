@@ -6,93 +6,90 @@
     <title>مجموعاتي - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .top-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
+        .tabs {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 10px;
             flex-wrap: wrap;
-            gap: 15px;
-        }
-        .logo { font-size: 22px; font-weight: 800; }
-        .user-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-        .user-name { font-weight: 600; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px; }
-        
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
         }
-        .header h1 {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
+        .tab-btn {
+            background: transparent;
             border: none;
-            border-radius: 14px;
+            padding: 10px 28px;
+            border-radius: 30px;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
+            color: #64748b;
+            transition: all 0.2s;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-info { background: #3b82f6; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
         
-        .filter-bar {
+        .filter-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            align-items: flex-end;
             margin-bottom: 20px;
         }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            width: 260px;
-            font-family: inherit;
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
         }
-        .filter-select {
-            padding: 10px 18px;
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
             border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            min-width: 180px;
+            border-radius: 12px;
             font-family: inherit;
+            font-size: 14px;
             background: white;
         }
         
-        .exam-info {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin: 12px 0;
-            color: #64748b;
-            font-size: 13px;
+        .group-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
         }
+        .group-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .requests-table th, .requests-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .requests-table th {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+        .requests-table tr:hover {
+            background: #f1f5f9;
+        }
+        
         .badge {
             display: inline-flex;
             align-items: center;
@@ -103,18 +100,17 @@
             font-weight: 600;
         }
         .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-info { background: #dbeafe; color: #1e40af; }
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-        .empty-state { text-align: center; padding: 40px; color: #64748b; }
         
-        .group-card {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
+        .pending-count {
+            background: #ef4444;
+            color: white;
+            border-radius: 30px;
+            padding: 2px 10px;
+            font-size: 12px;
+            margin-right: 8px;
         }
         
         .modal {
@@ -147,112 +143,44 @@
             border-radius: 16px;
             font-family: inherit;
         }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #334155; }
         
-        .tabs {
+        .pagination {
             display: flex;
+            justify-content: center;
             gap: 10px;
+            margin-top: 20px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 5px;
         }
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 30px;
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            color: #64748b;
-            transition: all 0.2s;
         }
-        .tab-btn.active {
+        .page-btn.active {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
+            border-color: transparent;
         }
-        
-        .requests-table {
-            width: 100%;
-            border-collapse: collapse;
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
         }
-        .requests-table th, .requests-table td {
-            padding: 12px;
-            text-align: right;
-            border-bottom: 1px solid #e2e8f0;
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
-        .requests-table th {
-            background: #f8fafc;
-            font-weight: 700;
-        }
-        .requests-table tr:hover {
-            background: #f1f5f9;
-        }
-        
-        .pending-count {
-            background: #ef4444;
-            color: white;
-            border-radius: 30px;
-            padding: 2px 10px;
-            font-size: 12px;
-            margin-right: 8px;
-        }
-        
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            direction: rtl;
-            border-right: 4px solid;
-        }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
-        .toast-message { flex: 1; font-size: 14px; color: #333; }
-        
-        .confirm-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10001;
-        }
-        .confirm-content {
-            background: white;
-            border-radius: 28px;
-            padding: 32px;
-            text-align: center;
-            width: 320px;
-        }
-        .confirm-buttons { display: flex; gap: 12px; margin-top: 20px; }
-        .confirm-yes { background: #10b981; color: white; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
-        .confirm-no { background: #e2e8f0; color: #333; padding: 10px; border: none; border-radius: 12px; cursor: pointer; flex: 1; }
         
         @media (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .search-input, .filter-select { width: 100%; }
-            .action-buttons { flex-direction: column; }
-            .btn { width: 100%; justify-content: center; }
-            .requests-table th, .requests-table td { padding: 8px; font-size: 12px; }
+            .filter-row { flex-direction: column; align-items: stretch; }
             .tabs { justify-content: center; }
             .tab-btn { padding: 6px 16px; font-size: 12px; }
+            .requests-table th, .requests-table td { padding: 8px; font-size: 12px; }
         }
     </style>
 </head>
@@ -282,24 +210,39 @@
         <!-- تبويب مجموعاتي -->
         <div id="groupsTab">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 بحث باسم المجموعة...">
-                    <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
-                    <button class="btn btn-outline" onclick="loadGroups()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="searchInput" placeholder="بحث باسم المجموعة...">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openCreateGroupModal()">➕ إنشاء مجموعة</button>
+                        <button class="btn btn-outline" onclick="loadGroups()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div id="groupsList"></div>
+                <div id="groupsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- تبويب طلبات الانتظار -->
         <div id="requestsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="requestSearch" class="search-input" placeholder="🔍 بحث باسم الطالب أو رقم الهاتف...">
-                    <select id="filterGroup" class="filter-select" onchange="loadPendingRequests()">
-                        <option value="all">👥 كل المجموعات</option>
-                    </select>
-                    <button class="btn btn-outline" onclick="loadPendingRequests()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="requestSearch" placeholder="بحث باسم الطالب أو رقم الهاتف...">
+                    </div>
+                    <div class="filter-group">
+                        <label>👥 المجموعة</label>
+                        <select id="filterGroup" onchange="loadPendingRequests()">
+                            <option value="all">كل المجموعات</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadPendingRequests()">🔄 تحديث</button>
+                    </div>
                 </div>
                 
                 <div style="overflow-x: auto;">
@@ -315,8 +258,9 @@
                             </tr>
                         </thead>
                         <tbody id="pendingRequestsTable"></tbody>
-                    </table>
+                    寸able
                 </div>
+                <div id="requestsPagination" class="pagination"></div>
             </div>
         </div>
     </div>
@@ -325,18 +269,36 @@
     <div id="groupModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">➕ إنشاء مجموعة جديدة</h3>
-            <input type="text" id="groupName" placeholder="اسم المجموعة">
-            <textarea id="groupDesc" rows="3" placeholder="وصف المجموعة"></textarea>
-            <select id="groupClassId">
-                <option value="">-- اختر الصف --</option>
-            </select>
-            <select id="groupSubjectId">
-                <option value="">-- اختر المادة --</option>
-            </select>
-            <input type="number" id="groupMaxCapacity" placeholder="الحد الأقصى للطلاب">
-            <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                <input type="checkbox" id="groupIsOpen" checked> مفتوح للانضمام
-            </label>
+            <div class="form-group">
+                <label>📌 اسم المجموعة *</label>
+                <input type="text" id="groupName" placeholder="مثال: مجموعة الرياضيات - المستوى المتقدم">
+            </div>
+            <div class="form-group">
+                <label>📝 وصف المجموعة</label>
+                <textarea id="groupDesc" rows="3" placeholder="وصف المجموعة (اختياري)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>🎓 الصف</label>
+                <select id="groupClassId">
+                    <option value="">-- اختر الصف --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>📖 المادة</label>
+                <select id="groupSubjectId">
+                    <option value="">-- اختر المادة --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>👥 الحد الأقصى للطلاب</label>
+                <input type="number" id="groupMaxCapacity" placeholder="اختياري - اتركه فارغاً لعدم وجود حد">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="groupIsOpen" checked> 
+                    <span>🔓 مفتوح للانضمام (بدون موافقة المعلم)</span>
+                </label>
+            </div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveGroup()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeGroupModal()">إلغاء</button>
@@ -353,9 +315,17 @@
         }
         document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
         
+        // ==================== المتغيرات العامة ====================
         let currentGroupId = null;
         let allRequests = [];
         let groupsList = [];
+        
+        // Pagination variables
+        let myGroupsList = [];
+        let groupsPage = 1;
+        let requestsList = [];
+        let requestsPage = 1;
+        let itemsPerPage = 10;
         
         // ==================== التبويبات ====================
         function showTab(tabName) {
@@ -376,6 +346,9 @@
         
         // ==================== تحميل المجموعات ====================
         async function loadGroups() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
             try {
                 const search = document.getElementById('searchInput').value;
                 
@@ -392,56 +365,73 @@
                 }
                 
                 // جلب عدد الأعضاء لكل مجموعة
-                for (let i = 0; i < filtered.length; i++) {
+                for (const g of filtered) {
                     const { count } = await sb
                         .from('group_members')
                         .select('*', { count: 'exact', head: true })
-                        .eq('group_id', filtered[i].id)
+                        .eq('group_id', g.id)
                         .eq('status', 'approved');
-                    filtered[i].member_count = count || 0;
+                    g.member_count = count || 0;
                 }
                 
-                const container = document.getElementById('groupsList');
+                myGroupsList = filtered;
                 
-                if (!filtered || filtered.length === 0) {
-                    container.innerHTML = '<div class="empty-state">📭 لا توجد مجموعات<br><button class="btn btn-primary" style="margin-top: 15px;" onclick="openCreateGroupModal()">➕ إنشاء أول مجموعة</button></div>';
-                    return;
-                }
+                const totalPages = Math.ceil(myGroupsList.length / itemsPerPage);
+                const startIndex = (groupsPage - 1) * itemsPerPage;
+                const paginatedGroups = myGroupsList.slice(startIndex, startIndex + itemsPerPage);
                 
-                container.innerHTML = '';
-                for (let i = 0; i < filtered.length; i++) {
-                    const g = filtered[i];
-                    const className = g.classes ? g.classes.name : '-';
-                    const subjectName = g.subjects ? g.subjects.name : '-';
-                    const memberText = (g.member_count || 0) + (g.max_capacity ? '/' + g.max_capacity : '');
-                    
-                    const card = document.createElement('div');
-                    card.className = 'group-card';
-                    card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
-                            <div style="flex: 1;">
-                                <h3>📌 ${escapeHtml(g.name)}</h3>
-                                <p style="color: #64748b; margin: 8px 0;">${escapeHtml(g.description || 'لا يوجد وصف')}</p>
-                                <div class="exam-info">
-                                    <span>🎓 ${escapeHtml(className)}</span>
-                                    <span>📖 ${escapeHtml(subjectName)}</span>
-                                    <span>👥 ${memberText} طالب</span>
-                                    <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
-                                </div>
-                            </div>
-                            <div class="action-buttons">
-                                <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
-                                <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                }
+                renderGroupsList(paginatedGroups);
+                renderPagination('groupsPagination', totalPages, groupsPage, (page) => goToGroupsPage(page));
                 
             } catch (error) {
                 console.error('Error loading groups:', error);
-                document.getElementById('groupsList').innerHTML = '<div class="empty-state">حدث خطأ</div>';
+                document.getElementById('groupsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل المجموعات</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
+        }
+        
+        function renderGroupsList(groups) {
+            const container = document.getElementById('groupsList');
+            
+            if (!groups || groups.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد مجموعات<br><button class="btn btn-primary" style="margin-top: 15px;" onclick="openCreateGroupModal()">➕ إنشاء أول مجموعة</button></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const g of groups) {
+                const className = g.classes ? g.classes.name : '-';
+                const subjectName = g.subjects ? g.subjects.name : '-';
+                const memberText = (g.member_count || 0) + (g.max_capacity ? '/' + g.max_capacity : '');
+                
+                const card = document.createElement('div');
+                card.className = 'group-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <h3>📌 ${escapeHtml(g.name)}</h3>
+                            <p style="color: #64748b; margin: 8px 0;">${escapeHtml(g.description || 'لا يوجد وصف')}</p>
+                            <div class="exam-info">
+                                <span>🎓 ${escapeHtml(className)}</span>
+                                <span>📖 ${escapeHtml(subjectName)}</span>
+                                <span>👥 ${memberText} طالب</span>
+                                <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning btn-sm" onclick="editGroup(${g.id})">✏️ تعديل</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteGroupConfirm(${g.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToGroupsPage(page) {
+            groupsPage = page;
+            loadGroups();
         }
         
         // ==================== تحميل طلبات الانتظار ====================
@@ -476,32 +466,39 @@
                 
                 if (error) throw error;
                 
-                allRequests = requests || [];
+                let allReqs = requests || [];
                 
                 // فلترة حسب المجموعة
-                let filtered = allRequests;
                 if (groupId !== 'all') {
-                    filtered = filtered.filter(r => r.group_id == groupId);
+                    allReqs = allReqs.filter(r => r.group_id == groupId);
                 }
                 
                 // فلترة حسب البحث
                 if (search) {
-                    filtered = filtered.filter(r => 
+                    allReqs = allReqs.filter(r => 
                         (r.users?.name && r.users.name.toLowerCase().includes(search.toLowerCase())) ||
                         (r.users?.phone && r.users.phone.includes(search))
                     );
                 }
                 
+                requestsList = allReqs;
+                
                 // تحديث عدد الطلبات في التبويب
                 const badge = document.getElementById('pendingBadge');
-                if (allRequests.length > 0) {
+                if (requestsList.length > 0) {
                     badge.style.display = 'inline-block';
-                    badge.innerHTML = allRequests.length;
+                    badge.innerHTML = requestsList.length;
                 } else {
                     badge.style.display = 'none';
                 }
                 
-                renderPendingRequestsTable(filtered);
+                // Pagination
+                const totalPages = Math.ceil(requestsList.length / itemsPerPage);
+                const startIndex = (requestsPage - 1) * itemsPerPage;
+                const paginatedRequests = requestsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderPendingRequestsTable(paginatedRequests);
+                renderPagination('requestsPagination', totalPages, requestsPage, (page) => goToRequestsPage(page));
                 
                 // تحميل خيارات فلتر المجموعات
                 await loadGroupsFilter();
@@ -529,7 +526,7 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${i+1}</td>
+                    <td>${i + 1 + ((requestsPage - 1) * itemsPerPage)}</td>
                     <td><strong>${escapeHtml(studentName)}</strong></td>
                     <td>${escapeHtml(studentPhone)}</td>
                     <td>${escapeHtml(groupName)}</td>
@@ -545,6 +542,11 @@
             }
         }
         
+        function goToRequestsPage(page) {
+            requestsPage = page;
+            loadPendingRequests();
+        }
+        
         // ==================== قبول طلب ====================
         async function approveRequest(requestId, groupId, studentId) {
             try {
@@ -556,6 +558,7 @@
                 if (error) throw error;
                 
                 showToast('✅ تم قبول الطالب', 'success');
+                requestsPage = 1;
                 loadPendingRequests();
                 loadGroups();
                 
@@ -576,6 +579,7 @@
                 if (error) throw error;
                 
                 showToast('❌ تم رفض الطلب', 'success');
+                requestsPage = 1;
                 loadPendingRequests();
                 
             } catch (error) {
@@ -597,8 +601,8 @@
                 
                 const groupFilter = document.getElementById('filterGroup');
                 groupFilter.innerHTML = '<option value="all">👥 كل المجموعات</option>';
-                for (let i = 0; i < groupsList.length; i++) {
-                    groupFilter.innerHTML += `<option value="${groupsList[i].id}">${escapeHtml(groupsList[i].name)}</option>`;
+                for (const g of groupsList) {
+                    groupFilter.innerHTML += `<option value="${g.id}">${escapeHtml(g.name)}</option>`;
                 }
                 
             } catch (error) {
@@ -619,8 +623,7 @@
                 const subjectMap = new Map();
                 
                 if (assignments) {
-                    for (let i = 0; i < assignments.length; i++) {
-                        const a = assignments[i];
+                    for (const a of assignments) {
                         if (a.classes && !classMap.has(a.class_id)) {
                             classMap.set(a.class_id, { id: a.class_id, name: a.classes.name });
                         }
@@ -635,14 +638,14 @@
                 
                 const classSelect = document.getElementById('groupClassId');
                 classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
-                for (let i = 0; i < teacherClasses.length; i++) {
-                    classSelect.innerHTML += `<option value="${teacherClasses[i].id}">${escapeHtml(teacherClasses[i].name)}</option>`;
+                for (const c of teacherClasses) {
+                    classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
                 }
                 
                 const subjectSelect = document.getElementById('groupSubjectId');
                 subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-                for (let i = 0; i < teacherSubjects.length; i++) {
-                    subjectSelect.innerHTML += `<option value="${teacherSubjects[i].id}">${escapeHtml(teacherSubjects[i].name)}</option>`;
+                for (const s of teacherSubjects) {
+                    subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
                 }
                 
             } catch (error) {
@@ -729,6 +732,7 @@
             
             if (result) {
                 closeGroupModal();
+                groupsPage = 1;
                 loadGroups();
                 showToast('تم ' + (currentGroupId ? 'تعديل' : 'إنشاء') + ' المجموعة', 'success');
             } else {
@@ -738,7 +742,7 @@
         
         // ==================== حذف مجموعة ====================
         function deleteGroupConfirm(id) {
-            showConfirm('⚠️ هل أنت متأكد من حذف هذه المجموعة؟', async () => {
+            showConfirm('⚠️ هل أنت متأكد من حذف هذه المجموعة؟ سيتم حذف جميع أعضائها أيضاً.', async () => {
                 const { error } = await sb
                     .from('groups')
                     .delete()
@@ -749,17 +753,51 @@
                     return;
                 }
                 
+                groupsPage = 1;
                 loadGroups();
                 showToast('تم حذف المجموعة', 'success');
             });
         }
         
-        // ==================== إغلاق المودال ====================
-        function closeGroupModal() {
-            document.getElementById('groupModal').style.display = 'none';
+        // ==================== دوال مساعدة ====================
+        function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="(${onPageChange})(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="(${onPageChange})(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
         }
         
-        // ==================== دوال مساعدة ====================
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -770,10 +808,34 @@
             });
         }
         
+        function closeGroupModal() {
+            document.getElementById('groupModal').style.display = 'none';
+        }
+        
         // ==================== أحداث ====================
-        document.getElementById('searchInput').addEventListener('input', () => loadGroups());
-        document.getElementById('requestSearch').addEventListener('input', () => loadPendingRequests());
-        document.getElementById('filterGroup').addEventListener('change', () => loadPendingRequests());
+        document.getElementById('searchInput').addEventListener('input', () => {
+            groupsPage = 1;
+            loadGroups();
+        });
+        document.getElementById('requestSearch').addEventListener('input', () => {
+            requestsPage = 1;
+            loadPendingRequests();
+        });
+        document.getElementById('filterGroup').addEventListener('change', () => {
+            requestsPage = 1;
+            loadPendingRequests();
+        });
+        
+        window.showTab = showTab;
+        window.openCreateGroupModal = openCreateGroupModal;
+        window.editGroup = editGroup;
+        window.saveGroup = saveGroup;
+        window.deleteGroupConfirm = deleteGroupConfirm;
+        window.approveRequest = approveRequest;
+        window.rejectRequest = rejectRequest;
+        window.closeGroupModal = closeGroupModal;
+        window.goToGroupsPage = goToGroupsPage;
+        window.goToRequestsPage = goToRequestsPage;
         
         // ==================== تحميل أولي ====================
         loadGroups();
