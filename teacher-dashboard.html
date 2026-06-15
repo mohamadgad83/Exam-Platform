@@ -7,30 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* شريط العودة للأدمن */
-        .impersonate-banner {
-            background: linear-gradient(135deg, #fef3c7, #fffbeb);
-            border: 1px solid #f59e0b;
-            border-radius: 20px;
-            padding: 15px 25px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .impersonate-banner-left { display: flex; align-items: center; gap: 12px; }
-        .impersonate-banner-left span:first-child { font-size: 28px; }
-        .impersonate-banner-left strong { color: #d97706; font-size: 16px; }
-        .impersonate-banner-left .badge { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 30px; font-size: 12px; }
-        
-        /* الشريط العلوي الرئيسي */
+        /* الشريط العلوي */
         .main-header {
             background: white;
             border-radius: 24px;
@@ -49,28 +28,6 @@
         .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .user-area { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
         .user-name { font-weight: 600; color: #1e293b; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; }
-        
-        /* البطاقات */
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .card-header h2 { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .card-header h3 { font-size: 18px; font-weight: 600; color: #1e293b; }
         
         /* إحصائيات */
         .stats-grid {
@@ -92,32 +49,26 @@
         .stat-number { font-size: 42px; font-weight: 800; }
         .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
         
-        /* الأزرار */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: inherit;
-            font-size: 14px;
+        /* إحصائيات سريعة */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-outline:hover { background: #6366f1; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .quick-stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .quick-stat-number { font-size: 28px; font-weight: 800; color: #6366f1; }
+        .quick-stat-label { font-size: 13px; color: #64748b; margin-top: 5px; }
         
-        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
-        
-        /* بطاقات الامتحانات والأسئلة */
+        /* بطاقات الامتحانات */
         .exam-card {
             background: #f8fafc;
             border-radius: 20px;
@@ -125,6 +76,7 @@
             margin-bottom: 15px;
             border: 1px solid #e2e8f0;
             transition: all 0.2s;
+            cursor: pointer;
         }
         .exam-card:hover {
             transform: translateX(-5px);
@@ -152,32 +104,53 @@
         }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
         
-        .empty-state { text-align: center; padding: 60px; color: #64748b; }
-        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-        
-        .nav-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
-        
-        /* إحصائيات سريعة إضافية */
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .quick-stat-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 20px;
-            padding: 15px;
-            text-align: center;
+        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            font-size: 14px;
         }
-        .quick-stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .quick-stat-number { font-size: 28px; font-weight: 800; color: #6366f1; }
-        .quick-stat-label { font-size: 13px; color: #64748b; margin-top: 5px; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
+        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-outline:hover { background: #6366f1; color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .impersonate-banner {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 1px solid #f59e0b;
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
         
         @media (max-width: 768px) {
             body { padding: 12px; }
@@ -186,7 +159,6 @@
             .stat-number { font-size: 28px; }
             .main-header { flex-direction: column; text-align: center; }
             .action-buttons { justify-content: center; }
-            .card-header { flex-direction: column; gap: 10px; align-items: flex-start; }
         }
     </style>
 </head>
@@ -194,10 +166,10 @@
     <div class="container">
         <!-- شريط العودة للأدمن -->
         <div id="impersonateBanner" class="impersonate-banner" style="display: none;">
-            <div class="impersonate-banner-left">
-                <span>👑</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 28px;">👑</span>
                 <span>أنت تتصفح كـ <strong><span id="impersonateUserName"></span></strong></span>
-                <span class="badge">وضع المشاهدة</span>
+                <span class="badge badge-warning">وضع المشاهدة</span>
             </div>
             <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
         </div>
@@ -210,7 +182,7 @@
             </div>
             <div class="user-area">
                 <span class="user-name">👋 مرحباً <span id="teacherName"></span></span>
-                <div class="nav-buttons">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='exams.html'">📝 إدارة الامتحانات</button>
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
                     <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-groups.html'">👥 مجموعاتي</button>
@@ -220,7 +192,7 @@
             </div>
         </div>
 
-        <!-- ==================== بطاقة الترحيب ==================== -->
+        <!-- بطاقة الترحيب -->
         <div class="card">
             <div class="card-header">
                 <h2>👨‍🏫 لوحة تحكم المعلم</h2>
@@ -228,26 +200,43 @@
             </div>
         </div>
 
-        <!-- ==================== الإحصائيات الرئيسية ==================== -->
-        <div class="stats-grid" id="statsArea"></div>
+        <!-- الإحصائيات الرئيسية -->
+        <div class="stats-grid" id="statsArea">
+            <div class="stat-card" onclick="window.location.href='exams.html'">
+                <div class="stat-number" id="totalExams">0</div>
+                <div class="stat-label">📝 إجمالي الامتحانات</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='exams.html'">
+                <div class="stat-number" id="publishedExams">0</div>
+                <div class="stat-label">✅ منشور</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='exams.html?tab=requests'">
+                <div class="stat-number" id="pendingRequests">0</div>
+                <div class="stat-label">⏳ طلبات انتظار</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='teacher-questions.html'">
+                <div class="stat-number" id="totalQuestions">0</div>
+                <div class="stat-label">📚 الأسئلة</div>
+            </div>
+        </div>
 
-        <!-- ==================== إحصائيات سريعة ==================== -->
+        <!-- إحصائيات سريعة -->
         <div class="quick-stats" id="quickStats"></div>
 
-        <!-- ==================== الإجراءات السريعة ==================== -->
+        <!-- الإجراءات السريعة -->
         <div class="card">
             <div class="card-header">
                 <h3>⚡ الإجراءات السريعة</h3>
             </div>
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="window.location.href='exams.html'">📝 إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='create-exam.html'">📝 إنشاء امتحان جديد</button>
                 <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'">❓ إضافة سؤال جديد</button>
                 <button class="btn btn-primary" onclick="window.location.href='teacher-groups.html'">👥 إنشاء مجموعة جديدة</button>
                 <button class="btn btn-outline" onclick="window.location.href='exams.html?tab=requests'">📋 مراجعة طلبات الامتحانات</button>
             </div>
         </div>
 
-        <!-- ==================== آخر الامتحانات ==================== -->
+        <!-- آخر الامتحانات -->
         <div class="card">
             <div class="card-header">
                 <h3>📝 آخر الامتحانات</h3>
@@ -275,14 +264,10 @@
             console.log('خطأ في قراءة originalUser', e);
         }
         
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
         
         const allowedRoles = ['teacher', 'admin'];
-        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) {
-            window.location.href = 'index.html';
-        }
+        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) window.location.href = 'index.html';
         
         document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
         
@@ -292,7 +277,6 @@
             document.getElementById('impersonateUserName').innerHTML = currentUser.name || currentUser.username;
         }
         
-        // ==================== العودة للأدمن ====================
         window.returnToAdmin = function() {
             try {
                 const original = JSON.parse(localStorage.getItem('originalUser'));
@@ -308,10 +292,10 @@
             }
         };
         
-        // ==================== تحميل الإحصائيات الرئيسية ====================
+        // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
             try {
-                // إحصائيات الامتحانات
+                // جلب امتحانات المعلم
                 const { data: exams } = await sb
                     .from('exams')
                     .select('id, status, exam_type')
@@ -322,43 +306,56 @@
                 const draftExams = exams?.filter(e => e.status === 'draft').length || 0;
                 const paidExams = exams?.filter(e => e.exam_type === 'paid').length || 0;
                 
-                // إحصائيات الأسئلة
+                // جلب عدد الأسئلة
                 const { count: totalQuestions } = await sb
                     .from('questions')
                     .select('*', { count: 'exact', head: true })
                     .eq('teacher_id', currentUser.id);
                 
-                // إحصائيات المجموعات
+                // جلب عدد المجموعات
                 const { count: totalGroups } = await sb
                     .from('groups')
                     .select('*', { count: 'exact', head: true })
                     .eq('teacher_id', currentUser.id);
                 
-                // إحصائيات طلبات الانتظار
-                const { count: pendingRequests } = await sb
-                    .from('exam_requests')
-                    .select('*, exam:exam_id(teacher_id)', { count: 'exact', head: true })
-                    .eq('exam.teacher_id', currentUser.id)
-                    .eq('status', 'pending_admin');
+                // جلب طلبات الانتظار
+                const { data: examIds } = await sb
+                    .from('exams')
+                    .select('id')
+                    .eq('teacher_id', currentUser.id);
                 
-                document.getElementById('statsArea').innerHTML = `
-                    <div class="stat-card" onclick="window.location.href='exams.html'">
-                        <div class="stat-number">${totalExams}</div>
-                        <div class="stat-label">📝 إجمالي الامتحانات</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='exams.html'">
-                        <div class="stat-number">${publishedExams}</div>
-                        <div class="stat-label">✅ منشور</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='exams.html?tab=requests'">
-                        <div class="stat-number">${pendingRequests || 0}</div>
-                        <div class="stat-label">⏳ طلبات انتظار</div>
-                    </div>
-                    <div class="stat-card" onclick="window.location.href='teacher-questions.html'">
-                        <div class="stat-number">${totalQuestions || 0}</div>
-                        <div class="stat-label">📚 الأسئلة</div>
-                    </div>
-                `;
+                let pendingRequests = 0;
+                if (examIds && examIds.length > 0) {
+                    const examIdList = examIds.map(e => e.id);
+                    const { count } = await sb
+                        .from('exam_requests')
+                        .select('*', { count: 'exact', head: true })
+                        .in('exam_id', examIdList)
+                        .eq('status', 'pending_admin');
+                    pendingRequests = count || 0;
+                }
+                
+                // جلب عدد الطلاب
+                const { data: assignments } = await sb
+                    .from('teacher_assignments')
+                    .select('class_id')
+                    .eq('teacher_id', currentUser.id);
+                
+                let totalStudents = 0;
+                if (assignments && assignments.length > 0) {
+                    const classIds = assignments.map(a => a.class_id);
+                    const { count } = await sb
+                        .from('users')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role', 'student')
+                        .in('class_id', classIds);
+                    totalStudents = count || 0;
+                }
+                
+                document.getElementById('totalExams').innerHTML = totalExams;
+                document.getElementById('publishedExams').innerHTML = publishedExams;
+                document.getElementById('pendingRequests').innerHTML = pendingRequests;
+                document.getElementById('totalQuestions').innerHTML = totalQuestions || 0;
                 
                 document.getElementById('quickStats').innerHTML = `
                     <div class="quick-stat-card" onclick="window.location.href='exams.html'">
@@ -374,26 +371,10 @@
                         <div class="quick-stat-label">👥 المجموعات</div>
                     </div>
                     <div class="quick-stat-card" onclick="window.location.href='teacher-students.html'">
-                        <div class="quick-stat-number" id="totalStudents">0</div>
+                        <div class="quick-stat-number">${totalStudents}</div>
                         <div class="quick-stat-label">👨‍🎓 الطلاب</div>
                     </div>
                 `;
-                
-                // جلب عدد الطلاب
-                const { data: assignments } = await sb
-                    .from('teacher_assignments')
-                    .select('class_id')
-                    .eq('teacher_id', currentUser.id);
-                
-                if (assignments && assignments.length > 0) {
-                    const classIds = assignments.map(a => a.class_id);
-                    const { count: studentsCount } = await sb
-                        .from('users')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('role', 'student')
-                        .in('class_id', classIds);
-                    document.getElementById('totalStudents').innerHTML = studentsCount || 0;
-                }
                 
             } catch (error) {
                 console.error('Error loading stats:', error);
@@ -419,30 +400,33 @@
                         <div class="empty-state">
                             <div class="empty-state-icon">📭</div>
                             <p>لا توجد امتحانات</p>
-                            <button class="btn btn-primary btn-sm" onclick="window.location.href='exams.html'" style="margin-top: 15px;">➕ إنشاء أول امتحان</button>
+                            <button class="btn btn-primary btn-sm" onclick="window.location.href='create-exam.html'" style="margin-top: 15px;">➕ إنشاء أول امتحان</button>
                         </div>
                     `;
                     return;
                 }
                 
-                container.innerHTML = exams.map(e => {
+                container.innerHTML = '';
+                for (const e of exams) {
                     const statusClass = e.status === 'published' ? 'badge-success' : (e.status === 'draft' ? 'badge-warning' : 'badge-danger');
                     const statusText = e.status === 'published' ? 'منشور' : (e.status === 'draft' ? 'مسودة' : 'مغلق');
                     const examType = e.exam_type === 'paid' ? `💰 ${e.exam_price} جنيه` : '🆓 مجاني';
                     
-                    return `
-                        <div class="exam-card" onclick="window.location.href='exams.html'" style="cursor: pointer;">
-                            <div class="exam-title">${escapeHtml(e.title)}</div>
-                            <div class="exam-info">
-                                <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
-                                <span>🎓 ${e.classes?.name || 'بدون صف'}</span>
-                                <span>⏱️ ${e.duration_minutes} دقيقة</span>
-                                <span>${examType}</span>
-                                <span class="badge ${statusClass}">${statusText}</span>
-                            </div>
+                    const card = document.createElement('div');
+                    card.className = 'exam-card';
+                    card.onclick = () => window.location.href = 'exams.html';
+                    card.innerHTML = `
+                        <div class="exam-title">${escapeHtml(e.title)}</div>
+                        <div class="exam-info">
+                            <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
+                            <span>🎓 ${e.classes?.name || 'بدون صف'}</span>
+                            <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                            <span>${examType}</span>
+                            <span class="badge ${statusClass}">${statusText}</span>
                         </div>
                     `;
-                }).join('');
+                    container.appendChild(card);
+                }
                 
             } catch (error) {
                 console.error('Error loading recent exams:', error);
@@ -460,7 +444,7 @@
             });
         }
         
-        // ==================== تحميل أولي ====================
+        // تحميل أولي
         loadStats();
         loadRecentExams();
     </script>
