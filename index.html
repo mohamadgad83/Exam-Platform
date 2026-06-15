@@ -266,12 +266,12 @@
                 </div>
                 <div class="form-group">
                     <label>🔒 كلمة السر</label>
-                    <input type="password" id="password" placeholder="أدخل كلمة السر">
+                    <input type="password" id="password" placeholder="أدخل كلمة السر" autocomplete="off">
                 </div>
                 <button type="submit" class="btn-login" id="loginBtn">دخول</button>
             </form>
 
-            <div id="error" class="error-message"></div>
+            <div id="errorMessage" class="error-message"></div>
 
             <div class="register-link">
                 <a href="register.html">✨ تسجيل حساب جديد (طالب)</a>
@@ -285,72 +285,136 @@
                 <h4>📝 بيانات الدخول التجريبية:</h4>
                 <p><strong>👑 مدير:</strong> اسم المستخدم: <strong>admin</strong> / كلمة السر: <strong>123456</strong></p>
                 <p><strong>👨‍🏫 معلم:</strong> اسم المستخدم: <strong>teacher1</strong> / كلمة السر: <strong>123456</strong></p>
-                <p><strong>👨‍🎓 طالب:</strong> رقم الهاتف: <strong>01222222222</strong> / كلمة السر: <strong>123456</strong></p>
+                <p><strong>👨‍🎓 طالب:</strong> رقم الهاتف: <strong>01012345678</strong> / كلمة السر: <strong>123456</strong></p>
             </div>
         </div>
     </div>
 
     <script src="js/supabase-config.js"></script>
     <script>
+        // ==================== المتغيرات ====================
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
-        const errorDiv = document.getElementById('error');
+        const errorDiv = document.getElementById('errorMessage');
 
+        // ==================== عرض الأخطاء ====================
         function showError(msg) {
             errorDiv.innerHTML = msg;
             errorDiv.style.display = 'block';
             setTimeout(() => {
                 errorDiv.style.display = 'none';
-            }, 4000);
+            }, 5000);
         }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // ==================== التحقق من صحة الإدخال ====================
+        function validateInput(identifier, password) {
+            if (!identifier.trim()) {
+                showError('❌ يرجى إدخال اسم المستخدم أو رقم الهاتف');
+                return false;
+            }
+            if (!password.trim()) {
+                showError('❌ يرجى إدخال كلمة السر');
+                return false;
+            }
+            return true;
+        }
+
+        // ==================== معالجة تسجيل الدخول ====================
+        async function handleLogin(event) {
+            event.preventDefault();
             
             const identifier = document.getElementById('identifier').value.trim();
             const password = document.getElementById('password').value;
             
-            if (!identifier || !password) {
-                showError('❌ يرجى إدخال اسم المستخدم/رقم الهاتف وكلمة السر');
+            if (!validateInput(identifier, password)) {
                 return;
             }
             
+            // تعطيل الزر أثناء المعالجة
             loginBtn.disabled = true;
             loginBtn.innerHTML = 'جاري التحقق... <span class="loading-spinner"></span>';
             
-            const result = await loginUser(identifier, password);
-            
-            if (result.success) {
-                setUser(result.user);
-                showToast(`مرحباً ${result.user.name}! جاري التحويل...`, 'success');
+            try {
+                const result = await loginUser(identifier, password);
                 
-                setTimeout(() => {
-                    if (result.user.role === 'admin') {
-                        window.location.href = 'admin-dashboard.html';
-                    } else if (result.user.role === 'teacher') {
-                        window.location.href = 'teacher-dashboard.html';
-                    } else {
-                        window.location.href = 'student-dashboard.html';
-                    }
-                }, 1000);
-            } else {
-                showError('❌ ' + result.error);
+                if (result.success) {
+                    // حفظ بيانات المستخدم
+                    setUser(result.user);
+                    
+                    // إظهار رسالة نجاح
+                    showToast(`مرحباً ${result.user.name}! جاري التحويل...`, 'success');
+                    
+                    // التوجيه حسب الدور
+                    setTimeout(() => {
+                        if (result.user.role === 'admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else if (result.user.role === 'teacher') {
+                            window.location.href = 'teacher-dashboard.html';
+                        } else {
+                            window.location.href = 'student-dashboard.html';
+                        }
+                    }, 1000);
+                } else {
+                    showError('❌ ' + result.error);
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'دخول';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('❌ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى');
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = 'دخول';
             }
-        });
+        }
         
-        // التحقق من وجود جلسة سابقة
-        const savedUser = getUser();
-        if (savedUser) {
-            if (savedUser.role === 'admin') {
-                window.location.href = 'admin-dashboard.html';
-            } else if (savedUser.role === 'teacher') {
-                window.location.href = 'teacher-dashboard.html';
-            } else if (savedUser.role === 'student') {
-                window.location.href = 'student-dashboard.html';
+        // ==================== دالة Toast ====================
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ==================== التحقق من وجود جلسة سابقة ====================
+        function checkExistingSession() {
+            const savedUser = getUser();
+            if (savedUser) {
+                // توجيه المستخدم مباشرة إذا كان لديه جلسة نشطة
+                if (savedUser.role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                } else if (savedUser.role === 'teacher') {
+                    window.location.href = 'teacher-dashboard.html';
+                } else if (savedUser.role === 'student') {
+                    window.location.href = 'student-dashboard.html';
+                }
             }
         }
+        
+        // ==================== ربط الأحداث ====================
+        loginForm.addEventListener('submit', handleLogin);
+        
+        // إضافة دعم الضغط على Enter
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLogin(e);
+            }
+        });
+        
+        // ==================== التحقق من الجلسة عند تحميل الصفحة ====================
+        checkExistingSession();
     </script>
 </body>
 </html>
