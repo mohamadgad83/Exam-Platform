@@ -277,7 +277,7 @@
                 </div>
                 <div class="filter-group">
                     <label>🎓 الصف الدراسي</label>
-                    <select id="filterClass" onchange="loadQuestions()">
+                    <select id="filterClass" onchange="onClassChange()">
                         <option value="all">كل الصفوف</option>
                     </select>
                 </div>
@@ -349,6 +349,41 @@
         // Pagination
         let currentPage = 1;
         let itemsPerPage = 10;
+        
+        // ==================== دالة تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass(classId) {
+            const subjectFilter = document.getElementById('filterSubject');
+            
+            if (!classId || classId === 'all') {
+                // عرض جميع المواد
+                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
+                const subjects = await fetchSubjects();
+                for (const subject of subjects) {
+                    subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                }
+            } else {
+                // عرض مواد الصف فقط
+                subjectFilter.innerHTML = '<option value="all">📖 المواد المرتبطة بالصف</option>';
+                const classSubjects = await fetchClassSubjects(parseInt(classId));
+                const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
+                
+                if (subjects.length === 0) {
+                    subjectFilter.innerHTML = '<option value="all">📖 لا توجد مواد لهذا الصف</option>';
+                } else {
+                    for (const subject of subjects) {
+                        subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                    }
+                }
+            }
+        }
+        
+        // ==================== عند تغيير الصف ====================
+        async function onClassChange() {
+            const classId = document.getElementById('filterClass').value;
+            await loadSubjectsByClass(classId);
+            currentPage = 1;
+            loadQuestions();
+        }
         
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
@@ -473,13 +508,8 @@
                 classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
             });
             
-            const subjects = await fetchSubjects();
-            subjectsList = subjects;
-            const subjectFilter = document.getElementById('filterSubject');
-            subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
-            subjects.forEach(s => {
-                subjectFilter.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
-            });
+            // تحميل المواد الأولية
+            await loadSubjectsByClass('all');
             
             if (isAdmin) {
                 const teachers = await fetchUsers({ role: 'teacher' });
@@ -817,7 +847,7 @@
         }
         
         async function deleteQuestionConfirm(questionId) {
-            showConfirm('هل أنت متأكد من حذف هذا السؤال؟', async () => {
+            if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
                 const { error } = await sb
                     .from('questions')
                     .delete()
@@ -831,7 +861,7 @@
                 currentPage = 1;
                 loadQuestions();
                 loadPendingQuestions();
-            });
+            }
         }
         
         function closeModal() {
@@ -848,11 +878,32 @@
             });
         }
         
+        function formatDate(date) {
+            if (!date) return '-';
+            return new Date(date).toLocaleDateString('ar-EG');
+        }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
         // أحداث الفلاتر
-        document.getElementById('filterClass').addEventListener('change', () => {
-            currentPage = 1;
-            loadQuestions();
-        });
+        document.getElementById('filterClass').addEventListener('change', onClassChange);
         document.getElementById('filterSubject').addEventListener('change', () => {
             currentPage = 1;
             loadQuestions();
@@ -870,6 +921,7 @@
         window.editQuestion = editQuestion;
         window.deleteQuestionConfirm = deleteQuestionConfirm;
         window.closeModal = closeModal;
+        window.onClassChange = onClassChange;
         
         const editId = localStorage.getItem('editQuestionId');
         if (editId && !isAdmin) {
