@@ -7,6 +7,127 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .essay-question-card {
+            background: #fff7ed;
+            border-right: 4px solid #f59e0b;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .student-answer {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .model-answer {
+            background: #d1fae5;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            color: #065f46;
+        }
+        .score-input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .submission-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .submission-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .submission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .student-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .final-score-section {
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .final-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6366f1;
+        }
+        .btn-finalize {
+            background: #10b981;
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn-finalize:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .btn-save-score {
+            background: #3b82f6;
+            color: white;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .essay-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-graded { background: #d1fae5; color: #065f46; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -15,7 +136,8 @@
             <div>
                 <span style="margin-left: 15px;">👋 مرحباً <span id="teacherName"></span></span>
                 <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
-                <button class="btn btn-outline btn-sm" onclick="logout()">🚪 خروج</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-exams.html'">📝 امتحاناتي</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
             </div>
         </div>
 
@@ -26,199 +148,414 @@
 
         <div class="card">
             <div class="filter-bar">
-                <select id="examFilter" class="filter-select">
-                    <option value="all">كل الامتحانات</option>
+                <select id="examFilter" class="filter-select" onchange="loadSubmissions()">
+                    <option value="all">📝 كل الامتحانات</option>
                 </select>
+                <select id="statusFilter" class="filter-select" onchange="loadSubmissions()">
+                    <option value="all">📊 كل الحالات</option>
+                    <option value="pending">⏳ قيد التصحيح</option>
+                    <option value="graded">✅ تم التصحيح</option>
+                </select>
+                <input type="text" id="studentSearch" class="search-input" placeholder="🔍 بحث باسم الطالب..." oninput="loadSubmissions()">
+                <button class="btn btn-outline" onclick="loadSubmissions()">🔄 تحديث</button>
             </div>
             <div id="submissionsList"></div>
         </div>
     </div>
 
-    <!-- مودال تصحيح السؤال -->
-    <div id="correctionModal" class="modal">
-        <div class="modal-content">
-            <h3>✏️ تصحيح السؤال</h3>
-            <div id="correctionContent"></div>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="saveCorrection()">💾 حفظ التصحيح</button>
-                <button class="btn btn-outline" onclick="closeModal('correctionModal')">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
     <script src="js/supabase-config.js"></script>
     <script>
-        if (!checkAuth(['teacher'])) return;
+        // ==================== التحقق من صلاحية الدخول ====================
+        if (!checkAuth(['teacher', 'admin'])) return;
         
         const user = getUser();
         let allSubmissions = [];
-        let currentCorrection = null;
+        let essayScores = {};
         
-        document.getElementById('teacherName').innerHTML = user.name;
+        document.getElementById('teacherName').innerHTML = user.name || user.username || 'معلم';
         
+        // تحميل قائمة الامتحانات للفلتر
         async function loadExamsFilter() {
-            const exams = await fetchExams({}, 'teacher', user.id);
-            const examFilter = document.getElementById('examFilter');
-            examFilter.innerHTML = '<option value="all">كل الامتحانات</option>';
-            exams.forEach(e => {
-                examFilter.innerHTML += `<option value="${e.id}">${e.title}</option>`;
-            });
+            try {
+                let query = sb.from('exams').select('id, title');
+                
+                if (user.role !== 'admin') {
+                    query = query.eq('teacher_id', user.id);
+                }
+                
+                const { data: exams, error } = await query.order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const examFilter = document.getElementById('examFilter');
+                examFilter.innerHTML = '<option value="all">📝 كل الامتحانات</option>';
+                
+                for (const exam of exams || []) {
+                    examFilter.innerHTML += `<option value="${exam.id}">${escapeHtml(exam.title)}</option>`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading exams filter:', error);
+            }
         }
         
+        // تحميل المحاولات التي تحتاج تصحيح
         async function loadSubmissions() {
-            const examId = document.getElementById('examFilter').value;
-            let filters = {};
-            if (examId !== 'all') filters.examId = examId;
-            
-            const attempts = await fetchExamAttempts(filters, 'teacher', user.id);
-            // فلترة المحاولات المكتملة فقط
-            allSubmissions = attempts.filter(a => a.status === 'submitted');
-            
+            try {
+                const examId = document.getElementById('examFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                const studentSearch = document.getElementById('studentSearch').value.toLowerCase();
+                
+                // بناء الاستعلام
+                let query = sb
+                    .from('exam_attempts')
+                    .select(`
+                        *,
+                        exam:exam_id(id, title, passing_score),
+                        student:student_id(id, name, phone)
+                    `)
+                    .in('status', ['submitted', 'graded']);
+                
+                if (user.role !== 'admin') {
+                    // جلب امتحانات المعلم فقط
+                    const { data: teacherExams } = await sb
+                        .from('exams')
+                        .select('id')
+                        .eq('teacher_id', user.id);
+                    
+                    const examIds = (teacherExams || []).map(e => e.id);
+                    if (examIds.length > 0) {
+                        query = query.in('exam_id', examIds);
+                    } else {
+                        document.getElementById('submissionsList').innerHTML = '<div class="empty-state">📭 لا توجد محاولات للتصحيح</div>';
+                        return;
+                    }
+                }
+                
+                if (examId !== 'all') {
+                    query = query.eq('exam_id', parseInt(examId));
+                }
+                
+                const { data: attempts, error } = await query.order('submitted_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                let filtered = attempts || [];
+                
+                // فلترة حسب حالة التصحيح
+                if (statusFilter !== 'all') {
+                    if (statusFilter === 'pending') {
+                        filtered = filtered.filter(a => a.status === 'submitted');
+                    } else if (statusFilter === 'graded') {
+                        filtered = filtered.filter(a => a.status === 'graded');
+                    }
+                }
+                
+                // فلترة حسب اسم الطالب
+                if (studentSearch) {
+                    filtered = filtered.filter(a => 
+                        a.student?.name?.toLowerCase().includes(studentSearch)
+                    );
+                }
+                
+                allSubmissions = filtered;
+                renderSubmissionsList();
+                
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+                document.getElementById('submissionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل المحاولات</div>';
+            }
+        }
+        
+        // عرض قائمة المحاولات
+        async function renderSubmissionsList() {
             const container = document.getElementById('submissionsList');
+            
             if (allSubmissions.length === 0) {
-                container.innerHTML = '<div class="empty-state">📭 لا توجد محاولات تحتاج تصحيح</div>';
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد محاولات للتصحيح</p></div>';
                 return;
             }
             
-            container.innerHTML = allSubmissions.map(sub => `
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-                        <div>
-                            <strong>👨‍🎓 ${sub.users?.name}</strong>
-                            <div class="exam-info">📞 ${sub.users?.phone || '-'}</div>
+            container.innerHTML = '';
+            
+            for (const attempt of allSubmissions) {
+                // جلب أسئلة الامتحان المقالية فقط
+                const { data: examQuestions } = await sb
+                    .from('exam_questions')
+                    .select('*, questions:question_id(*)')
+                    .eq('exam_id', attempt.exam_id);
+                
+                const essayQuestions = (examQuestions || []).filter(eq => 
+                    eq.questions?.type === 'essay'
+                );
+                
+                const hasEssayQuestions = essayQuestions.length > 0;
+                const isGraded = attempt.status === 'graded';
+                const answers = attempt.answers || {};
+                const savedScores = attempt.essay_scores || {};
+                
+                // حساب مجموع درجات المقالي الحالية
+                let currentEssayTotal = 0;
+                for (const eq of essayQuestions) {
+                    currentEssayTotal += savedScores[eq.question_id] || 0;
+                }
+                
+                // العرض
+                const card = document.createElement('div');
+                card.className = 'submission-card';
+                card.innerHTML = `
+                    <div class="submission-header">
+                        <div class="student-info">
+                            <div class="student-avatar">👨‍🎓</div>
+                            <div>
+                                <h3>${escapeHtml(attempt.student?.name || 'طالب')}</h3>
+                                <div class="exam-info">
+                                    <span>📞 ${escapeHtml(attempt.student?.phone || '-')}</span>
+                                    <span>📝 ${escapeHtml(attempt.exam?.title || 'امتحان')}</span>
+                                    <span>📅 ${formatDateTime(attempt.submitted_at)}</span>
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <span class="badge badge-info">📝 ${sub.exams?.title}</span>
-                            <span class="badge">📅 ${formatDateTime(sub.submitted_at)}</span>
+                            <span class="essay-status ${isGraded ? 'status-graded' : 'status-pending'}">
+                                ${isGraded ? '✅ تم التصحيح' : '⏳ قيد التصحيح'}
+                            </span>
                         </div>
                     </div>
-                    <div id="essays-${sub.id}">
-                        ${await renderEssayQuestions(sub)}
+                    
+                    <div id="essay-questions-${attempt.id}">
+                        ${await renderEssayQuestions(attempt, essayQuestions, answers, savedScores)}
                     </div>
-                    <div style="margin-top: 15px;">
-                        <button class="btn btn-success" onclick="finalizeCorrection(${sub.id})">✅ إنهاء التصحيح وحساب النتيجة النهائية</button>
-                    </div>
-                </div>
-            `).join('');
+                    
+                    ${hasEssayQuestions ? `
+                        <div class="final-score-section">
+                            <div>
+                                <strong>📊 درجات الأسئلة المقالية:</strong>
+                                <span class="final-score" id="essay-total-${attempt.id}">${currentEssayTotal}</span>
+                                <span>/ ${essayQuestions.reduce((sum, eq) => sum + (eq.questions?.points || 0), 0)}</span>
+                            </div>
+                            <div>
+                                <strong>🎯 الدرجة النهائية الحالية:</strong>
+                                <span class="final-score" id="final-score-${attempt.id}">${attempt.score || 0}</span>
+                                <span>/ ${attempt.total_points || 0}</span>
+                            </div>
+                            <button class="btn-finalize" onclick="finalizeCorrection(${attempt.id})" ${isGraded ? 'disabled' : ''}>
+                                ${isGraded ? '✓ تم التصحيح' : '✅ إنهاء التصحيح وحساب النتيجة'}
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="final-score-section">
+                            <div class="badge badge-info">📝 لا توجد أسئلة مقالية في هذا الامتحان</div>
+                        </div>
+                    `}
+                `;
+                container.appendChild(card);
+            }
         }
         
-        async function renderEssayQuestions(attempt) {
-            // جلب أسئلة الامتحان المقالية
-            const examQuestions = await fetchExamQuestions(attempt.exam_id);
-            const essayQuestions = examQuestions.filter(eq => {
-                const q = eq.questions;
-                return q && q.type === 'essay';
-            });
-            
+        // عرض الأسئلة المقالية لكل محاولة
+        async function renderEssayQuestions(attempt, essayQuestions, answers, savedScores) {
             if (essayQuestions.length === 0) {
-                return '<div class="empty-state">لا توجد أسئلة مقالية في هذا الامتحان</div>';
+                return '<div class="empty-state" style="padding: 20px;">لا توجد أسئلة مقالية في هذا الامتحان</div>';
             }
             
-            const answers = attempt.answers || {};
-            let html = '';
+            let html = '<h4 style="margin-bottom: 15px;">✏️ الأسئلة المقالية</h4>';
             
             for (let i = 0; i < essayQuestions.length; i++) {
                 const eq = essayQuestions[i];
                 const q = eq.questions;
-                const studentAnswer = answers[eq.question_id] || 'لم يتم الإجابة';
-                const savedScore = (attempt.essay_scores && attempt.essay_scores[eq.question_id]) || 0;
+                const studentAnswer = answers[q.id] || 'لم يتم الإجابة';
+                const modelAnswer = q.model_answer || 'لا يوجد نموذج إجابة';
+                const savedScore = savedScores[q.id] || 0;
+                const maxPoints = q.points || 5;
                 
                 html += `
-                    <div class="exam-card" style="background: #fff7ed; border-right: 4px solid #f59e0b;">
-                        <div><strong>السؤال ${i+1}:</strong> ${q.text}</div>
-                        <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 12px;">
-                            <strong>إجابة الطالب:</strong><br>
-                            ${studentAnswer}
+                    <div class="essay-question-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <strong>السؤال ${i + 1}:</strong> ${escapeHtml(q.text)}
+                                <div class="exam-info" style="margin-top: 5px;">
+                                    <span class="badge badge-warning">📝 مقالي</span>
+                                    <span>⭐ الحد الأقصى: ${maxPoints} درجة</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="margin-top: 10px;">
-                            <label>الدرجة: </label>
-                            <input type="number" id="score-${attempt.id}-${eq.question_id}" class="search-input" style="width: 100px;" min="0" max="${q.points}" value="${savedScore}">
-                            <span> / ${q.points}</span>
-                            <button class="btn btn-primary btn-sm" onclick="saveEssayScore(${attempt.id}, ${eq.question_id}, ${q.points})">💾 حفظ</button>
+                        
+                        <div style="margin-top: 15px;">
+                            <strong>📋 إجابة الطالب:</strong>
+                            <div class="student-answer">${escapeHtml(studentAnswer)}</div>
+                        </div>
+                        
+                        ${modelAnswer !== 'لا يوجد نموذج إجابة' ? `
+                            <div style="margin-top: 15px;">
+                                <strong>📝 نموذج الإجابة:</strong>
+                                <div class="model-answer">${escapeHtml(modelAnswer)}</div>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="margin-top: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div>
+                                <label>🎯 درجة السؤال:</label>
+                                <input type="number" 
+                                       id="score-${attempt.id}-${q.id}" 
+                                       class="score-input" 
+                                       value="${savedScore}" 
+                                       min="0" 
+                                       max="${maxPoints}" 
+                                       step="0.5"
+                                       ${attempt.status === 'graded' ? 'disabled' : ''}>
+                                <span> / ${maxPoints}</span>
+                            </div>
+                            <button class="btn-save-score" 
+                                    onclick="saveEssayScore(${attempt.id}, ${q.id}, ${maxPoints})"
+                                    ${attempt.status === 'graded' ? 'disabled' : ''}>
+                                💾 حفظ الدرجة
+                            </button>
                         </div>
                     </div>
                 `;
             }
+            
             return html;
         }
         
+        // حفظ درجة سؤال مقالي
         async function saveEssayScore(attemptId, questionId, maxPoints) {
             const scoreInput = document.getElementById(`score-${attemptId}-${questionId}`);
-            const score = parseInt(scoreInput.value) || 0;
+            let score = parseFloat(scoreInput.value);
             
+            if (isNaN(score)) score = 0;
             if (score > maxPoints) {
                 showToast(`الدرجة لا يمكن أن تتجاوز ${maxPoints}`, 'error');
                 scoreInput.value = maxPoints;
-                return;
+                score = maxPoints;
+            }
+            if (score < 0) {
+                showToast(`الدرجة لا يمكن أن تكون سالبة`, 'error');
+                scoreInput.value = 0;
+                score = 0;
             }
             
-            // جلب المحاولة الحالية
-            const { data: attempt } = await sb
-                .from('exam_attempts')
-                .select('essay_scores')
-                .eq('id', attemptId)
-                .single();
-            
-            const essayScores = attempt?.essay_scores || {};
-            essayScores[questionId] = score;
-            
-            const { error } = await sb
-                .from('exam_attempts')
-                .update({ essay_scores: essayScores })
-                .eq('id', attemptId);
-            
-            if (error) {
-                showToast('حدث خطأ في حفظ الدرجة', 'error');
-            } else {
+            try {
+                // جلب المحاولة الحالية
+                const { data: attempt, error: fetchError } = await sb
+                    .from('exam_attempts')
+                    .select('essay_scores, score, total_points')
+                    .eq('id', attemptId)
+                    .single();
+                
+                if (fetchError) throw fetchError;
+                
+                const essayScores = attempt?.essay_scores || {};
+                essayScores[questionId] = score;
+                
+                // حساب مجموع درجات المقالي الجديد
+                let essayTotal = 0;
+                for (const [_, val] of Object.entries(essayScores)) {
+                    essayTotal += parseFloat(val) || 0;
+                }
+                
+                // تحديث المحاولة
+                const { error: updateError } = await sb
+                    .from('exam_attempts')
+                    .update({ essay_scores: essayScores })
+                    .eq('id', attemptId);
+                
+                if (updateError) throw updateError;
+                
+                // تحديث العرض
+                document.getElementById(`essay-total-${attemptId}`).innerHTML = essayTotal;
+                
                 showToast('تم حفظ درجة السؤال', 'success');
+                
+                // إعادة تحميل العرض لتحديث حالة التصحيح
+                await loadSubmissions();
+                
+            } catch (error) {
+                console.error('Error saving essay score:', error);
+                showToast('حدث خطأ في حفظ الدرجة', 'error');
             }
         }
         
+        // إنهاء التصحيح وحساب النتيجة النهائية
         async function finalizeCorrection(attemptId) {
-            // جلب المحاولة والأسئلة المقالية
-            const { data: attempt } = await sb
-                .from('exam_attempts')
-                .select('*, exams!inner(id, title)')
-                .eq('id', attemptId)
-                .single();
-            
-            const examQuestions = await fetchExamQuestions(attempt.exam_id);
-            const essayQuestions = examQuestions.filter(eq => eq.questions?.type === 'essay');
-            
-            // حساب مجموع درجات المقالي
-            const essayScores = attempt.essay_scores || {};
-            let essayTotal = 0;
-            let essayMax = 0;
-            for (const eq of essayQuestions) {
-                essayTotal += essayScores[eq.question_id] || 0;
-                essayMax += eq.questions?.points || 1;
-            }
-            
-            // النتيجة النهائية = درجات الاختياري + درجات المقالي
-            const finalScore = (attempt.score || 0) + essayTotal;
-            const finalTotal = (attempt.total_points || 0) + essayMax;
-            
-            const { error } = await sb
-                .from('exam_attempts')
-                .update({
-                    score: finalScore,
-                    total_points: finalTotal,
-                    status: 'graded'
-                })
-                .eq('id', attemptId);
-            
-            if (error) {
+            try {
+                // جلب المحاولة
+                const { data: attempt, error: fetchError } = await sb
+                    .from('exam_attempts')
+                    .select('*, exam:exam_id(*)')
+                    .eq('id', attemptId)
+                    .single();
+                
+                if (fetchError) throw fetchError;
+                
+                // جلب أسئلة الامتحان المقالية
+                const { data: examQuestions } = await sb
+                    .from('exam_questions')
+                    .select('*, questions:question_id(*)')
+                    .eq('exam_id', attempt.exam_id);
+                
+                const essayQuestions = (examQuestions || []).filter(eq => 
+                    eq.questions?.type === 'essay'
+                );
+                
+                // حساب مجموع درجات المقالي
+                const essayScores = attempt.essay_scores || {};
+                let essayTotal = 0;
+                let essayMax = 0;
+                
+                for (const eq of essayQuestions) {
+                    essayTotal += essayScores[eq.question_id] || 0;
+                    essayMax += eq.questions?.points || 0;
+                }
+                
+                // النتيجة النهائية = درجة الاختياري + درجة المقالي
+                const objectiveScore = attempt.score || 0;
+                const objectiveTotal = attempt.total_points || 0;
+                
+                const finalScore = objectiveScore + essayTotal;
+                const finalTotal = objectiveTotal + essayMax;
+                
+                // تحديث المحاولة
+                const { error: updateError } = await sb
+                    .from('exam_attempts')
+                    .update({
+                        score: finalScore,
+                        total_points: finalTotal,
+                        status: 'graded'
+                    })
+                    .eq('id', attemptId);
+                
+                if (updateError) throw updateError;
+                
+                showToast(`✅ تم إنهاء التصحيح! النتيجة: ${finalScore}/${finalTotal}`, 'success');
+                
+                // إعادة تحميل القائمة
+                await loadSubmissions();
+                
+            } catch (error) {
+                console.error('Error finalizing correction:', error);
                 showToast('حدث خطأ في إنهاء التصحيح', 'error');
-            } else {
-                showToast('تم إنهاء التصحيح وحساب النتيجة النهائية', 'success');
-                loadSubmissions();
             }
         }
         
-        document.getElementById('examFilter').addEventListener('change', () => loadSubmissions());
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
         
-        loadExamsFilter();
-        loadSubmissions();
+        // تحميل أولي
+        async function init() {
+            await loadExamsFilter();
+            await loadSubmissions();
+        }
+        
+        init();
     </script>
 </body>
 </html>
