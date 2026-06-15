@@ -335,6 +335,41 @@
         let questionImageUrl = null;
         let modelAnswerImageUrl = null;
         let choices = [];
+        let allClasses = [];
+        let allSubjects = [];
+        
+        // ==================== دالة تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass(classId) {
+            const subjectSelect = document.getElementById('questionSubject');
+            
+            if (!classId) {
+                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+                subjectSelect.disabled = true;
+                return;
+            }
+            
+            subjectSelect.disabled = false;
+            subjectSelect.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
+            
+            try {
+                const classSubjects = await fetchClassSubjects(parseInt(classId));
+                const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
+                
+                if (subjects.length === 0) {
+                    subjectSelect.innerHTML = '<option value="">لا توجد مواد لهذا الصف</option>';
+                    return;
+                }
+                
+                subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+                for (const subject of subjects) {
+                    subjectSelect.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                }
+                
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                subjectSelect.innerHTML = '<option value="">حدث خطأ في تحميل المواد</option>';
+            }
+        }
         
         // تهيئة الاختيارات حسب نوع السؤال
         function initChoicesForType() {
@@ -377,6 +412,16 @@
             }
         }
         
+        // تحميل الصفوف
+        async function loadClasses() {
+            allClasses = await fetchClasses();
+            const classSelect = document.getElementById('questionClass');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            for (const c of allClasses) {
+                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            }
+        }
+        
         // عند تغيير المعلم
         async function onTeacherChange() {
             const teacherValue = document.getElementById('questionTeacher').value;
@@ -397,12 +442,11 @@
             let classes = [];
             
             if (teacherValue === 'admin') {
-                classes = await fetchClasses();
+                classes = allClasses;
             } else {
                 const assignments = await fetchTeacherAssignments(parseInt(teacherValue));
                 const classIds = [...new Set(assignments.map(a => a.class_id))];
                 if (classIds.length > 0) {
-                    const allClasses = await fetchClasses();
                     classes = allClasses.filter(c => classIds.includes(c.id));
                 }
             }
@@ -417,46 +461,10 @@
             }
         }
         
-        // عند تغيير الصف
+        // عند تغيير الصف - التعديل الرئيسي هنا
         async function onClassChange() {
             const classId = document.getElementById('questionClass').value;
-            const teacherValue = currentTeacherId;
-            const subjectSelect = document.getElementById('questionSubject');
-            
-            if (!classId) {
-                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
-                subjectSelect.disabled = true;
-                return;
-            }
-            
-            subjectSelect.disabled = false;
-            subjectSelect.innerHTML = '<option value="">⏳ جاري التحميل...</option>';
-            
-            let subjects = [];
-            
-            if (teacherValue === 'admin') {
-                const classSubjects = await fetchClassSubjects(parseInt(classId));
-                subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
-            } else {
-                const assignments = await fetchTeacherAssignments(parseInt(teacherValue));
-                const subjectIds = assignments
-                    .filter(a => a.class_id == classId)
-                    .map(a => a.subject_id);
-                
-                if (subjectIds.length > 0) {
-                    const allSubjects = await fetchSubjects();
-                    subjects = allSubjects.filter(s => subjectIds.includes(s.id));
-                }
-            }
-            
-            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
-            for (let i = 0; i < subjects.length; i++) {
-                subjectSelect.innerHTML += `<option value="${subjects[i].id}">${subjects[i].name}</option>`;
-            }
-            
-            if (subjects.length === 0) {
-                subjectSelect.innerHTML = '<option value="">لا توجد مواد متاحة</option>';
-            }
+            await loadSubjectsByClass(classId);
         }
         
         // عند تغيير نوع السؤال
@@ -509,12 +517,10 @@
             const type = document.getElementById('questionType').value;
             
             if (type === 'mcq') {
-                // MCQ: إجابة واحدة صحيحة فقط
                 for (let i = 0; i < choices.length; i++) {
                     choices[i].isCorrect = (i === index);
                 }
             } else if (type === 'multi_select') {
-                // Multi-Select: يمكن اختيار إجابتين صحيحتين كحد أقصى
                 const currentCorrect = choices.filter(c => c.isCorrect).length;
                 const willBeCorrect = !choices[index].isCorrect;
                 
@@ -598,7 +604,7 @@
             document.getElementById('previewModal').style.display = 'none';
         }
         
-        // حفظ السؤال - التصحيح الرئيسي هنا ✅
+        // حفظ السؤال
         async function saveQuestion() {
             const teacherValue = document.getElementById('questionTeacher').value;
             const classId = document.getElementById('questionClass').value;
@@ -635,7 +641,6 @@
                 if (modelAnswer) questionData.model_answer = modelAnswer;
                 if (modelAnswerImageUrl) questionData.model_answer_image = modelAnswerImageUrl;
             } else {
-                // التحقق من صحة الاختيارات
                 const correctChoices = choices.filter(c => c.isCorrect && c.text.trim());
                 
                 if (type === 'mcq') {
@@ -661,11 +666,10 @@
                 
                 questionData.options = JSON.stringify(choices.map(c => c.text));
                 
-                // ✅ التصحيح الرئيسي: MCQ يتم حفظه كنص عادي، Multi-Select كـ JSON
                 if (type === 'mcq') {
-                    questionData.correct_answer = correctChoices[0].text;  // نص عادي
+                    questionData.correct_answer = correctChoices[0].text;
                 } else {
-                    questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));  // JSON array
+                    questionData.correct_answer = JSON.stringify(correctChoices.map(c => c.text));
                 }
                 questionData.is_multi_select = (type === 'multi_select');
             }
@@ -712,14 +716,33 @@
             });
         }
         
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
         // تهيئة
         async function init() {
+            await loadClasses();
             await loadTeachers();
             initChoicesForType();
             renderChoices();
             onQuestionTypeChange();
             
-            // إضافة دعم لصق الصور
             const questionText = document.getElementById('questionText');
             questionText.addEventListener('paste', async (e) => {
                 const items = e.clipboardData.items;
