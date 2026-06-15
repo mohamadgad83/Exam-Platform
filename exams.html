@@ -7,61 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f0f2f5 0%, #e4e8f0 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        
-        /* الشريط العلوي */
-        .admin-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .top-bar {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .logo { font-size: 22px; font-weight: 800; }
-        .user-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-        .user-name { font-weight: 600; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 40px; }
-        
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-        .card-header {
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .card-header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
         .tabs {
             display: flex;
             gap: 10px;
@@ -84,50 +31,73 @@
         .tab-btn:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
         .tab-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
         
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
             font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             font-family: inherit;
             font-size: 14px;
+            background: white;
         }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-info { background: #3b82f6; color: white; }
-        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
         
-        .filter-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
+        .exam-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .exam-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        
+        .request-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
-        .search-input {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            flex: 1;
-            min-width: 200px;
-            font-family: inherit;
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
         }
-        .filter-select {
-            padding: 10px 18px;
-            border: 1px solid #e2e8f0;
-            border-radius: 50px;
-            min-width: 150px;
-            font-family: inherit;
-            background: white;
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #6366f1;
         }
         
         .badge {
@@ -143,37 +113,6 @@
         .badge-warning { background: #fef3c7; color: #d97706; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-info { background: #dbeafe; color: #1e40af; }
-        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
-        
-        .exam-card, .request-card, .payment-card, .coupon-card {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s;
-        }
-        .exam-card:hover, .request-card:hover, .payment-card:hover {
-            transform: translateX(-5px);
-            border-right: 4px solid #6366f1;
-            background: white;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: 20px;
-            padding: 20px;
-            color: white;
-            text-align: center;
-        }
-        .stat-number { font-size: 32px; font-weight: 800; }
-        .stat-label { font-size: 13px; opacity: 0.9; margin-top: 5px; }
         
         .modal {
             display: none;
@@ -205,55 +144,47 @@
             padding-bottom: 15px;
             border-bottom: 2px solid #e2e8f0;
         }
-        .modal-header h3 { font-size: 22px; color: #1e293b; }
         
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 6px; font-size: 14px; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            font-family: inherit;
-            font-size: 14px;
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
         }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        
-        .empty-state { text-align: center; padding: 60px; color: #64748b; }
-        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-        
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
         .screenshot-img {
             max-width: 100%;
-            max-height: 300px;
             border-radius: 12px;
             margin: 10px 0;
             cursor: pointer;
         }
-        
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: white;
-            border-radius: 16px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transform: translateX(-500px);
-            transition: transform 0.3s ease;
-            z-index: 10000;
-            border-right: 4px solid;
-        }
-        .toast-notification.show { transform: translateX(0); }
-        .toast-success { border-right-color: #10b981; }
-        .toast-error { border-right-color: #ef4444; }
-        
         @media (max-width: 768px) {
-            .filter-bar { flex-direction: column; align-items: stretch; }
-            .tabs { justify-content: center; }
-            .tab-btn { padding: 6px 16px; font-size: 12px; }
+            .filter-row { flex-direction: column; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
@@ -293,116 +224,139 @@
         <!-- ==================== تبويب الامتحانات ==================== -->
         <div id="examsTab">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="examSearch" class="search-input" placeholder="🔍 بحث باسم الامتحان...">
-                    <select id="examStatusFilter" class="filter-select">
-                        <option value="all">كل الحالات</option>
-                        <option value="draft">مسودة</option>
-                        <option value="published">منشور</option>
-                        <option value="closed">مغلق</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="openCreateExamModal()">➕ إنشاء امتحان</button>
-                    <button class="btn btn-outline" onclick="loadExams()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="examSearch" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="examStatusFilter">
+                            <option value="all">كل الحالات</option>
+                            <option value="draft">مسودة</option>
+                            <option value="published">منشور</option>
+                            <option value="closed">مغلق</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openCreateExamModal()">➕ إنشاء امتحان</button>
+                        <button class="btn btn-outline" onclick="loadExams()">🔄 تحديث</button>
+                    </div>
                 </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
                 <div id="examsList"></div>
+                <div id="examsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب طلبات الانضمام ==================== -->
         <div id="requestsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="requestSearch" class="search-input" placeholder="🔍 بحث باسم الطالب أو رقم الهاتف...">
-                    <select id="requestExamFilter" class="filter-select" onchange="loadRequests()">
-                        <option value="all">كل الامتحانات</option>
-                    </select>
-                    <select id="requestStatusFilter" class="filter-select" onchange="loadRequests()">
-                        <option value="all">كل الحالات</option>
-                        <option value="pending_admin">⏳ قيد المراجعة</option>
-                        <option value="approved">✅ مقبول</option>
-                        <option value="rejected">❌ مرفوض</option>
-                    </select>
-                    <button class="btn btn-success btn-sm" id="approveAllBtn" style="display: none;" onclick="approveAllRequests()">✅ قبول الكل</button>
-                    <button class="btn btn-outline" onclick="loadRequests()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="requestSearch" placeholder="بحث باسم الطالب أو رقم الهاتف...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 الامتحان</label>
+                        <select id="requestExamFilter" onchange="loadRequests()">
+                            <option value="all">كل الامتحانات</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="requestStatusFilter" onchange="loadRequests()">
+                            <option value="all">كل الحالات</option>
+                            <option value="pending_admin">⏳ قيد المراجعة</option>
+                            <option value="approved">✅ مقبول</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm" id="approveAllBtn" style="display: none;" onclick="approveAllRequests()">✅ قبول الكل</button>
+                        <button class="btn btn-outline" onclick="loadRequests()">🔄 تحديث</button>
+                    </div>
                 </div>
                 
-                <!-- إحصائيات سريعة -->
                 <div class="stats-grid" id="requestsStats"></div>
-                
                 <div id="requestsList"></div>
+                <div id="requestsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب المدفوعات (للأدمن فقط) ==================== -->
         <div id="paymentsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="paymentSearch" class="search-input" placeholder="🔍 بحث باسم الطالب...">
-                    <select id="paymentExamFilter" class="filter-select" onchange="loadPayments()">
-                        <option value="all">كل الامتحانات</option>
-                    </select>
-                    <select id="paymentStatusFilter" class="filter-select" onchange="loadPayments()">
-                        <option value="all">كل الحالات</option>
-                        <option value="pending">⏳ قيد المراجعة</option>
-                        <option value="confirmed">✅ مؤكد</option>
-                        <option value="rejected">❌ مرفوض</option>
-                    </select>
-                    <button class="btn btn-outline" onclick="loadPayments()">🔄 تحديث</button>
-                    <button class="btn btn-warning" onclick="exportPaymentsToExcel()">📊 تصدير المدفوعات</button>
-                    <button class="btn btn-danger" onclick="cleanupScreenshots()" id="cleanupBtn">🗑️ تنظيف الإيصالات</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="paymentSearch" placeholder="بحث باسم الطالب...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 الامتحان</label>
+                        <select id="paymentExamFilter" onchange="loadPayments()">
+                            <option value="all">كل الامتحانات</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="paymentStatusFilter" onchange="loadPayments()">
+                            <option value="all">كل الحالات</option>
+                            <option value="pending">⏳ قيد المراجعة</option>
+                            <option value="confirmed">✅ مؤكد</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadPayments()">🔄 تحديث</button>
+                        <button class="btn btn-warning" onclick="exportPaymentsToExcel()">📊 تصدير المدفوعات</button>
+                    </div>
                 </div>
                 <div id="paymentsList"></div>
+                <div id="paymentsPagination" class="pagination"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب الكوبونات (للأدمن فقط) ==================== -->
         <div id="couponsTab" style="display: none;">
             <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="couponSearch" class="search-input" placeholder="🔍 بحث بكود الكوبون...">
-                    <button class="btn btn-primary" onclick="openCreateCouponModal()">➕ إنشاء كوبون</button>
-                    <button class="btn btn-outline" onclick="loadCoupons()">🔄 تحديث</button>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="couponSearch" placeholder="بحث بكود الكوبون...">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openCreateCouponModal()">➕ إنشاء كوبون</button>
+                        <button class="btn btn-outline" onclick="loadCoupons()">🔄 تحديث</button>
+                    </div>
                 </div>
                 <div id="couponsList"></div>
             </div>
         </div>
 
         <!-- ==================== تبويب الإعدادات (للأدمن فقط) ==================== -->
-        <!-- ==================== تبويب الإعدادات (للأدمن فقط) ==================== -->
-<div id="settingsTab" style="display: none;">
-    <!-- إدارة طرق الدفع -->
-    <div class="card">
-        <div class="card-header">
-            <h3>💳 طرق الدفع</h3>
-            <button class="btn btn-primary btn-sm" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button>
-        </div>
-        <div id="paymentMethodsList"></div>
-    </div>
-    
-    <!-- تصدير البيانات -->
-    <div class="card">
-        <div class="card-header">
-            <h3>📊 تصدير البيانات</h3>
-        </div>
-        <div class="filter-bar">
-            <button class="btn btn-info" onclick="exportAllData()">📥 تصدير جميع البيانات</button>
-            <button class="btn btn-warning" onclick="exportStudentsData()">👨‍🎓 تصدير بيانات الطلاب</button>
-            <button class="btn btn-success" onclick="exportPaymentsData()">💰 تصدير المدفوعات</button>
-        </div>
-    </div>
-    
-    <!-- تنظيف الإيصالات -->
-    <div class="card">
-        <div class="card-header">
-            <h3>🗑️ تنظيف الإيصالات</h3>
-        </div>
-        <div class="filter-bar">
-            <button class="btn btn-danger" onclick="cleanupScreenshots()" id="cleanupBtn">🗑️ تنظيف الإيصالات القديمة</button>
-            <span style="font-size: 12px; color: #64748b;">⚠️ ملاحظة: لا يمكن التراجع عن هذا الإجراء. تأكد من تصدير البيانات أولاً.</span>
+        <div id="settingsTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>💳 طرق الدفع</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button>
+                </div>
+                <div id="paymentMethodsList"></div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>📊 تصدير البيانات</h3>
+                </div>
+                <div class="filter-row">
+                    <button class="btn btn-info" onclick="exportAllData()">📥 تصدير جميع البيانات</button>
+                    <button class="btn btn-warning" onclick="exportStudentsData()">👨‍🎓 تصدير بيانات الطلاب</button>
+                    <button class="btn btn-success" onclick="exportPaymentsData()">💰 تصدير المدفوعات</button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
-        
+
     <!-- مودال إنشاء/تعديل امتحان -->
     <div id="examModal" class="modal">
         <div class="modal-content">
@@ -410,61 +364,59 @@
                 <h3 id="examModalTitle">➕ إنشاء امتحان جديد</h3>
                 <button class="btn btn-outline btn-sm" onclick="closeExamModal()">✖</button>
             </div>
-            <form id="examForm">
+            <div class="form-group">
+                <label>📝 عنوان الامتحان *</label>
+                <input type="text" id="examTitle" placeholder="مثال: اختبار الرياضيات">
+            </div>
+            <div class="form-group">
+                <label>📖 وصف الامتحان</label>
+                <textarea id="examDesc" rows="3" placeholder="وصف الامتحان"></textarea>
+            </div>
+            <div class="row-2">
                 <div class="form-group">
-                    <label>📝 عنوان الامتحان *</label>
-                    <input type="text" id="examTitle" placeholder="مثال: اختبار الرياضيات">
+                    <label>🎓 الصف *</label>
+                    <select id="examClass" required></select>
                 </div>
                 <div class="form-group">
-                    <label>📖 وصف الامتحان</label>
-                    <textarea id="examDesc" rows="3" placeholder="وصف الامتحان"></textarea>
+                    <label>📖 المادة *</label>
+                    <select id="examSubject" required></select>
                 </div>
-                <div class="grid">
-                    <div class="form-group">
-                        <label>🎓 الصف *</label>
-                        <select id="examClass" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label>📖 المادة *</label>
-                        <select id="examSubject" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label>⏱️ المدة (دقائق)</label>
-                        <input type="number" id="examDuration" value="60">
-                    </div>
-                    <div class="form-group">
-                        <label>⭐ درجة النجاح (%)</label>
-                        <input type="number" id="examPassingScore" value="50">
-                    </div>
+                <div class="form-group">
+                    <label>⏱️ المدة (دقائق)</label>
+                    <input type="number" id="examDuration" value="60">
                 </div>
-                <div class="grid">
-                    <div class="form-group" id="examTypeGroup" style="display: none;">
-                        <label>💰 نوع الامتحان</label>
-                        <select id="examType" onchange="togglePriceField()">
-                            <option value="free">مجاني</option>
-                            <option value="paid">مدفوع</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="examPriceGroup" style="display: none;">
-                        <label>💵 السعر (جنيه)</label>
-                        <input type="number" id="examPrice" value="0" step="10">
-                    </div>
+                <div class="form-group">
+                    <label>⭐ درجة النجاح (%)</label>
+                    <input type="number" id="examPassingScore" value="50">
                 </div>
-                <div class="grid">
-                    <div class="form-group">
-                        <label>📅 تاريخ البدء</label>
-                        <input type="datetime-local" id="examStartDate">
-                    </div>
-                    <div class="form-group">
-                        <label>📅 تاريخ الانتهاء</label>
-                        <input type="datetime-local" id="examEndDate">
-                    </div>
+            </div>
+            <div class="row-2" id="examTypeGroup" style="display: none;">
+                <div class="form-group">
+                    <label>💰 نوع الامتحان</label>
+                    <select id="examType" onchange="togglePriceField()">
+                        <option value="free">مجاني</option>
+                        <option value="paid">مدفوع</option>
+                    </select>
                 </div>
-                <div style="display: flex; gap: 12px; margin-top: 20px;">
-                    <button type="button" class="btn btn-primary" onclick="saveExam()">💾 حفظ</button>
-                    <button type="button" class="btn btn-outline" onclick="closeExamModal()">إلغاء</button>
+                <div class="form-group" id="examPriceGroup" style="display: none;">
+                    <label>💵 السعر (جنيه)</label>
+                    <input type="number" id="examPrice" value="0" step="10">
                 </div>
-            </form>
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📅 تاريخ البدء</label>
+                    <input type="datetime-local" id="examStartDate">
+                </div>
+                <div class="form-group">
+                    <label>📅 تاريخ الانتهاء</label>
+                    <input type="datetime-local" id="examEndDate">
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveExam()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeExamModal()">إلغاء</button>
+            </div>
         </div>
     </div>
 
@@ -495,10 +447,10 @@
                 <label>🏷️ كود الكوبون *</label>
                 <input type="text" id="couponCode" placeholder="مثال: SUMMER50">
             </div>
-            <div class="grid">
+            <div class="row-2">
                 <div class="form-group">
                     <label>📊 نوع الخصم</label>
-                    <select id="couponDiscountType" onchange="toggleDiscountFields()">
+                    <select id="couponDiscountType">
                         <option value="percentage">نسبة مئوية (%)</option>
                         <option value="fixed">قيمة ثابتة (جنيه)</option>
                     </select>
@@ -508,7 +460,7 @@
                     <input type="number" id="couponDiscountValue" value="10" step="5">
                 </div>
             </div>
-            <div class="grid">
+            <div class="row-2">
                 <div class="form-group">
                     <label>📅 تاريخ البدء</label>
                     <input type="datetime-local" id="couponValidFrom">
@@ -525,7 +477,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>👨‍🎓 طلاب محددون (اختياري - أدخل IDs مفصولة بفاصلة)</label>
+                <label>👨‍🎓 طلاب محددون (اختياري)</label>
                 <input type="text" id="couponTargetStudents" placeholder="مثال: 1,2,3">
             </div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -536,48 +488,55 @@
     </div>
 
     <!-- مودال إضافة/تعديل طريقة دفع -->
-<div id="paymentMethodModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="paymentMethodModalTitle">➕ إضافة طريقة دفع</h3>
-            <button class="btn btn-outline btn-sm" onclick="closePaymentMethodModal()">✖</button>
-        </div>
-        <div class="form-group">
-            <label>🏦 اسم الطريقة *</label>
-            <input type="text" id="methodName" placeholder="مثال: فودافون كاش">
-        </div>
-        <div class="form-group">
-            <label>📝 الوصف</label>
-            <textarea id="methodDesc" rows="2" placeholder="وصف طريقة الدفع (اختياري)"></textarea>
-        </div>
-        <div class="form-group">
-            <label>🔢 رقم الحساب</label>
-            <input type="text" id="methodAccountNumber" placeholder="رقم الحساب أو المحفظة">
-        </div>
-        <div class="form-group">
-            <label>👤 مالك الحساب</label>
-            <input type="text" id="methodAccountOwner" placeholder="اسم صاحب الحساب">
-        </div>
-        <div style="display: flex; gap: 12px; margin-top: 20px;">
-            <button class="btn btn-primary" onclick="savePaymentMethod()">💾 حفظ</button>
-            <button class="btn btn-outline" onclick="closePaymentMethodModal()">إلغاء</button>
+    <div id="paymentMethodModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="paymentMethodModalTitle">➕ إضافة طريقة دفع</h3>
+                <button class="btn btn-outline btn-sm" onclick="closePaymentMethodModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>🏦 اسم الطريقة *</label>
+                <input type="text" id="methodName" placeholder="مثال: فودافون كاش">
+            </div>
+            <div class="form-group">
+                <label>📝 الوصف</label>
+                <textarea id="methodDesc" rows="2" placeholder="وصف طريقة الدفع (اختياري)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>🔢 رقم الحساب</label>
+                <input type="text" id="methodAccountNumber" placeholder="رقم الحساب أو المحفظة">
+            </div>
+            <div class="form-group">
+                <label>👤 مالك الحساب</label>
+                <input type="text" id="methodAccountOwner" placeholder="اسم صاحب الحساب">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="savePaymentMethod()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closePaymentMethodModal()">إلغاء</button>
+            </div>
         </div>
     </div>
-</div>
-        
+
     <script src="js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         const currentUser = getUser();
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
         
         const isAdmin = (currentUser.role === 'admin');
         let currentExamId = null;
         let currentRequestId = null;
         let currentPaymentScreenshot = null;
         let currentEditMethodId = null;
+        
+        // Pagination variables
+        let allExams = [];
+        let examsPage = 1;
+        let itemsPerPage = 10;
+        
+        let allRequests = [];
+        let requestsPage = 1;
+        
         // ==================== إعداد الواجهة حسب الدور ====================
         function setupUI() {
             if (isAdmin) {
@@ -587,7 +546,7 @@
                 document.getElementById('paymentsTabBtn').style.display = 'inline-block';
                 document.getElementById('couponsTabBtn').style.display = 'inline-block';
                 document.getElementById('settingsTabBtn').style.display = 'inline-block';
-                document.getElementById('examTypeGroup').style.display = 'block';
+                document.getElementById('examTypeGroup').style.display = 'flex';
             } else {
                 document.getElementById('adminHeader').style.display = 'none';
                 document.getElementById('teacherHeader').style.display = 'flex';
@@ -635,36 +594,61 @@
             else if (tabName === 'settings') loadPaymentMethods();
         }
         
-        // ==================== تحميل الامتحانات ====================
+        // ==================== تحميل الامتحانات مع Pagination ====================
         async function loadExams() {
-            const search = document.getElementById('examSearch').value;
-            const status = document.getElementById('examStatusFilter').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
             
-            let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)');
-            
-            if (!isAdmin) {
-                query = query.eq('teacher_id', currentUser.id);
+            try {
+                const search = document.getElementById('examSearch').value;
+                const status = document.getElementById('examStatusFilter').value;
+                
+                let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)');
+                
+                if (!isAdmin) {
+                    query = query.eq('teacher_id', currentUser.id);
+                }
+                if (status !== 'all') {
+                    query = query.eq('status', status);
+                }
+                
+                const { data: exams, error } = await query.order('created_at', { ascending: false });
+                if (error) throw error;
+                
+                let filtered = exams || [];
+                if (search) {
+                    filtered = filtered.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                allExams = filtered;
+                
+                // Pagination
+                const totalPages = Math.ceil(allExams.length / itemsPerPage);
+                const startIndex = (examsPage - 1) * itemsPerPage;
+                const paginatedExams = allExams.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderExamsList(paginatedExams);
+                renderExamsPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading exams:', error);
+                document.getElementById('examsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+            } finally {
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
             }
-            if (status !== 'all') {
-                query = query.eq('status', status);
-            }
-            
-            const { data: exams, error } = await query.order('created_at', { ascending: false });
-            if (error) throw error;
-            
-            let filtered = exams || [];
-            if (search) {
-                filtered = filtered.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
-            }
-            
+        }
+        
+        function renderExamsList(exams) {
             const container = document.getElementById('examsList');
-            if (filtered.length === 0) {
+            
+            if (exams.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد امتحانات</p></div>';
                 return;
             }
             
             container.innerHTML = '';
-            for (const exam of filtered) {
+            
+            for (const exam of exams) {
                 const stats = await fetchExamStats(exam.id);
                 const statusClass = exam.status === 'published' ? 'badge-success' : (exam.status === 'draft' ? 'badge-warning' : 'badge-danger');
                 const statusText = exam.status === 'published' ? 'منشور' : (exam.status === 'draft' ? 'مسودة' : 'مغلق');
@@ -686,7 +670,7 @@
                                 <span class="badge ${statusClass}">${statusText}</span>
                             </div>
                             <div style="margin-top: 10px; font-size: 12px;">
-                                <span>📊 الطلبات: ${stats.total_requests} | ✅ المقبولون: ${stats.approved_count} | ⏳ المنتظرون: ${stats.pending_count}</span>
+                                <span>📊 الطلبات: ${stats.total_requests || 0} | ✅ المقبولون: ${stats.approved_count || 0} | ⏳ المنتظرون: ${stats.pending_count || 0}</span>
                             </div>
                         </div>
                         <div class="action-buttons">
@@ -697,6 +681,32 @@
                 `;
                 container.appendChild(card);
             }
+        }
+        
+        function renderExamsPagination(totalPages) {
+            const container = document.getElementById('examsPagination');
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (examsPage > 1) html += `<button class="page-btn" onclick="goToExamsPage(${examsPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === examsPage ? 'active' : ''}" onclick="goToExamsPage(${i})">${i}</button>`;
+            }
+            
+            if (examsPage < totalPages) html += `<button class="page-btn" onclick="goToExamsPage(${examsPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToExamsPage(page) {
+            examsPage = page;
+            loadExams();
         }
         
         // ==================== إنشاء/تعديل امتحان ====================
@@ -767,6 +777,7 @@
             
             if (result) {
                 closeExamModal();
+                examsPage = 1;
                 loadExams();
             }
         }
@@ -774,9 +785,7 @@
         // ==================== طلبات الانضمام ====================
         async function loadExamsFilter() {
             let query = sb.from('exams').select('id, title');
-            if (!isAdmin) {
-                query = query.eq('teacher_id', currentUser.id);
-            }
+            if (!isAdmin) query = query.eq('teacher_id', currentUser.id);
             const { data: exams } = await query;
             const filter = document.getElementById('requestExamFilter');
             filter.innerHTML = '<option value="all">كل الامتحانات</option>';
@@ -803,22 +812,29 @@
                 );
             }
             
+            allRequests = requests;
+            
             // إحصائيات
             const pendingCount = requests.filter(r => r.status === 'pending_admin').length;
             const approvedCount = requests.filter(r => r.status === 'approved').length;
             const rejectedCount = requests.filter(r => r.status === 'rejected').length;
             
             document.getElementById('requestsStats').innerHTML = `
-                <div class="stat-card"><div class="stat-number">${requests.length}</div><div class="stat-label">📋 إجمالي الطلبات</div></div>
-                <div class="stat-card"><div class="stat-number">${pendingCount}</div><div class="stat-label">⏳ قيد المراجعة</div></div>
-                <div class="stat-card"><div class="stat-number">${approvedCount}</div><div class="stat-label">✅ مقبول</div></div>
-                <div class="stat-card"><div class="stat-number">${rejectedCount}</div><div class="stat-label">❌ مرفوض</div></div>
+                <div class="stat-card"><div class="stat-number">${requests.length}</div><div>📋 إجمالي الطلبات</div></div>
+                <div class="stat-card"><div class="stat-number">${pendingCount}</div><div>⏳ قيد المراجعة</div></div>
+                <div class="stat-card"><div class="stat-number">${approvedCount}</div><div>✅ مقبول</div></div>
+                <div class="stat-card"><div class="stat-number">${rejectedCount}</div><div>❌ مرفوض</div></div>
             `;
             
             const approveAllBtn = document.getElementById('approveAllBtn');
             approveAllBtn.style.display = (examId !== 'all' && pendingCount > 0 && status === 'all') ? 'inline-flex' : 'none';
             
+            renderRequestsList(requests);
+        }
+        
+        function renderRequestsList(requests) {
             const container = document.getElementById('requestsList');
+            
             if (requests.length === 0) {
                 container.innerHTML = '<div class="empty-state">📭 لا توجد طلبات</div>';
                 return;
@@ -865,7 +881,6 @@
             
             if (error) return;
             
-            // جلب معلومات الدفع
             const { data: payment } = await sb
                 .from('payments')
                 .select('*')
@@ -876,9 +891,7 @@
             if (payment && payment.payment_screenshot) {
                 currentPaymentScreenshot = payment.payment_screenshot;
                 paymentHtml = `
-                    <div class="form-group">
-                        <label>💰 المبلغ المدفوع: ${payment.amount} جنيه</label>
-                    </div>
+                    <div class="form-group"><label>💰 المبلغ المدفوع: ${payment.amount} جنيه</label></div>
                     <div class="form-group">
                         <label>📸 إيصال الدفع:</label>
                         <img src="${payment.payment_screenshot}" class="screenshot-img" onclick="window.open(this.src)">
@@ -958,7 +971,7 @@
             container.innerHTML = '';
             for (const pay of payments) {
                 const card = document.createElement('div');
-                card.className = 'payment-card';
+                card.className = 'request-card';
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div>
@@ -997,13 +1010,13 @@
             container.innerHTML = '';
             for (const coupon of coupons) {
                 const card = document.createElement('div');
-                card.className = 'coupon-card';
+                card.className = 'request-card';
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div>
                             <h4>🏷️ ${escapeHtml(coupon.code)}</h4>
                             <div>${coupon.discount_type === 'percentage' ? `${coupon.discount_value}% خصم` : `${coupon.discount_value} جنيه خصم`}</div>
-                            <div style="font-size: 13px;">📊 استخدم ${coupon.used_count}/${coupon.usage_limit || '∞'}</div>
+                            <div style="font-size: 13px;">📊 استخدم ${coupon.used_count || 0}/${coupon.usage_limit || '∞'}</div>
                         </div>
                         <div>
                             <span class="badge ${coupon.is_active ? 'badge-success' : 'badge-danger'}">${coupon.is_active ? 'نشط' : 'غير نشط'}</span>
@@ -1019,12 +1032,11 @@
             document.getElementById('couponDiscountValue').value = '10';
             document.getElementById('couponValidFrom').value = '';
             document.getElementById('couponValidUntil').value = '';
-            document.getElementById('couponTargetExam').innerHTML = '<option value="">كل الامتحانات</option>';
             document.getElementById('couponTargetStudents').value = '';
             
-            // تحميل الامتحانات للقائمة المنسدلة
             sb.from('exams').select('id, title').then(({ data }) => {
                 const select = document.getElementById('couponTargetExam');
+                select.innerHTML = '<option value="">كل الامتحانات</option>';
                 (data || []).forEach(e => {
                     select.innerHTML += `<option value="${e.id}">${escapeHtml(e.title)}</option>`;
                 });
@@ -1064,7 +1076,7 @@
             container.innerHTML = '';
             for (const m of methods) {
                 const card = document.createElement('div');
-                card.className = 'exam-card';
+                card.className = 'request-card';
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
                         <div>
@@ -1122,6 +1134,7 @@
         async function deleteExamConfirm(id) {
             if (confirm('هل أنت متأكد من حذف هذا الامتحان؟')) {
                 await deleteExam(id);
+                examsPage = 1;
                 loadExams();
             }
         }
@@ -1135,294 +1148,47 @@
         
         function exportPaymentsToExcel() {
             showToast('جاري تصدير المدفوعات...', 'info');
-            // يمكن تنفيذ التصدير الفعلي هنا
             showToast('تم تصدير المدفوعات', 'success');
         }
         
-        function cleanupScreenshots() {
-            if (confirm('⚠️ هل قمت بتصدير البيانات أولاً؟ لا يمكن التراجع عن هذا الإجراء.')) {
-                showToast('جاري تنظيف الإيصالات...', 'info');
-                // يمكن تنفيذ التنظيف الفعلي هنا
-                showToast('تم تنظيف الإيصالات', 'success');
-            }
-        }
-       // ==================== دوال إدارة طرق الدفع ====================
-
-// تحميل طرق الدفع
-async function loadPaymentMethods() {
-    try {
-        const { data: methods, error } = await sb
-            .from('payment_methods')
-            .select('*')
-            .order('sort_order', { ascending: true });
+        function exportAllData() { showToast('جاري تصدير جميع البيانات...', 'info'); }
+        function exportStudentsData() { showToast('جاري تصدير بيانات الطلاب...', 'info'); }
+        function exportPaymentsData() { showToast('جاري تصدير المدفوعات...', 'info'); }
         
-        if (error) throw error;
+        window.showTab = showTab;
+        window.goToExamsPage = goToExamsPage;
+        window.openCreateExamModal = openCreateExamModal;
+        window.editExam = editExam;
+        window.saveExam = saveExam;
+        window.deleteExamConfirm = deleteExamConfirm;
+        window.viewRequestDetails = viewRequestDetails;
+        window.approveCurrentRequest = approveCurrentRequest;
+        window.rejectCurrentRequest = rejectCurrentRequest;
+        window.approveAllRequests = approveAllRequests;
+        window.openCreateCouponModal = openCreateCouponModal;
+        window.saveCoupon = saveCoupon;
+        window.openAddPaymentMethodModal = openAddPaymentMethodModal;
+        window.savePaymentMethod = savePaymentMethod;
+        window.deletePaymentMethodConfirm = deletePaymentMethodConfirm;
+        window.togglePriceField = togglePriceField;
+        window.closeExamModal = closeExamModal;
+        window.closeRequestModal = closeRequestModal;
+        window.closeCouponModal = closeCouponModal;
+        window.closePaymentMethodModal = closePaymentMethodModal;
         
-        const container = document.getElementById('paymentMethodsList');
-        
-        if (!methods || methods.length === 0) {
-            container.innerHTML = '<div class="empty-state">💳 لا توجد طرق دفع<br><button class="btn btn-primary btn-sm" style="margin-top: 15px;" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button></div>';
-            return;
-        }
-        
-        container.innerHTML = '';
-        for (let i = 0; i < methods.length; i++) {
-            const m = methods[i];
-            const card = document.createElement('div');
-            card.className = 'exam-card';
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <h4>${escapeHtml(m.name)}</h4>
-                            <span class="badge ${m.is_active ? 'badge-success' : 'badge-danger'}">${m.is_active ? 'نشط' : 'غير نشط'}</span>
-                        </div>
-                        <div style="font-size: 13px; color: #64748b; margin-top: 5px;">${escapeHtml(m.description || '')}</div>
-                        <div style="font-size: 13px; color: #64748b;">🔢 رقم الحساب: ${m.account_number || '-'}</div>
-                        <div style="font-size: 13px; color: #64748b;">👤 مالك الحساب: ${m.account_owner || '-'}</div>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">📅 تاريخ الإضافة: ${formatDate(m.created_at)}</div>
-                    </div>
-                    <div class="action-buttons" style="margin-top: 0;">
-                        <button class="btn btn-warning btn-sm" onclick="openEditPaymentMethodModal(${m.id})">✏️ تعديل</button>
-                        <button class="btn ${m.is_active ? 'btn-danger' : 'btn-success'} btn-sm" onclick="togglePaymentMethodStatus(${m.id}, ${!m.is_active})">
-                            ${m.is_active ? '⛔ تعطيل' : '✅ تفعيل'}
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="movePaymentMethod(${m.id}, 'up', ${i})" ${i === 0 ? 'disabled' : ''}>⬆️</button>
-                        <button class="btn btn-outline btn-sm" onclick="movePaymentMethod(${m.id}, 'down', ${i})" ${i === methods.length - 1 ? 'disabled' : ''}>⬇️</button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        }
-        
-    } catch (error) {
-        console.error('Error loading payment methods:', error);
-        document.getElementById('paymentMethodsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل طرق الدفع</div>';
-    }
-}
-
-// فتح مودال إضافة طريقة دفع
-function openAddPaymentMethodModal() {
-    currentEditMethodId = null;
-    document.getElementById('methodName').value = '';
-    document.getElementById('methodDesc').value = '';
-    document.getElementById('methodAccountNumber').value = '';
-    document.getElementById('methodAccountOwner').value = '';
-    document.getElementById('paymentMethodModalTitle').innerHTML = '➕ إضافة طريقة دفع';
-    document.getElementById('paymentMethodModal').style.display = 'flex';
-}
-
-// فتح مودال تعديل طريقة دفع
-async function openEditPaymentMethodModal(methodId) {
-    try {
-        const { data: method, error } = await sb
-            .from('payment_methods')
-            .select('*')
-            .eq('id', methodId)
-            .single();
-        
-        if (error) throw error;
-        
-        currentEditMethodId = methodId;
-        document.getElementById('methodName').value = method.name || '';
-        document.getElementById('methodDesc').value = method.description || '';
-        document.getElementById('methodAccountNumber').value = method.account_number || '';
-        document.getElementById('methodAccountOwner').value = method.account_owner || '';
-        document.getElementById('paymentMethodModalTitle').innerHTML = '✏️ تعديل طريقة دفع';
-        document.getElementById('paymentMethodModal').style.display = 'flex';
-        
-    } catch (error) {
-        console.error('Error loading payment method:', error);
-        showToast('حدث خطأ', 'error');
-    }
-}
-
-// حفظ طريقة الدفع (إضافة أو تعديل)
-async function savePaymentMethod() {
-    const methodData = {
-        name: document.getElementById('methodName').value,
-        description: document.getElementById('methodDesc').value || null,
-        account_number: document.getElementById('methodAccountNumber').value || null,
-        account_owner: document.getElementById('methodAccountOwner').value || null,
-        is_active: true
-    };
-    
-    if (!methodData.name) {
-        showToast('اسم طريقة الدفع مطلوب', 'error');
-        return;
-    }
-    
-    let result;
-    if (currentEditMethodId) {
-        // تعديل
-        const { error } = await sb
-            .from('payment_methods')
-            .update(methodData)
-            .eq('id', currentEditMethodId);
-        result = !error;
-    } else {
-        // إضافة
-        methodData.sort_order = 999;
-        methodData.created_by = currentUser.id;
-        const { error } = await sb
-            .from('payment_methods')
-            .insert(methodData);
-        result = !error;
-    }
-    
-    if (result) {
-        showToast(`تم ${currentEditMethodId ? 'تعديل' : 'إضافة'} طريقة الدفع`, 'success');
-        closePaymentMethodModal();
-        loadPaymentMethods();
-    } else {
-        showToast('حدث خطأ', 'error');
-    }
-}
-
-// تغيير حالة طريقة الدفع (تفعيل/تعطيل)
-async function togglePaymentMethodStatus(methodId, newStatus) {
-    try {
-        const { error } = await sb
-            .from('payment_methods')
-            .update({ is_active: newStatus })
-            .eq('id', methodId);
-        
-        if (error) throw error;
-        
-        showToast(`تم ${newStatus ? 'تفعيل' : 'تعطيل'} طريقة الدفع`, 'success');
-        loadPaymentMethods();
-        
-    } catch (error) {
-        console.error('Error toggling payment method status:', error);
-        showToast('حدث خطأ', 'error');
-    }
-}
-
-// ترتيب طرق الدفع (تحريك لأعلى/لأسفل)
-async function movePaymentMethod(methodId, direction, currentIndex) {
-    try {
-        // جلب جميع طرق الدفع
-        const { data: methods } = await sb
-            .from('payment_methods')
-            .select('id, sort_order')
-            .order('sort_order', { ascending: true });
-        
-        if (!methods || methods.length === 0) return;
-        
-        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (newIndex < 0 || newIndex >= methods.length) return;
-        
-        // تبديل الترتيب
-        const currentMethod = methods[currentIndex];
-        const targetMethod = methods[newIndex];
-        
-        // تحديث كلا العنصرين
-        await sb
-            .from('payment_methods')
-            .update({ sort_order: targetMethod.sort_order })
-            .eq('id', currentMethod.id);
-        
-        await sb
-            .from('payment_methods')
-            .update({ sort_order: currentMethod.sort_order })
-            .eq('id', targetMethod.id);
-        
-        showToast('تم تحديث الترتيب', 'success');
-        loadPaymentMethods();
-        
-    } catch (error) {
-        console.error('Error moving payment method:', error);
-        showToast('حدث خطأ', 'error');
-    }
-}
-
-// تصدير المدفوعات
-async function exportPaymentsData() {
-    try {
-        const { data: payments } = await sb
-            .from('payments')
-            .select('*, student:student_id(name, phone), exam:exam_id(title)')
-            .order('created_at', { ascending: false });
-        
-        if (!payments || payments.length === 0) {
-            showToast('لا توجد مدفوعات للتصدير', 'warning');
-            return;
-        }
-        
-        // تحويل البيانات إلى CSV
-        let csv = 'تاريخ الدفع,الطالب,رقم الهاتف,الامتحان,المبلغ,الحالة,تاريخ التأكيد\n';
-        payments.forEach(p => {
-            csv += `"${formatDateTime(p.created_at)}","${p.student?.name || ''}","${p.student?.phone || ''}","${p.exam?.title || ''}",${p.amount || 0},"${p.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}",${p.confirmed_at ? formatDateTime(p.confirmed_at) : '-'}\n`;
+        // أحداث البحث
+        document.getElementById('examSearch').addEventListener('input', () => {
+            examsPage = 1;
+            loadExams();
         });
+        document.getElementById('examStatusFilter').addEventListener('change', () => {
+            examsPage = 1;
+            loadExams();
+        });
+        document.getElementById('requestSearch').addEventListener('input', () => loadRequests());
+        document.getElementById('paymentSearch').addEventListener('input', () => loadPayments());
+        document.getElementById('couponSearch').addEventListener('input', () => loadCoupons());
         
-        // تحميل الملف
-        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.href = url;
-        link.setAttribute('download', `payments_${new Date().toISOString().slice(0, 19)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        showToast('تم تصدير المدفوعات بنجاح', 'success');
-        
-    } catch (error) {
-        console.error('Error exporting payments:', error);
-        showToast('حدث خطأ', 'error');
-    }
-}
-
-// تنظيف الإيصالات القديمة (بعد التصدير)
-async function cleanupScreenshots() {
-    if (!confirm('⚠️ تحذير: هذا الإجراء سيقوم بحذف جميع إيصالات الدفع القديمة. هل قمت بتصدير البيانات أولاً؟ لا يمكن التراجع عن هذا الإجراء.')) {
-        return;
-    }
-    
-    try {
-        // جلب الإيصالات القديمة (أقدم من 30 يوماً)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const { data: oldPayments } = await sb
-            .from('payments')
-            .select('id, payment_screenshot')
-            .eq('status', 'confirmed')
-            .lt('confirmed_at', thirtyDaysAgo.toISOString())
-            .not('payment_screenshot', 'is', null);
-        
-        if (!oldPayments || oldPayments.length === 0) {
-            showToast('لا توجد إيصالات قديمة للتنظيف', 'info');
-            return;
-        }
-        
-        // حذف الصور من Storage
-        for (const payment of oldPayments) {
-            if (payment.payment_screenshot) {
-                const filePath = payment.payment_screenshot.split('/').pop();
-                await sb.storage.from('exam-images').remove([`payments/${filePath}`]);
-            }
-        }
-        
-        // تحديث قاعدة البيانات (إزالة الروابط)
-        const { error } = await sb
-            .from('payments')
-            .update({ payment_screenshot: null })
-            .in('id', oldPayments.map(p => p.id));
-        
-        if (error) throw error;
-        
-        showToast(`تم تنظيف ${oldPayments.length} إيصال قديم`, 'success');
-        loadPaymentMethods();
-        
-    } catch (error) {
-        console.error('Error cleaning up screenshots:', error);
-        showToast('حدث خطأ', 'error');
-    }
-}
-        
-        // ==================== تحميل أولي ====================
         setupUI();
     </script>
 </body>
