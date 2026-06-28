@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مراجعة الاختبار - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .review-header { margin-bottom: 2rem; }
+    .review-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .summary-box {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--gray-200);
+    }
+    .summary-box .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .summary-box .label {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+    .review-question { transition: var(--transition); }
+    .review-question:hover { transform: translateX(-4px); }
+    .option-review {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      font-size: 0.9375rem;
+    }
+    .option-review.student-selected { background: var(--info-light); border: 1px solid var(--info); }
+    .option-review.correct-answer { background: var(--success-light); border: 1px solid var(--success); }
+    .option-review.wrong-answer { background: var(--danger-light); border: 1px solid var(--danger); }
+    .option-review.neutral { background: var(--gray-50); border: 1px solid var(--gray-200); }
+    .option-review .marker {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .explanation-box {
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .explanation-box h4 {
+      color: var(--primary-dark);
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    .explanation-box p {
+      color: var(--gray-700);
+      font-size: 0.9375rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <!-- Review Header -->
+        <div class="review-header">
+          <div class="review-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 2.5rem 2rem; border-radius: var(--radius-xl); text-align: center;">
+            <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">📊 مراجعة الاختبار</h1>
+            <p id="exam-title" style="opacity: 0.9; font-size: 1.125rem;">جاري التحميل...</p>
+
+            <div class="review-summary" style="margin-top: 1.5rem;">
+              <div class="summary-box">
+                <div class="value" id="score-value" style="color: var(--success);">0</div>
+                <div class="label">الدرجة</div>
+              </div>
+              <div class="summary-box">
+                <div class="value" id="percentage-value" style="color: var(--primary);">0%</div>
+                <div class="label">النسبة</div>
+              </div>
+              <div class="summary-box">
+                <div class="value" id="correct-value" style="color: var(--success);">0</div>
+                <div class="label">صحيحة</div>
+              </div>
+              <div class="summary-box">
+                <div class="value" id="wrong-value" style="color: var(--danger);">0</div>
+                <div class="label">خاطئة</div>
+              </div>
+              <div class="summary-box">
+                <div class="value" id="time-value" style="color: var(--warning);">0</div>
+                <div class="label">الوقت (دقيقة)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions Review -->
+        <div id="questions-review">
+          <!-- Questions loaded here -->
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; padding-bottom: 2rem;">
+          <a href="results.html" class="btn btn-primary btn-lg">
+            <span>📊</span> كل النتائج
+          </a>
+          <a href="exams.html" class="btn btn-secondary btn-lg">
+            <span>📝</span> اختبارات أخرى
+          </a>
+          <button class="btn btn-outline btn-lg" onclick="window.print()">
+            <span>🖨️</span> طباعة
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('student');
+    renderLayout('student', 'exams');
+    document.title = 'مراجعة الاختبار';
+
+    // Demo data
+    const demoSubmission = {
+      exam_title: 'اختبار الرياضيات - الوحدة الأولى: الجبر',
+      score: 8,
+      total_marks: 10,
+      correct_count: 4,
+      wrong_count: 1,
+      time_taken: 38 * 60, // seconds
+      questions: [
+        {
+          id: 1,
+          question_text: 'ما هو حل المعادلة 2x + 5 = 15؟',
+          options: ['x = 5', 'x = 10', 'x = 7.5', 'x = 20'],
+          correct_answer: 0,
+          student_answer: 0,
+          marks: 2,
+          explanation: 'نطرح 5 من الطرفين: 2x = 10، ثم نقسم على 2: x = 5'
+        },
+        {
+          id: 2,
+          question_text: 'إذا كان طول ضلع المربع 4 سم، فما هو محيطه؟',
+          options: ['12 سم', '16 سم', '8 سم', '20 سم'],
+          correct_answer: 1,
+          student_answer: 1,
+          marks: 2,
+          explanation: 'محيط المربع = 4 × طول الضلع = 4 × 4 = 16 سم'
+        },
+        {
+          id: 3,
+          question_text: 'أي من التالي يمثل العدد الأولي؟',
+          options: ['9', '15', '17', '21'],
+          correct_answer: 2,
+          student_answer: 2,
+          marks: 2,
+          explanation: '17 هو عدد أولي لأنه لا يقبل القسمة إلا على 1 ونفسه'
+        },
+        {
+          id: 4,
+          question_text: 'ما هو ناتج 3² + 4²؟',
+          options: ['25', '49', '7', '14'],
+          correct_answer: 0,
+          student_answer: 0,
+          marks: 2,
+          explanation: '3² = 9 و 4² = 16، إذن 9 + 16 = 25'
+        },
+        {
+          id: 5,
+          question_text: 'إذا كان سعر 5 كتب 75 جنيهاً، فما سعر 8 كتب؟',
+          options: ['100 جنيه', '120 جنيه', '90 جنيه', '150 جنيه'],
+          correct_answer: 1,
+          student_answer: 2, // Wrong!
+          marks: 2,
+          explanation: 'سعر الكتاب الواحد = 75 ÷ 5 = 15 جنيه، سعر 8 كتب = 15 × 8 = 120 جنيه'
+        }
+      ]
+    };
+
+    function loadReview() {
+      const sub = demoSubmission;
+      const percentage = ((sub.score / sub.total_marks) * 100).toFixed(1);
+      const timeMinutes = Math.floor(sub.time_taken / 60);
+
+      document.getElementById('exam-title').textContent = sub.exam_title;
+      document.getElementById('score-value').textContent = `${sub.score}/${sub.total_marks}`;
+      document.getElementById('percentage-value').textContent = `${percentage}%`;
+      document.getElementById('percentage-value').style.color = getGradeColor(parseFloat(percentage));
+      document.getElementById('correct-value').textContent = sub.correct_count;
+      document.getElementById('wrong-value').textContent = sub.wrong_count;
+      document.getElementById('time-value').textContent = timeMinutes;
+
+      const container = document.getElementById('questions-review');
+      container.innerHTML = sub.questions.map((q, i) => {
+        const isCorrect = q.student_answer === q.correct_answer;
+        const statusClass = isCorrect ? 'correct' : 'wrong';
+        const statusText = isCorrect ? '✅ إجابة صحيحة' : '❌ إجابة خاطئة';
+        const statusColor = isCorrect ? 'var(--success)' : 'var(--danger)';
+
+        return `
+          <div class="review-question ${statusClass}">
+            <div class="status-badge">${statusText}</div>
+            <div style="margin-top: 0.5rem;">
+              <span class="badge badge-secondary" style="margin-bottom: 0.75rem; display: inline-block;">سؤال ${i + 1}</span>
+              <span class="badge ${isCorrect ? 'badge-success' : 'badge-danger'}" style="margin-bottom: 0.75rem; display: inline-block;">${q.marks} درجة</span>
+            </div>
+            <div class="question-text" style="font-size: 1.0625rem; margin-bottom: 1.25rem;">${q.question_text}</div>
+
+            <div class="answer-options" style="margin-bottom: 1rem;">
+              ${q.options.map((opt, idx) => {
+                let optClass = 'neutral';
+                let marker = '';
+                if (idx === q.correct_answer) {
+                  optClass = 'correct-answer';
+                  marker = '<div class="marker" style="background: var(--success); color: white;">✓</div>';
+                } else if (idx === q.student_answer && idx !== q.correct_answer) {
+                  optClass = 'wrong-answer';
+                  marker = '<div class="marker" style="background: var(--danger); color: white;">✗</div>';
+                } else if (idx === q.student_answer) {
+                  optClass = 'student-selected';
+                  marker = '<div class="marker" style="background: var(--info); color: white;">●</div>';
+                } else {
+                  marker = `<div class="marker" style="background: var(--gray-200); color: var(--gray-500);">${String.fromCharCode(1611 + idx)}</div>`;
+                }
+                return `
+                  <div class="option-review ${optClass}">
+                    ${marker}
+                    <span>${opt}</span>
+                    ${idx === q.correct_answer ? '<span style="margin-right: auto; color: var(--success); font-size: 0.8125rem; font-weight: 600;">الإجابة الصحيحة</span>' : ''}
+                    ${idx === q.student_answer && idx !== q.correct_answer ? '<span style="margin-right: auto; color: var(--danger); font-size: 0.8125rem; font-weight: 600;">إجابتك</span>' : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+
+            <div class="explanation-box">
+              <h4>💡 الشرح</h4>
+              <p>${q.explanation}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadReview);
+  </script>
+</body>
+</html>

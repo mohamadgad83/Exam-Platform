@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الاختبارات - نظام إدارة الاختبارات الإلكترونية</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <style>
+    .landing-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background: white;
+      box-shadow: var(--shadow);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .landing-nav .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .landing-nav .nav-links {
+      display: flex;
+      gap: 2rem;
+    }
+    .landing-nav .nav-links a {
+      color: var(--gray-700);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .landing-nav .nav-links a:hover {
+      color: var(--primary);
+    }
+    .landing-hero {
+      padding-top: 8rem;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+    .stats-section {
+      padding: 4rem 2rem;
+      background: white;
+    }
+    .stats-section-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      text-align: center;
+    }
+    .stat-item h2 {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .stat-item p {
+      color: var(--gray-500);
+    }
+    .how-it-works {
+      padding: 4rem 2rem;
+      background: var(--light);
+    }
+    .steps-grid {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+    .step-card {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .step-number {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin: 0 auto 1rem;
+    }
+    .footer {
+      background: var(--dark);
+      color: white;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .footer p {
+      opacity: 0.7;
+    }
+    @media (max-width: 768px) {
+      .stats-section-inner { grid-template-columns: repeat(2, 1fr); }
+      .steps-grid { grid-template-columns: 1fr; }
+      .landing-nav .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="landing-nav">
+    <div class="logo">
+      <span>📚</span>
+      <span>منصة الاختبارات</span>
+    </div>
+    <div class="nav-links">
+      <a href="#features">المميزات</a>
+      <a href="#how">كيف يعمل</a>
+      <a href="login.html" class="btn btn-primary">تسجيل الدخول</a>
+    </div>
+  </nav>
+
+  <section class="landing-hero">
+    <h1>نظام إدارة الاختبارات الإلكترونية</h1>
+    <p>منصة متكاملة لإنشاء وإدارة الاختبارات الإلكترونية للمدارس والمعاهد مع نظام أمان متقدم وواجهة سهلة الاستخدام</p>
+    <div class="hero-buttons">
+      <a href="login.html" class="btn btn-primary btn-lg">🚀 ابدأ الآن</a>
+      <a href="#features" class="btn btn-outline btn-lg">ℹ️ تعرف أكثر</a>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="stats-section-inner">
+      <div class="stat-item">
+        <h2>+500</h2>
+        <p>مدرسة مشتركة</p>
+      </div>
+      <div class="stat-item">
+        <h2>+50K</h2>
+        <p>طالب نشط</p>
+      </div>
+      <div class="stat-item">
+        <h2>+200K</h2>
+        <p>اختبار تم إجراؤه</p>
+      </div>
+      <div class="stat-item">
+        <h2>99.9%</h2>
+        <p>نسبة التوفر</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-features" id="features">
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h3>أمان متقدم</h3>
+        <p>وضع الامتحان الآمن مع منع النسخ والتبديل بين التبويبات وتسجيل الانتهاكات</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⏱️</div>
+        <h3>مؤقت ذكي</h3>
+        <p>مؤقت تلقائي مع التحذير قبل انتهاء الوقت وتسليم تلقائي</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>تقارير فورية</h3>
+        <p>نتائج فورية مع تحليل الأداء وإحصائيات مفصلة لكل طالب</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📝</div>
+        <h3>بنك أسئلة</h3>
+        <p>بنك أسئلة مركزي مع دعم أنواع متعددة من الأسئلة</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">👥</div>
+        <h3>إدارة المجموعات</h3>
+        <p>تنظيم الطلاب في مجموعات وتوزيع الاختبارات بسهولة</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📱</div>
+        <h3>تصميم متجاوب</h3>
+        <p>يعمل على جميع الأجهزة: كمبيوتر، تابلت، وموبايل</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how">
+    <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2rem; color: var(--gray-900);">كيف يعمل النظام؟</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h3>إنشاء الاختبار</h3>
+        <p>المعلم ينشئ اختباراً من بنك الأسئلة أو يضيف أسئلة جديدة ويحدد المدة والدرجات</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h3>توزيع الاختبار</h3>
+        <p>تحديد المجموعات أو الطلاب المستهدفين وتحديد موعد الاختبار</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h3>إجراء الاختبار</h3>
+        <p>الطالب يدخل في وضع الامتحان الآمن ويجيب على الأسئلة في الوقت المحدد</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h3>التصحيح التلقائي</h3>
+        <p>تصحيح فوري للأسئلة الموضوعية مع تقارير مفصلة للمعلم والطالب</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">5</div>
+        <h3>المراجعة والتحليل</h3>
+        <p>الطالب يراجع إجاباته والمعلم يحلل أداء الطلاب والأسئلة</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">6</div>
+        <h3>الشهادات</h3>
+        <p>إصدار شهادات إتمام الاختبار مع QR Code للتحقق</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© 2026 منصة الاختبارات. جميع الحقوق محفوظة.</p>
+    <p style="margin-top: 0.5rem; font-size: 0.875rem;">نظام آمن وموثوق لإدارة الاختبارات الإلكترونية</p>
+  </footer>
+</body>
+</html>

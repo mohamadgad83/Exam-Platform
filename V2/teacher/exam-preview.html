@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>معاينة الاختبار - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .preview-banner { background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; padding: 1rem 1.5rem; border-radius: var(--radius-xl); margin-bottom: 1.5rem; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+    .preview-banner .badge { background: rgba(255,255,255,0.2); color: white; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="preview-banner">
+          <span>👁️</span>
+          <span>وضع المعاينة - هذا ما سيراه الطالب</span>
+          <span class="badge">معاينة فقط</span>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📝 اختبار الرياضيات - الوحدة الأولى: الجبر</h2>
+            <div style="display: flex; gap: 0.75rem;">
+              <span class="badge badge-info">⏱️ 45 دقيقة</span>
+              <span class="badge badge-secondary">📊 50 درجة</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="background: var(--gray-50); padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem;">
+              <h4 style="margin-bottom: 0.75rem; color: var(--gray-800);">📋 تعليمات الاختبار</h4>
+              <ul style="color: var(--gray-600); padding-right: 1.5rem; line-height: 2;">
+                <li>اقرأ كل سؤال بعناية قبل الإجابة</li>
+                <li>لا يمكن العودة للسؤال السابق بعد الانتقال</li>
+                <li>تأكد من مراجعة إجاباتك قبل التسليم</li>
+                <li>الوقت يبدأ عند الضغط على "بدء الاختبار"</li>
+              </ul>
+            </div>
+
+            <div style="text-align: center; padding: 3rem;">
+              <div style="font-size: 4rem; margin-bottom: 1rem;">📝</div>
+              <h3 style="margin-bottom: 0.75rem; color: var(--gray-900);">جاهز للبدء؟</h3>
+              <p style="color: var(--gray-500); margin-bottom: 1.5rem;">الاختبار يحتوي على 25 سؤالاً | مدة 45 دقيقة</p>
+              <button class="btn btn-primary btn-lg" onclick="startPreview()">بدء المعاينة</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions Preview -->
+        <div id="questions-preview" style="display: none;">
+          <div class="question-card">
+            <div class="question-number">1</div>
+            <div class="question-text">ما هو حل المعادلة 2x + 5 = 15؟</div>
+            <div class="answer-options">
+              <label class="answer-option"><input type="radio" name="q1"> x = 5</label>
+              <label class="answer-option"><input type="radio" name="q1"> x = 10</label>
+              <label class="answer-option"><input type="radio" name="q1"> x = 7.5</label>
+              <label class="answer-option"><input type="radio" name="q1"> x = 20</label>
+            </div>
+          </div>
+
+          <div class="question-card">
+            <div class="question-number">2</div>
+            <div class="question-text">إذا كان طول ضلع المربع 4 سم، فما هو محيطه؟</div>
+            <div class="answer-options">
+              <label class="answer-option"><input type="radio" name="q2"> 12 سم</label>
+              <label class="answer-option"><input type="radio" name="q2"> 16 سم</label>
+              <label class="answer-option"><input type="radio" name="q2"> 8 سم</label>
+              <label class="answer-option"><input type="radio" name="q2"> 20 سم</label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+            <button class="btn btn-secondary" disabled>← السابق</button>
+            <button class="btn btn-primary">التالي →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('teacher');
+    renderLayout('teacher', 'exams');
+    document.title = 'معاينة الاختبار';
+
+    function startPreview() {
+      document.getElementById('questions-preview').style.display = 'block';
+      window.scrollTo({ top: document.getElementById('questions-preview').offsetTop - 100, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

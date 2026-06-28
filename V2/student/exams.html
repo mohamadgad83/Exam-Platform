@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الاختبارات المتاحة - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .exam-status-bar { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .status-tab { padding: 0.5rem 1.25rem; border-radius: 9999px; border: 1.5px solid var(--gray-200); cursor: pointer; font-weight: 500; transition: var(--transition); background: white; font-family: var(--font-main); font-size: 0.9rem; }
+    .status-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .status-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+
+        <!-- Filter Bar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+          <div class="exam-status-bar" style="margin:0;">
+            <button class="status-tab active" onclick="setTab('all', this)">كل الاختبارات</button>
+            <button class="status-tab" onclick="setTab('available', this)">📝 متاحة</button>
+            <button class="status-tab" onclick="setTab('completed', this)">✅ مكتملة</button>
+          </div>
+          <div style="display:flex;gap:0.75rem;">
+            <select class="form-select" style="width:auto;" id="filter-subject" onchange="applyFilters()">
+              <option value="">كل المواد</option>
+              <option value="math">الرياضيات</option>
+              <option value="arabic">اللغة العربية</option>
+              <option value="english">اللغة الإنجليزية</option>
+              <option value="science">العلوم</option>
+              <option value="history">التاريخ</option>
+            </select>
+            <input type="text" class="form-input" id="search-exam" placeholder="🔍 بحث..." style="width:200px;" oninput="applyFilters()">
+          </div>
+        </div>
+
+        <div id="exams-container">
+          <div style="text-align:center;padding:3rem;"><div class="spinner spinner-lg"></div><p style="margin-top:1rem;color:var(--gray-500);">جاري تحميل الاختبارات...</p></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('student');
+    renderLayout('student', 'exams');
+
+    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
+    const sb = getSupabase();
+
+    let allExams = [];
+    let submittedMap = {};
+    let currentTab = 'all';
+
+    const subjectMap = { math:'الرياضيات', arabic:'اللغة العربية', english:'الإنجليزية', science:'العلوم', history:'التاريخ', other:'أخرى' };
+    const subjectColors = { math:'blue', arabic:'green', english:'teal', science:'orange', history:'purple', other:'indigo' };
+
+    async function loadExams() {
+      try {
+        const [examsRes, subsRes] = await Promise.all([
+          sb.from('exams').select('*').eq('is_active', true).order('created_at', { ascending: false }),
+          sb.from('exam_submissions').select('exam_id, score, total_marks, passed, submitted_at').eq('student_id', user.id)
+        ]);
+
+        allExams = examsRes.data || [];
+        const subs = subsRes.data || [];
+        subs.forEach(s => { submittedMap[s.exam_id] = s; });
+
+        applyFilters();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('exams-container').innerHTML = `
+          <div class="empty-state"><div class="empty-icon">⚠️</div><h3>حدث خطأ في التحميل</h3><button class="btn btn-primary" onclick="loadExams()">إعادة المحاولة</button></div>`;
+      }
+    }
+
+    function setTab(tab, el) {
+      currentTab = tab;
+      document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const subject = document.getElementById('filter-subject').value;
+      const search = document.getElementById('search-exam').value.toLowerCase();
+
+      let filtered = allExams;
+      if (subject) filtered = filtered.filter(e => e.subject === subject);
+      if (search) filtered = filtered.filter(e => e.title.toLowerCase().includes(search));
+
+      if (currentTab === 'available') filtered = filtered.filter(e => !submittedMap[e.id]);
+      if (currentTab === 'completed') filtered = filtered.filter(e => !!submittedMap[e.id]);
+
+      renderExams(filtered);
+    }
+
+    function renderExams(exams) {
+      const container = document.getElementById('exams-container');
+      if (exams.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <h3>لا توجد اختبارات</h3>
+          <p>لا توجد اختبارات تطابق بحثك الحالي</p>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="exams-grid">${exams.map(e => {
+        const sub = submittedMap[e.id];
+        const isCompleted = !!sub;
+        const iconColor = subjectColors[e.subject] || 'blue';
+
+        return `<div class="exam-card">
+          <div class="exam-card-header" style="${isCompleted ? 'background:linear-gradient(135deg,var(--gray-600),var(--gray-800))' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div style="flex:1;">
+                <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:0.625rem;line-height:1.4;">${sanitizeHTML(e.title)}</h3>
+                <span class="badge" style="background:rgba(255,255,255,0.2);color:white;">${subjectMap[e.subject] || 'عام'}</span>
+              </div>
+              ${isCompleted ? '<span style="font-size:2rem;">✅</span>' : '<span style="font-size:2rem;">📝</span>'}
+            </div>
+            ${isCompleted ? `<div style="margin-top:1rem;padding:0.75rem;background:rgba(255,255,255,0.1);border-radius:var(--radius-lg);text-align:center;">
+              <div style="font-size:1.5rem;font-weight:800;">${sub.score}/${sub.total_marks}</div>
+              <div style="opacity:0.8;font-size:0.875rem;">${sub.passed ? '✅ ناجح' : '❌ راسب'}</div>
+            </div>` : ''}
+          </div>
+          <div class="exam-card-body">
+            <div class="exam-meta">
+              <span>⏱️ ${e.duration_minutes} دقيقة</span>
+              <span>📊 ${e.total_marks} درجة</span>
+              <span>🎯 للنجاح: ${e.passing_score || 50}%</span>
+            </div>
+            ${e.description ? `<p style="margin-top:0.75rem;font-size:0.875rem;color:var(--gray-500);">${sanitizeHTML(e.description)}</p>` : ''}
+            <div style="margin-top:1.25rem;">
+              ${isCompleted
+                ? `<a href="exam-review.html?id=${sub.exam_id}&submission=${e.id}" class="btn btn-secondary btn-block">👁️ مراجعة الإجابات</a>`
+                : `<a href="exam-attempt.html?id=${e.id}" class="btn btn-primary btn-block">▶️ ابدأ الاختبار</a>`
+              }
+            </div>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    loadExams();
+  </script>
+</body>
+</html>

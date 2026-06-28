@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول - منصة الاختبارات</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <style>
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      padding: 2rem;
+    }
+    .login-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-card .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-card .logo-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary);
+      color: white;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1rem;
+    }
+    .login-card .logo h1 {
+      font-size: 1.5rem;
+      color: var(--gray-900);
+    }
+    .login-card .logo p {
+      color: var(--gray-500);
+      margin-top: 0.25rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--gray-100);
+      padding: 0.25rem;
+      border-radius: var(--radius);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.625rem;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--gray-600);
+    }
+    .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .forgot-link {
+      text-align: left;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+    }
+    .forgot-link a {
+      color: var(--primary);
+      font-size: 0.875rem;
+      text-decoration: none;
+    }
+    .forgot-link a:hover { text-decoration: underline; }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      color: var(--gray-400);
+      font-size: 0.875rem;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--gray-200);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="logo">
+        <div class="logo-icon">📚</div>
+        <h1>منصة الاختبارات</h1>
+        <p>نظام إدارة الاختبارات الإلكترونية</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">تسجيل الدخول</button>
+        <button class="tab-btn" onclick="switchTab('register')">حساب جديد</button>
+      </div>
+
+      <!-- Login Form -->
+      <div class="tab-content active" id="login-tab">
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" class="form-input" id="login-email" data-validate="required|email" placeholder="example@school.edu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">كلمة المرور</label>
+            <input type="password" class="form-input" id="login-password" data-validate="required|min:6" placeholder="••••••••" required>
+          </div>
+          <div class="forgot-link">
+            <a href="#" onclick="showForgotPassword(event)">نسيت كلمة المرور؟</a>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="login-btn">
+            تسجيل الدخول
+          </button>
+        </form>
+      </div>
+
+      <!-- Register Form -->
+      <div class="tab-content" id="register-tab">
+        <form id="register-form" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label">الاسم الكامل</label>
+            <input type="text" class="form-input" id="reg-name" data-validate="required|min:3" placeholder="محمد أحمد" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" class="form-input" id="reg-email" data-validate="required|email" placeholder="example@school.edu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">نوع الحساب</label>
+            <select class="form-select" id="reg-role" required>
+              <option value="">اختر نوع الحساب</option>
+              <option value="student">طالب</option>
+              <option value="teacher">معلم</option>
+            </select>
+          </div>
+          <div class="form-group" id="class-group" style="display: none;">
+            <label class="form-label">الصف الدراسي</label>
+            <select class="form-select" id="reg-class">
+              <option value="">اختر الصف</option>
+              <option value="1">الصف الأول الثانوي</option>
+              <option value="2">الصف الثاني الثانوي</option>
+              <option value="3">الصف الثالث الثانوي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">كلمة المرور</label>
+            <input type="password" class="form-input" id="reg-password" data-validate="required|min:8" placeholder="••••••••" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">تأكيد كلمة المرور</label>
+            <input type="password" class="form-input" id="reg-confirm" data-validate="required" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="register-btn">
+            إنشاء حساب
+          </button>
+        </form>
+      </div>
+
+      <div class="divider">أو</div>
+      <p style="text-align: center; color: var(--gray-500); font-size: 0.875rem;">
+        بالتسجيل، أنت توافق على <a href="#" style="color: var(--primary);">شروط الاستخدام</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="shared/app.js"></script>
+  <script src="shared/supabase-client.js"></script>
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      event.target.classList.add('active');
+      document.getElementById(tab + '-tab').classList.add('active');
+    }
+
+    // Show class selector for students
+    document.getElementById('reg-role').addEventListener('change', function() {
+      document.getElementById('class-group').style.display = this.value === 'student' ? 'block' : 'none';
+    });
+
+    // Login handler
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const originalText = btn.textContent;
+
+      if (!validateForm(e.target)) return;
+
+      btn.innerHTML = '<div class="spinner"></div>';
+      btn.disabled = true;
+
+      try {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        // For demo: simulate login
+        // In production: const { user } = await Auth.signIn(email, password);
+
+        // Demo user data
+        const demoUser = {
+          id: 'demo-' + Date.now(),
+          email: email,
+          full_name: 'مستخدم تجريبي',
+          role: email.includes('admin') ? 'admin' : email.includes('teacher') ? 'teacher' : 'student',
+          class_id: '2',
+          avatar: null
+        };
+
+        // Simulate API delay
+        await new Promise(r => setTimeout(r, 1000));
+
+        localStorage.setItem('exam_platform_user', JSON.stringify(demoUser));
+        localStorage.setItem('exam_platform_session', 'demo-token-' + Date.now());
+
+        showToast('✅ تم تسجيل الدخول بنجاح', 'success');
+
+        // Redirect based on role
+        const redirectMap = {
+          admin: '/admin/dashboard.html',
+          teacher: '/teacher/dashboard.html',
+          student: '/student/dashboard.html'
+        };
+
+        setTimeout(() => {
+          window.location.href = redirectMap[demoUser.role] || '/student/dashboard.html';
+        }, 1000);
+
+      } catch (err) {
+        showToast('❌ ' + (err.message || 'خطأ في تسجيل الدخول'), 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Register handler
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById('register-btn');
+
+      if (!validateForm(e.target)) return;
+
+      const password = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+
+      if (password !== confirm) {
+        showToast('❌ كلمتا المرور غير متطابقتين', 'error');
+        return;
+      }
+
+      btn.innerHTML = '<div class="spinner"></div>';
+      btn.disabled = true;
+
+      try {
+        // Simulate registration
+        await new Promise(r => setTimeout(r, 1500));
+        showToast('✅ تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول', 'success');
+
+        setTimeout(() => {
+          switchTab('login');
+          btn.textContent = 'إنشاء حساب';
+          btn.disabled = false;
+        }, 1500);
+
+      } catch (err) {
+        showToast('❌ ' + (err.message || 'خطأ في إنشاء الحساب'), 'error');
+        btn.textContent = 'إنشاء حساب';
+        btn.disabled = false;
+      }
+    }
+
+    // Forgot password
+    function showForgotPassword(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      if (!email) {
+        showToast('⚠️ أدخل بريدك الإلكتروني أولاً', 'warning');
+        return;
+      }
+      showToast('📧 تم إرسال رابط إعادة تعيين كلمة المرور', 'info');
+    }
+
+    // Check if already logged in
+    (function checkAuth() {
+      const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
+      if (user.id) {
+        const redirectMap = {
+          admin: '/admin/dashboard.html',
+          teacher: '/teacher/dashboard.html',
+          student: '/student/dashboard.html'
+        };
+        window.location.href = redirectMap[user.role] || '/student/dashboard.html';
+      }
+    })();
+  </script>
+</body>
+</html>

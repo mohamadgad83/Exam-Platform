@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم الأدمن - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+
+        <!-- Stats -->
+        <div class="stats-grid" style="margin-bottom:1.5rem;">
+          <div class="stat-card"><div class="stat-icon blue">👥</div><div class="stat-info"><h3 id="stat-users">-</h3><p>إجمالي المستخدمين</p></div></div>
+          <div class="stat-card"><div class="stat-icon green">📝</div><div class="stat-info"><h3 id="stat-exams">-</h3><p>إجمالي الاختبارات</p></div></div>
+          <div class="stat-card"><div class="stat-icon orange">📋</div><div class="stat-info"><h3 id="stat-subs">-</h3><p>إجمالي التسليمات</p></div></div>
+          <div class="stat-card"><div class="stat-icon purple">📊</div><div class="stat-info"><h3 id="stat-pass">-</h3><p>معدل النجاح العام</p></div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+          <!-- Recent Users -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">👥 آخر المستخدمين</h2>
+              <a href="users.html" class="btn btn-outline btn-sm">عرض الكل</a>
+            </div>
+            <div id="recent-users" style="padding:0;">
+              <div style="padding:1.5rem;text-align:center;"><div class="spinner"></div></div>
+            </div>
+          </div>
+
+          <!-- System Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">📊 نشاط النظام</h2>
+            </div>
+            <div id="system-activity" style="padding:0;">
+              <div style="padding:1.5rem;text-align:center;"><div class="spinner"></div></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card" style="margin-top:1.5rem;">
+          <div class="card-header"><h2 class="card-title">⚡ إجراءات سريعة</h2></div>
+          <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+            <a href="users.html" class="btn btn-primary">👥 إدارة المستخدمين</a>
+            <a href="classes.html" class="btn btn-secondary">🏫 إدارة الفصول</a>
+            <a href="exams.html" class="btn btn-secondary">📝 كل الاختبارات</a>
+            <a href="reports.html" class="btn btn-secondary">📈 التقارير</a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('admin');
+    renderLayout('admin', 'dashboard');
+
+    const sb = getSupabase();
+
+    async function loadAdminDashboard() {
+      try {
+        const [usersRes, examsRes, subsRes] = await Promise.all([
+          sb.from('users').select('id, full_name, email, role, created_at').order('created_at', { ascending: false }),
+          sb.from('exams').select('id', { count: 'exact', head: true }),
+          sb.from('exam_submissions').select('id, passed', { count: 'exact' })
+        ]);
+
+        const users = usersRes.data || [];
+        const subs = subsRes.data || [];
+        const passedCount = subs.filter(s => s.passed).length;
+        const passRate = subs.length > 0 ? Math.round((passedCount / subs.length) * 100) : 0;
+
+        document.getElementById('stat-users').textContent = users.length;
+        document.getElementById('stat-exams').textContent = examsRes.count || 0;
+        document.getElementById('stat-subs').textContent = subs.length;
+        document.getElementById('stat-pass').textContent = passRate + '%';
+
+        // Recent users
+        const usersEl = document.getElementById('recent-users');
+        const roleLabels = { admin:'مدير', teacher:'معلم', student:'طالب' };
+        const roleBadge = { admin:'badge-danger', teacher:'badge-info', student:'badge-success' };
+        usersEl.innerHTML = users.slice(0, 8).map(u => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.5rem;border-bottom:1px solid var(--gray-100);">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;">${(u.full_name?.[0]||'?').toUpperCase()}</div>
+              <div>
+                <div style="font-weight:600;font-size:0.9375rem;">${sanitizeHTML(u.full_name || '-')}</div>
+                <div style="font-size:0.8125rem;color:var(--gray-500);">${sanitizeHTML(u.email || '')}</div>
+              </div>
+            </div>
+            <span class="badge ${roleBadge[u.role] || 'badge-secondary'}">${roleLabels[u.role] || u.role}</span>
+          </div>
+        `).join('');
+
+        // System activity
+        const actEl = document.getElementById('system-activity');
+        const roleCount = { admin: 0, teacher: 0, student: 0 };
+        users.forEach(u => { if (roleCount[u.role] !== undefined) roleCount[u.role]++; });
+        actEl.innerHTML = `
+          <div style="padding:1.5rem;">
+            ${[
+              { label: 'المديرون', count: roleCount.admin, color: 'var(--danger)', icon: '🔐' },
+              { label: 'المعلمون', count: roleCount.teacher, color: 'var(--info)', icon: '📚' },
+              { label: 'الطلاب', count: roleCount.student, color: 'var(--success)', icon: '👨‍🎓' },
+            ].map(r => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 0;border-bottom:1px solid var(--gray-100);">
+                <span style="font-size:0.9375rem;">${r.icon} ${r.label}</span>
+                <div style="display:flex;align-items:center;gap:1rem;">
+                  <div class="progress" style="width:100px;">
+                    <div class="progress-bar" style="width:${users.length ? (r.count/users.length*100) : 0}%;background:${r.color};"></div>
+                  </div>
+                  <strong style="color:${r.color};min-width:30px;">${r.count}</strong>
+                </div>
+              </div>
+            `).join('')}
+            <div style="margin-top:1.5rem;padding-top:1rem;">
+              <div style="font-size:0.875rem;color:var(--gray-500);margin-bottom:0.5rem;">معدل النجاح العام</div>
+              <div class="progress" style="height:12px;">
+                <div class="progress-bar success" style="width:${passRate}%;"></div>
+              </div>
+              <div style="text-align:center;margin-top:0.5rem;font-weight:700;color:var(--success);">${passRate}%</div>
+            </div>
+          </div>`;
+
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ في تحميل البيانات', 'error');
+      }
+    }
+
+    loadAdminDashboard();
+  </script>
+</body>
+</html>

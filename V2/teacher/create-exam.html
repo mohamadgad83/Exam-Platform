@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء اختبار - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .exam-builder { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; }
+    .builder-main { min-width: 0; }
+    .builder-sidebar { position: sticky; top: 80px; height: fit-content; }
+    .step-indicator { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .step { flex: 1; padding: 0.75rem; text-align: center; border-radius: var(--radius-lg); background: var(--gray-100); color: var(--gray-500); font-size: 0.875rem; font-weight: 500; transition: var(--transition); }
+    .step.active { background: var(--primary); color: white; }
+    .step.completed { background: var(--success-light); color: var(--success); }
+    .step-content { display: none; }
+    .step-content.active { display: block; }
+    .question-item { background: var(--white); border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); border: 2px solid var(--gray-200); position: relative; transition: var(--transition); }
+    .question-item:hover { border-color: var(--primary); }
+    .question-item .drag-handle { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); cursor: grab; padding: 0.5rem; }
+    .question-item .delete-btn { position: absolute; left: 0.75rem; top: 0.75rem; background: var(--danger-light); color: var(--danger); border: none; width: 32px; height: 32px; border-radius: var(--radius); cursor: pointer; font-size: 1rem; transition: var(--transition); }
+    .question-item .delete-btn:hover { background: var(--danger); color: white; }
+    .option-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .option-row input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); }
+    .option-row input[type="text"] { flex: 1; }
+    .sidebar-card { background: var(--white); border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); margin-bottom: 1rem; }
+    .sidebar-card h4 { font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--gray-100); }
+    .summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.875rem; border-bottom: 1px solid var(--gray-100); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row .label { color: var(--gray-500); }
+    .summary-row .value { font-weight: 600; color: var(--gray-900); }
+    @media (max-width: 1024px) { .exam-builder { grid-template-columns: 1fr; } .builder-sidebar { position: static; } }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+          <div class="step active" id="step-1" onclick="goToStep(1)">1. معلومات الاختبار</div>
+          <div class="step" id="step-2" onclick="goToStep(2)">2. إضافة الأسئلة</div>
+          <div class="step" id="step-3" onclick="goToStep(3)">3. الإعدادات</div>
+          <div class="step" id="step-4" onclick="goToStep(4)">4. المراجعة والنشر</div>
+        </div>
+
+        <div class="exam-builder">
+          <!-- Main Builder -->
+          <div class="builder-main">
+            <!-- Step 1: Exam Info -->
+            <div class="step-content active" id="step-content-1">
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">📝 معلومات الاختبار</h2>
+                </div>
+                <div class="card-body">
+                  <form id="exam-info-form">
+                    <div class="form-group">
+                      <label class="form-label required">عنوان الاختبار</label>
+                      <input type="text" class="form-input" id="exam-title" placeholder="مثال: اختبار الرياضيات - الوحدة الأولى" data-validate="required|min:5">
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">المادة</label>
+                        <select class="form-select" id="exam-subject" data-validate="required">
+                          <option value="">اختر المادة</option>
+                          <option value="math">الرياضيات</option>
+                          <option value="arabic">اللغة العربية</option>
+                          <option value="english">اللغة الإنجليزية</option>
+                          <option value="science">العلوم</option>
+                          <option value="history">التاريخ</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">الصف الدراسي</label>
+                        <select class="form-select" id="exam-class" data-validate="required">
+                          <option value="">اختر الصف</option>
+                          <option value="1">الأول الثانوي</option>
+                          <option value="2">الثاني الثانوي</option>
+                          <option value="3">الثالث الثانوي</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">وصف الاختبار</label>
+                      <textarea class="form-textarea" id="exam-desc" rows="3" placeholder="وصف مختصر للاختبار..."></textarea>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">مدة الاختبار (دقيقة)</label>
+                        <input type="number" class="form-input" id="exam-duration" value="45" min="5" max="180" data-validate="required|number">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">الدرجة الكلية</label>
+                        <input type="number" class="form-input" id="exam-marks" value="50" min="1" data-validate="required|number">
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Questions -->
+            <div class="step-content" id="step-content-2">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 class="card-title">❓ الأسئلة (<span id="question-count">0</span>)</h2>
+                <div style="display: flex; gap: 0.75rem;">
+                  <button class="btn btn-secondary" onclick="importFromBank()">📥 من بنك الأسئلة</button>
+                  <button class="btn btn-primary" onclick="addQuestion()">➕ إضافة سؤال</button>
+                </div>
+              </div>
+              <div id="questions-container">
+                <!-- Questions added here -->
+              </div>
+            </div>
+
+            <!-- Step 3: Settings -->
+            <div class="step-content" id="step-content-3">
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">⚙️ إعدادات الاختبار</h2>
+                </div>
+                <div class="card-body">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">درجة النجاح (%)</label>
+                      <input type="number" class="form-input" id="passing-score" value="50" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">عدد المحاولات</label>
+                      <input type="number" class="form-input" id="attempts" value="1" min="1" max="10">
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                      <input type="checkbox" id="shuffle-questions" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                      <span>🔀 عشوائية ترتيب الأسئلة</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                      <input type="checkbox" id="shuffle-options" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                      <span>🔀 عشوائية ترتيب الخيارات</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                      <input type="checkbox" id="show-results" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                      <span>📊 إظهار النتيجة فوراً بعد التسليم</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                      <input type="checkbox" id="fullscreen-required" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
+                      <span>🔒 إجبار وضع الشاشة الكاملة</span>
+                    </label>
+                  </div>
+                  <div class="form-group" style="margin-top: 1.5rem;">
+                    <label class="form-label">تعليمات للطلاب</label>
+                    <textarea class="form-textarea" rows="4" placeholder="اكتب التعليمات التي ستظهر للطلاب قبل بدء الاختبار...">يرجى قراءة الأسئلة بعناية. لا يمكن العودة للسؤال السابق بعد الانتقال للسؤال التالي. تأكد من مراجعة إجاباتك قبل التسليم.</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Review & Publish -->
+            <div class="step-content" id="step-content-4">
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">👁️ معاينة الاختبار</h2>
+                </div>
+                <div class="card-body" id="preview-content">
+                  <!-- Preview loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
+              <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()" disabled>← السابق</button>
+              <button class="btn btn-primary" id="next-btn" onclick="nextStep()">التالي →</button>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="builder-sidebar">
+            <div class="sidebar-card">
+              <h4>📊 ملخص الاختبار</h4>
+              <div class="summary-row">
+                <span class="label">العنوان</span>
+                <span class="value" id="summary-title">-</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">المادة</span>
+                <span class="value" id="summary-subject">-</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">المدة</span>
+                <span class="value" id="summary-duration">-</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">الدرجة الكلية</span>
+                <span class="value" id="summary-marks">-</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">عدد الأسئلة</span>
+                <span class="value" id="summary-questions">0</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">درجة النجاح</span>
+                <span class="value" id="summary-passing">50%</span>
+              </div>
+            </div>
+
+            <div class="sidebar-card">
+              <h4>⚡ إجراءات سريعة</h4>
+              <button class="btn btn-primary btn-block" style="margin-bottom: 0.75rem;" onclick="saveDraft()">
+                💾 حفظ كمسودة
+              </button>
+              <button class="btn btn-success btn-block" onclick="publishExam()">
+                🚀 نشر الاختبار
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('teacher');
+    renderLayout('teacher', 'create-exam');
+    document.title = 'إنشاء اختبار';
+
+    let currentStep = 1;
+    let questions = [];
+    let questionCounter = 0;
+
+    function goToStep(step) {
+      if (step < 1 || step > 4) return;
+
+      // Validate current step before moving
+      if (step > currentStep && !validateCurrentStep()) return;
+
+      currentStep = step;
+
+      // Update indicators
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step-${i}`);
+        el.classList.remove('active', 'completed');
+        if (i < step) el.classList.add('completed');
+        else if (i === step) el.classList.add('active');
+      }
+
+      // Update content
+      document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step-content-${step}`).classList.add('active');
+
+      // Update buttons
+      document.getElementById('prev-btn').disabled = step === 1;
+      document.getElementById('next-btn').textContent = step === 4 ? 'نشر الاختبار 🚀' : 'التالي →';
+
+      // Update preview if on step 4
+      if (step === 4) updatePreview();
+    }
+
+    function nextStep() {
+      if (currentStep < 4) goToStep(currentStep + 1);
+      else publishExam();
+    }
+
+    function prevStep() {
+      if (currentStep > 1) goToStep(currentStep - 1);
+    }
+
+    function validateCurrentStep() {
+      if (currentStep === 1) {
+        return validateForm(document.getElementById('exam-info-form'));
+      }
+      if (currentStep === 2) {
+        if (questions.length === 0) {
+          showToast('❌ أضف سؤالاً واحداً على الأقل', 'error');
+          return false;
+        }
+        return true;
+      }
+      return true;
+    }
+
+    function addQuestion() {
+      questionCounter++;
+      const qId = `q-${questionCounter}`;
+
+      const qHtml = `
+        <div class="question-item" id="${qId}">
+          <div class="drag-handle">⋮⋮</div>
+          <button class="delete-btn" onclick="deleteQuestion('${qId}')" title="حذف">🗑️</button>
+          <div class="form-group">
+            <label class="form-label required">نص السؤال ${questionCounter}</label>
+            <textarea class="form-textarea" rows="2" placeholder="اكتب نص السؤال هنا..." data-validate="required"></textarea>
+          </div>
+          <div style="margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--gray-700);">الخيارات (اختر الإجابة الصحيحة):</div>
+          <div class="options-container" id="${qId}-options">
+            ${[0,1,2,3].map(i => `
+              <div class="option-row">
+                <input type="radio" name="${qId}-correct" value="${i}" ${i === 0 ? 'checked' : ''}>
+                <input type="text" class="form-input" placeholder="الخيار ${String.fromCharCode(1612 + i)}" data-validate="required">
+              </div>
+            `).join('')}
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <input type="number" class="form-input" placeholder="الدرجة" value="1" min="0.5" step="0.5">
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="addOption('${qId}')">➕ خيار</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('questions-container').insertAdjacentHTML('beforeend', qHtml);
+      questions.push(qId);
+      updateSummary();
+    }
+
+    function deleteQuestion(qId) {
+      confirmDialog('هل أنت متأكد من حذف هذا السؤال؟', () => {
+        document.getElementById(qId).remove();
+        questions = questions.filter(id => id !== qId);
+        updateSummary();
+      });
+    }
+
+    function addOption(qId) {
+      const container = document.getElementById(`${qId}-options`);
+      const count = container.querySelectorAll('.option-row').length;
+      const optionHtml = `
+        <div class="option-row">
+          <input type="radio" name="${qId}-correct" value="${count}">
+          <input type="text" class="form-input" placeholder="الخيار ${String.fromCharCode(1612 + count)}" data-validate="required">
+          <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()" style="padding: 0.25rem 0.5rem;">✕</button>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', optionHtml);
+    }
+
+    function importFromBank() {
+      showToast('📥 بنك الأسئلة قريباً', 'info');
+    }
+
+    function updateSummary() {
+      const title = document.getElementById('exam-title').value || '-';
+      const subject = document.getElementById('exam-subject');
+      const subjectText = subject.options[subject.selectedIndex]?.text || '-';
+      const duration = document.getElementById('exam-duration').value || '-';
+      const marks = document.getElementById('exam-marks').value || '-';
+      const passing = document.getElementById('passing-score').value || '50';
+
+      document.getElementById('summary-title').textContent = title;
+      document.getElementById('summary-subject').textContent = subjectText;
+      document.getElementById('summary-duration').textContent = duration + (duration !== '-' ? ' دقيقة' : '');
+      document.getElementById('summary-marks').textContent = marks;
+      document.getElementById('summary-questions').textContent = questions.length;
+      document.getElementById('summary-passing').textContent = passing + '%';
+      document.getElementById('question-count').textContent = questions.length;
+    }
+
+    function updatePreview() {
+      const title = document.getElementById('exam-title').value || 'عنوان الاختبار';
+      const preview = document.getElementById('preview-content');
+
+      preview.innerHTML = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h3 style="font-size: 1.5rem; color: var(--gray-900); margin-bottom: 0.5rem;">${title}</h3>
+          <p style="color: var(--gray-500);">مدة الاختبار: ${document.getElementById('exam-duration').value || '45'} دقيقة | الدرجة الكلية: ${document.getElementById('exam-marks').value || '50'}</p>
+        </div>
+        ${questions.map((qId, i) => `
+          <div class="question-card" style="margin-bottom: 1rem;">
+            <div class="question-number">${i + 1}</div>
+            <div class="question-text">سؤال ${i + 1}</div>
+            <div class="answer-options">
+              ${[0,1,2,3].map(j => `
+                <label class="answer-option">
+                  <input type="radio" disabled>
+                  <span>الخيار ${String.fromCharCode(1612 + j)}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function saveDraft() {
+      showLoading(document.querySelector('.btn-primary'), 'جاري الحفظ...');
+      setTimeout(() => {
+        hideLoading(document.querySelector('.btn-primary'));
+        showToast('✅ تم حفظ المسودة', 'success');
+      }, 1500);
+    }
+
+    function publishExam() {
+      if (!validateCurrentStep()) return;
+
+      confirmDialog(
+        'هل أنت متأكد من نشر الاختبار؟ لن تتمكن من تعديل الأسئلة بعد النشر.',
+        () => {
+          showToast('🚀 جاري نشر الاختبار...', 'info');
+          setTimeout(() => {
+            showToast('✅ تم نشر الاختبار بنجاح!', 'success');
+            setTimeout(() => {
+              window.location.href = 'exams.html';
+            }, 1500);
+          }, 2000);
+        }
+      );
+    }
+
+    // Update summary on input
+    document.addEventListener('input', debounce(updateSummary, 300));
+  </script>
+</body>
+</html>

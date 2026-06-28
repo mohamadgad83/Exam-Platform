@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المجموعات - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .group-stats { display: flex; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-100); }
+    .group-stat { text-align: center; }
+    .group-stat .num { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    .group-stat .lbl { font-size: 0.75rem; color: var(--gray-500); }
+    .group-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+
+        <!-- Stats -->
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.5rem;">
+          <div class="stat-card">
+            <div class="stat-icon purple">👥</div>
+            <div class="stat-info"><h3 id="stat-groups">-</h3><p>مجموعاتي</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">👨‍🎓</div>
+            <div class="stat-info"><h3 id="stat-members">-</h3><p>إجمالي الطلاب</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">📝</div>
+            <div class="stat-info"><h3 id="stat-exams">-</h3><p>اختبارات في المجموعات</p></div>
+          </div>
+        </div>
+
+        <!-- Groups -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">👥 مجموعاتي</h2>
+            <button class="btn btn-primary" onclick="showCreateGroup()">➕ مجموعة جديدة</button>
+          </div>
+          <div class="card-body">
+            <div class="groups-grid" id="groups-container">
+              <div style="padding:2rem;text-align:center;"><div class="spinner spinner-lg"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Create/Edit Group Modal -->
+  <div class="modal-overlay" id="group-modal" onclick="if(event.target===this)closeGroupModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">➕ مجموعة جديدة</h3>
+        <button class="btn btn-sm btn-ghost" onclick="closeGroupModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="group-form">
+          <div class="form-group">
+            <label class="form-label required">اسم المجموعة</label>
+            <input type="text" class="form-input" id="group-name" data-validate="required|min:3" placeholder="مثال: مجموعة الرياضيات - الصف الثاني">
+          </div>
+          <div class="form-group">
+            <label class="form-label">وصف المجموعة</label>
+            <textarea class="form-textarea" id="group-desc" rows="3" placeholder="وصف اختياري للمجموعة..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">الصف الدراسي</label>
+            <select class="form-select" id="group-class">
+              <option value="">اختر الصف (اختياري)</option>
+              <option value="1">الأول الثانوي</option>
+              <option value="2">الثاني الثانوي</option>
+              <option value="3">الثالث الثانوي</option>
+              <option value="prep1">الأول الإعدادي</option>
+              <option value="prep2">الثاني الإعدادي</option>
+              <option value="prep3">الثالث الإعدادي</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeGroupModal()">إلغاء</button>
+        <button class="btn btn-primary" id="save-group-btn" onclick="saveGroup()">💾 حفظ المجموعة</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('teacher');
+    renderLayout('teacher', 'groups');
+
+    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
+    const sb = getSupabase();
+    let editingGroupId = null;
+
+    async function loadGroups() {
+      try {
+        const { data: groups, error } = await sb
+          .from('groups')
+          .select('*, group_members(count)')
+          .eq('teacher_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const container = document.getElementById('groups-container');
+        document.getElementById('stat-groups').textContent = groups.length;
+        const totalMembers = groups.reduce((sum, g) => sum + (g.group_members?.[0]?.count || 0), 0);
+        document.getElementById('stat-members').textContent = totalMembers;
+
+        // Count exams
+        const { count: examCount } = await sb.from('exams').select('id', { count: 'exact' }).eq('teacher_id', user.id);
+        document.getElementById('stat-exams').textContent = examCount || 0;
+
+        if (groups.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column:1/-1;" class="empty-state">
+              <div class="empty-icon">👥</div>
+              <h3>لا توجد مجموعات بعد</h3>
+              <p>أنشئ مجموعة لتنظيم طلابك وتعيين الاختبارات</p>
+              <button class="btn btn-primary" onclick="showCreateGroup()" style="margin-top:1rem;">➕ إنشاء أول مجموعة</button>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = groups.map(g => `
+          <div class="group-card" id="group-${g.id}">
+            <div class="group-header">
+              <div>
+                <div class="group-name">${sanitizeHTML(g.name)}</div>
+                ${g.class_level ? `<div class="group-teacher">🏫 ${sanitizeHTML(g.class_level)}</div>` : ''}
+              </div>
+              <span class="badge badge-primary">${g.group_members?.[0]?.count || 0} طالب</span>
+            </div>
+            ${g.description ? `<p style="color:var(--gray-500);font-size:0.875rem;margin-top:0.75rem;">${sanitizeHTML(g.description)}</p>` : ''}
+            <div class="group-stats">
+              <div class="group-stat">
+                <div class="num">${g.group_members?.[0]?.count || 0}</div>
+                <div class="lbl">طالب</div>
+              </div>
+              <div class="group-stat">
+                <div class="num">${formatDate(g.created_at)}</div>
+                <div class="lbl">تاريخ الإنشاء</div>
+              </div>
+            </div>
+            <div class="group-actions">
+              <button class="btn btn-outline btn-sm" onclick="showEditGroup('${g.id}', '${sanitizeHTML(g.name)}', '${sanitizeHTML(g.description||'')}')">✏️ تعديل</button>
+              <button class="btn btn-outline btn-sm" onclick="viewGroupMembers('${g.id}', '${sanitizeHTML(g.name)}')">👨‍🎓 الطلاب</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}', '${sanitizeHTML(g.name)}')">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ في تحميل المجموعات', 'error');
+        document.getElementById('groups-container').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>تعذّر تحميل المجموعات</p></div>';
+      }
+    }
+
+    function showCreateGroup() {
+      editingGroupId = null;
+      document.getElementById('modal-title').textContent = '➕ مجموعة جديدة';
+      document.getElementById('group-name').value = '';
+      document.getElementById('group-desc').value = '';
+      document.getElementById('group-class').value = '';
+      document.getElementById('group-modal').classList.add('active');
+    }
+
+    function showEditGroup(id, name, desc) {
+      editingGroupId = id;
+      document.getElementById('modal-title').textContent = '✏️ تعديل المجموعة';
+      document.getElementById('group-name').value = name;
+      document.getElementById('group-desc').value = desc;
+      document.getElementById('group-modal').classList.add('active');
+    }
+
+    function closeGroupModal() {
+      document.getElementById('group-modal').classList.remove('active');
+    }
+
+    async function saveGroup() {
+      const form = document.getElementById('group-form');
+      if (!validateForm(form)) return;
+
+      const btn = document.getElementById('save-group-btn');
+      showLoading(btn, 'جاري الحفظ...');
+
+      const name = document.getElementById('group-name').value.trim();
+      const description = document.getElementById('group-desc').value.trim();
+      const class_level = document.getElementById('group-class').value;
+
+      try {
+        if (editingGroupId) {
+          const { error } = await sb.from('groups').update({ name, description, class_level, updated_at: new Date().toISOString() }).eq('id', editingGroupId);
+          if (error) throw error;
+          showToast('تم تحديث المجموعة بنجاح ✅', 'success');
+        } else {
+          const { error } = await sb.from('groups').insert({ name, description, class_level, teacher_id: user.id });
+          if (error) throw error;
+          showToast('تم إنشاء المجموعة بنجاح ✅', 'success');
+        }
+        closeGroupModal();
+        loadGroups();
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ: ' + err.message, 'error');
+      } finally {
+        hideLoading(btn);
+      }
+    }
+
+    async function deleteGroup(id, name) {
+      confirmDialog(`هل تريد حذف مجموعة "${name}"؟ سيتم إزالة جميع الطلاب من المجموعة.`,
+        async () => {
+          try {
+            await sb.from('group_members').delete().eq('group_id', id);
+            const { error } = await sb.from('groups').delete().eq('id', id);
+            if (error) throw error;
+            showToast('تم حذف المجموعة', 'success');
+            loadGroups();
+          } catch (err) { showToast('تعذّر الحذف: ' + err.message, 'error'); }
+        }
+      );
+    }
+
+    async function viewGroupMembers(groupId, groupName) {
+      showModal(`👨‍🎓 طلاب مجموعة: ${groupName}`, '<div style="text-align:center;padding:1rem;"><div class="spinner"></div></div>');
+      try {
+        const { data } = await sb.from('group_members')
+          .select('joined_at, users(full_name, email)')
+          .eq('group_id', groupId)
+          .order('joined_at', { ascending: false });
+
+        const members = data || [];
+        const content = members.length === 0
+          ? '<div class="empty-state"><div class="empty-icon">👥</div><p>لا يوجد طلاب في هذه المجموعة بعد</p></div>'
+          : `<div class="table-container"><table class="data-table">
+              <thead><tr><th>الاسم</th><th>البريد</th><th>تاريخ الانضمام</th></tr></thead>
+              <tbody>${members.map(m => `<tr>
+                <td><strong>${sanitizeHTML(m.users?.full_name || '-')}</strong></td>
+                <td style="direction:ltr;">${sanitizeHTML(m.users?.email || '-')}</td>
+                <td style="color:var(--gray-500);font-size:0.875rem;">${formatDate(m.joined_at)}</td>
+              </tr>`).join('')}
+              </tbody></table></div>`;
+
+        document.querySelector('.modal-body').innerHTML = content;
+      } catch (err) {
+        document.querySelector('.modal-body').innerHTML = '<p style="color:var(--danger);">حدث خطأ في التحميل</p>';
+      }
+    }
+
+    loadGroups();
+  </script>
+</body>
+</html>

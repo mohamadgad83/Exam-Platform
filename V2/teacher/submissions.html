@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التسليمات - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .submissions-filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .submissions-filters .form-select, .submissions-filters .form-input { width: auto; min-width: 180px; }
+    .submission-row { background: var(--white); border-radius: var(--radius-xl); padding: 1.25rem 1.5rem; margin-bottom: 0.875rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); display: flex; align-items: center; gap: 1.25rem; transition: var(--transition); cursor: pointer; }
+    .submission-row:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .submission-row.flagged { border-right: 4px solid var(--danger); }
+    .submission-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-light) 0%, var(--info-light) 100%); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+    .submission-info { flex: 1; min-width: 0; }
+    .submission-info h4 { font-size: 1rem; font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .submission-meta { display: flex; gap: 1rem; font-size: 0.8125rem; color: var(--gray-500); flex-wrap: wrap; }
+    .submission-score { text-align: left; flex-shrink: 0; min-width: 80px; }
+    .submission-score .value { font-size: 1.5rem; font-weight: 700; }
+    .submission-score .total { font-size: 0.8125rem; color: var(--gray-500); }
+    .submission-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .grade-input { width: 70px; text-align: center; font-size: 1.125rem; font-weight: 700; padding: 0.5rem; border: 2px solid var(--gray-200); border-radius: var(--radius); }
+    .grade-input:focus { border-color: var(--primary); outline: none; }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-mini { background: var(--white); border-radius: var(--radius-xl); padding: 1.25rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); text-align: center; }
+    .stat-mini .num { font-size: 1.75rem; font-weight: 700; }
+    .stat-mini .lbl { font-size: 0.8125rem; color: var(--gray-500); margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-mini">
+            <div class="num" style="color: var(--primary);">45</div>
+            <div class="lbl">إجمالي التسليمات</div>
+          </div>
+          <div class="stat-mini">
+            <div class="num" style="color: var(--success);">32</div>
+            <div class="lbl">ناجحين</div>
+          </div>
+          <div class="stat-mini">
+            <div class="num" style="color: var(--danger);">13</div>
+            <div class="lbl">راسبين</div>
+          </div>
+          <div class="stat-mini">
+            <div class="num" style="color: var(--warning);">78%</div>
+            <div class="lbl">متوسط النجاح</div>
+          </div>
+          <div class="stat-mini">
+            <div class="num" style="color: var(--danger);">3</div>
+            <div class="lbl">مشتبه فيهم</div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📋 التسليمات</h2>
+            <div class="submissions-filters">
+              <select class="form-select" id="filter-exam" onchange="filterSubmissions()">
+                <option value="">كل الاختبارات</option>
+                <option value="1">اختبار الرياضيات</option>
+                <option value="2">اختبار اللغة العربية</option>
+              </select>
+              <select class="form-select" id="filter-status" onchange="filterSubmissions()">
+                <option value="">كل الحالات</option>
+                <option value="passed">✅ ناجح</option>
+                <option value="failed">❌ راسب</option>
+                <option value="flagged">🚩 مشتبه</option>
+              </select>
+              <input type="text" class="form-input" id="search-student" placeholder="🔍 البحث..." oninput="filterSubmissions()">
+            </div>
+          </div>
+          <div id="submissions-list">
+            <!-- Submissions loaded here -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('teacher');
+    renderLayout('teacher', 'submissions');
+    document.title = 'التسليمات';
+
+    const demoSubmissions = [
+      { id: 1, student_name: 'أحمد محمد', student_id: 'ST-001', exam_title: 'اختبار الرياضيات', grade: 42, total: 50, percentage: 84, submitted_at: '2026-06-25T10:30:00', time: 38, flagged: false, status: 'passed' },
+      { id: 2, student_name: 'سارة علي', student_id: 'ST-002', exam_title: 'اختبار الرياضيات', grade: 38, total: 50, percentage: 76, submitted_at: '2026-06-25T10:45:00', time: 42, flagged: false, status: 'passed' },
+      { id: 3, student_name: 'محمد خالد', student_id: 'ST-003', exam_title: 'اختبار الرياضيات', grade: 22, total: 50, percentage: 44, submitted_at: '2026-06-25T11:00:00', time: 25, flagged: true, status: 'failed' },
+      { id: 4, student_name: 'فاطمة أحمد', student_id: 'ST-004', exam_title: 'اختبار الرياضيات', grade: 45, total: 50, percentage: 90, submitted_at: '2026-06-25T11:15:00', time: 40, flagged: false, status: 'passed' },
+      { id: 5, student_name: 'عمر حسن', student_id: 'ST-005', exam_title: 'اختبار الرياضيات', grade: 18, total: 50, percentage: 36, submitted_at: '2026-06-25T11:30:00', time: 15, flagged: true, status: 'failed' },
+      { id: 6, student_name: 'نور الدين', student_id: 'ST-006', exam_title: 'اختبار اللغة العربية', grade: 85, total: 100, percentage: 85, submitted_at: '2026-06-20T14:00:00', time: 52, flagged: false, status: 'passed' },
+      { id: 7, student_name: 'ليلى سامي', student_id: 'ST-007', exam_title: 'اختبار اللغة العربية', grade: 92, total: 100, percentage: 92, submitted_at: '2026-06-20T14:15:00', time: 48, flagged: false, status: 'passed' },
+    ];
+
+    function renderSubmissions(subs) {
+      const container = document.getElementById('submissions-list');
+
+      if (subs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <h3>لا توجد تسليمات</h3>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = subs.map(s => {
+        const color = getGradeColor(s.percentage);
+        const passed = s.percentage >= 50;
+
+        return `
+          <div class="submission-row ${s.flagged ? 'flagged' : ''}" onclick="viewSubmission(${s.id})">
+            <div class="submission-avatar">${s.student_name.charAt(0)}</div>
+            <div class="submission-info">
+              <h4>${s.student_name} <span style="color: var(--gray-400); font-weight: 400; font-size: 0.875rem;">(${s.student_id})</span></h4>
+              <div class="submission-meta">
+                <span>📝 ${s.exam_title}</span>
+                <span>📅 ${formatDate(s.submitted_at)}</span>
+                <span>⏱️ ${s.time} دقيقة</span>
+                ${s.flagged ? '<span style="color: var(--danger); font-weight: 600;">🚩 مشتبه فيه</span>' : ''}
+              </div>
+            </div>
+            <div class="submission-score">
+              <div class="value" style="color: ${color};">${s.percentage}%</div>
+              <div class="total">${s.grade}/${s.total}</div>
+            </div>
+            <div class="submission-actions" onclick="event.stopPropagation()">
+              <a href="../student/exam-review.html?id=${s.id}" class="btn btn-outline btn-sm" target="_blank">مراجعة</a>
+              <button class="btn btn-primary btn-sm" onclick="gradeSubmission(${s.id})">تصحيح</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterSubmissions() {
+      const exam = document.getElementById('filter-exam').value;
+      const status = document.getElementById('filter-status').value;
+      const search = document.getElementById('search-student').value.toLowerCase();
+
+      let filtered = demoSubmissions;
+
+      if (exam) filtered = filtered.filter(s => s.exam_title.includes(exam === '1' ? 'رياضيات' : 'عربية'));
+      if (status === 'passed') filtered = filtered.filter(s => s.percentage >= 50);
+      if (status === 'failed') filtered = filtered.filter(s => s.percentage < 50);
+      if (status === 'flagged') filtered = filtered.filter(s => s.flagged);
+      if (search) filtered = filtered.filter(s => s.student_name.toLowerCase().includes(search) || s.student_id.toLowerCase().includes(search));
+
+      renderSubmissions(filtered);
+    }
+
+    function viewSubmission(id) {
+      window.location.href = `../student/exam-review.html?id=${id}`;
+    }
+
+    function gradeSubmission(id) {
+      showModal('تصحيح التسليم', `
+        <div style="text-align: center; padding: 1rem;">
+          <p style="margin-bottom: 1.5rem;">أدخل الدرجة النهائية:</p>
+          <input type="number" class="grade-input" id="grade-${id}" value="${demoSubmissions.find(s => s.id === id)?.grade || 0}" min="0">
+          <p style="margin-top: 1rem; color: var(--gray-500); font-size: 0.875rem;">من <span id="total-${id}">50</span></p>
+        </div>
+      `, [
+        { text: 'إلغاء', class: 'btn-secondary', action: 'closeModal()' },
+        { text: 'حفظ', class: 'btn-primary', action: `saveGrade(${id})` }
+      ]);
+    }
+
+    function saveGrade(id) {
+      const grade = document.getElementById(`grade-${id}`).value;
+      showToast(`✅ تم حفظ الدرجة: ${grade}`, 'success');
+      closeModal();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubmissions(demoSubmissions);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم المعلم - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+
+        <!-- Stats -->
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">📝</div>
+            <div class="stat-info">
+              <h3 id="stat-exams">-</h3>
+              <p>اختبارات منشأة</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">👨‍🎓</div>
+            <div class="stat-info">
+              <h3 id="stat-students">-</h3>
+              <p>طالب في مجموعاتي</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">📊</div>
+            <div class="stat-info">
+              <h3 id="stat-pass-rate">-</h3>
+              <p>معدل النجاح</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📋</div>
+            <div class="stat-info">
+              <h3 id="stat-submissions">-</h3>
+              <p>تسليم هذا الأسبوع</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-body" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+            <span style="font-weight:600;color:var(--gray-700);">⚡ إجراءات سريعة:</span>
+            <a href="create-exam.html" class="btn btn-primary">➕ إنشاء اختبار جديد</a>
+            <a href="questions.html" class="btn btn-secondary">❓ بنك الأسئلة</a>
+            <a href="students.html" class="btn btn-secondary">👨‍🎓 إدارة الطلاب</a>
+            <a href="submissions.html" class="btn btn-success">📋 تصحيح التسليمات</a>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+          <!-- Recent Submissions -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">📈 آخر التسليمات</h2>
+              <a href="submissions.html" class="btn btn-outline btn-sm">عرض الكل</a>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div id="recent-submissions">
+                <div style="padding:1.5rem;">
+                  <div class="skeleton" style="height:18px;width:80%;margin-bottom:0.75rem;"></div>
+                  <div class="skeleton" style="height:18px;width:60%;margin-bottom:0.75rem;"></div>
+                  <div class="skeleton" style="height:18px;width:70%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Exams -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">📝 اختباراتي</h2>
+              <a href="create-exam.html" class="btn btn-primary btn-sm">➕ جديد</a>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div id="my-exams">
+                <div style="padding:1.5rem;">
+                  <div class="skeleton" style="height:18px;width:80%;margin-bottom:0.75rem;"></div>
+                  <div class="skeleton" style="height:18px;width:60%;margin-bottom:0.75rem;"></div>
+                  <div class="skeleton" style="height:18px;width:70%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('teacher');
+    renderLayout('teacher', 'dashboard');
+
+    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
+    const sb = getSupabase();
+
+    async function loadDashboard() {
+      try {
+        const [examsRes, groupsRes, submissionsRes, weekSubmissionsRes] = await Promise.all([
+          sb.from('exams').select('id, title, is_active, created_at').eq('teacher_id', user.id),
+          sb.from('groups').select('id, group_members(count)').eq('teacher_id', user.id),
+          sb.from('exam_submissions').select('score, total_marks, passed').in('exam_id',
+            (await sb.from('exams').select('id').eq('teacher_id', user.id)).data?.map(e => e.id) || []
+          ),
+          sb.from('exam_submissions').select('id').gte('submitted_at', new Date(Date.now() - 7*24*60*60*1000).toISOString())
+        ]);
+
+        const exams = examsRes.data || [];
+        const submissions = submissionsRes.data || [];
+        const passedCount = submissions.filter(s => s.passed).length;
+        const passRate = submissions.length > 0 ? Math.round((passedCount / submissions.length) * 100) : 0;
+        let totalStudents = 0;
+        (groupsRes.data || []).forEach(g => { totalStudents += g.group_members?.[0]?.count || 0; });
+
+        document.getElementById('stat-exams').textContent = exams.length;
+        document.getElementById('stat-students').textContent = totalStudents;
+        document.getElementById('stat-pass-rate').textContent = passRate + '%';
+        document.getElementById('stat-submissions').textContent = weekSubmissionsRes.data?.length || 0;
+
+        // Recent submissions
+        const recentRes = await sb.from('exam_submissions')
+          .select('*, users(full_name), exams(title)')
+          .in('exam_id', exams.map(e => e.id))
+          .order('submitted_at', { ascending: false }).limit(5);
+
+        const recentEl = document.getElementById('recent-submissions');
+        const recentData = recentRes.data || [];
+        if (recentData.length === 0) {
+          recentEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>لا توجد تسليمات بعد</p></div>';
+        } else {
+          recentEl.innerHTML = `<div class="table-container"><table class="data-table">
+            <thead><tr><th>الطالب</th><th>الاختبار</th><th>الدرجة</th><th>الحالة</th><th>الوقت</th></tr></thead>
+            <tbody>${recentData.map(s => `<tr>
+              <td><strong>${sanitizeHTML(s.users?.full_name || '-')}</strong></td>
+              <td>${sanitizeHTML(s.exams?.title || '-')}</td>
+              <td><strong style="color:${s.passed?'var(--success)':'var(--danger)'}">${s.score}/${s.total_marks}</strong></td>
+              <td><span class="badge ${s.passed?'badge-success':'badge-danger'}">${s.passed?'ناجح':'راسب'}</span></td>
+              <td style="color:var(--gray-500);font-size:0.875rem;">${timeAgo(s.submitted_at)}</td>
+            </tr>`).join('')}
+            </tbody></table></div>`;
+        }
+
+        // My exams list
+        const examsEl = document.getElementById('my-exams');
+        if (exams.length === 0) {
+          examsEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>لم تنشئ أي اختبار بعد</p><a href="create-exam.html" class="btn btn-primary" style="margin-top:1rem;">➕ إنشاء اختبار</a></div>';
+        } else {
+          examsEl.innerHTML = `<div class="table-container"><table class="data-table">
+            <thead><tr><th>عنوان الاختبار</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+            <tbody>${exams.slice(0,5).map(e => `<tr>
+              <td><strong>${sanitizeHTML(e.title)}</strong></td>
+              <td><span class="badge ${e.is_active?'badge-success':'badge-secondary'}">${e.is_active?'نشط':'مخفي'}</span></td>
+              <td style="color:var(--gray-500);font-size:0.875rem;">${formatDate(e.created_at)}</td>
+              <td><a href="exam-preview.html?id=${e.id}" class="btn btn-outline btn-sm">معاينة</a></td>
+            </tr>`).join('')}
+            </tbody></table></div>`;
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast('حدث خطأ في تحميل البيانات', 'error');
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

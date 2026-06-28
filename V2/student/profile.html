@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الملف الشخصي - منصة الاختبارات</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .profile-grid { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; }
+    .profile-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+    .profile-card { background: var(--white); border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); text-align: center; }
+    .profile-avatar-large { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; margin: 0 auto 1.25rem; border: 4px solid var(--primary-light); box-shadow: 0 8px 24px rgba(37,99,235,0.2); position: relative; }
+    .profile-avatar-large .edit-btn { position: absolute; bottom: 0; left: 0; width: 36px; height: 36px; background: var(--white); border: 2px solid var(--gray-200); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.875rem; transition: var(--transition); }
+    .profile-avatar-large .edit-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+    .profile-name { font-size: 1.375rem; font-weight: 700; color: var(--gray-900); margin-bottom: 0.25rem; }
+    .profile-role { font-size: 0.9375rem; color: var(--gray-500); margin-bottom: 1rem; }
+    .profile-stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem; }
+    .profile-stat-mini { background: var(--gray-50); padding: 0.75rem; border-radius: var(--radius-lg); }
+    .profile-stat-mini .num { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    .profile-stat-mini .lbl { font-size: 0.75rem; color: var(--gray-500); }
+    .settings-section { background: var(--white); border-radius: var(--radius-xl); padding: 1.75rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); margin-bottom: 1.5rem; }
+    .settings-section h3 { font-size: 1.125rem; font-weight: 600; color: var(--gray-900); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 0.5rem; }
+    .password-strength { height: 4px; border-radius: 2px; margin-top: 0.5rem; transition: var(--transition); }
+    @media (max-width: 768px) { .profile-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="profile-grid">
+          <!-- Sidebar -->
+          <div class="profile-sidebar">
+            <div class="profile-card">
+              <div class="profile-avatar-large" id="profile-avatar">م</div>
+              <div class="profile-name" id="profile-name">محمد أحمد</div>
+              <div class="profile-role" id="profile-role">طالب - الصف الثاني الثانوي</div>
+              <span class="badge badge-success">نشط</span>
+
+              <div class="profile-stats-mini">
+                <div class="profile-stat-mini">
+                  <div class="num" id="stat-exams">12</div>
+                  <div class="lbl">اختبار</div>
+                </div>
+                <div class="profile-stat-mini">
+                  <div class="num" id="stat-avg">85%</div>
+                  <div class="lbl">متوسط</div>
+                </div>
+                <div class="profile-stat-mini">
+                  <div class="num" id="stat-rank">5</div>
+                  <div class="lbl">ترتيب</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="padding: 1.25rem;">
+              <h4 style="font-size: 0.9375rem; color: var(--gray-700); margin-bottom: 0.75rem;">📅 آخر نشاط</h4>
+              <div style="font-size: 0.875rem; color: var(--gray-500);">
+                <p style="margin-bottom: 0.5rem;">📝 اختبار الرياضيات - <span style="color: var(--gray-700);">منذ 3 أيام</span></p>
+                <p>📊 نتيجة: <span style="color: var(--success); font-weight: 600;">42/50</span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Settings -->
+          <div>
+            <!-- Personal Info -->
+            <div class="settings-section">
+              <h3>👤 المعلومات الشخصية</h3>
+              <form id="profile-form" onsubmit="updateProfile(event)">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label required">الاسم الكامل</label>
+                    <input type="text" class="form-input" id="edit-name" value="محمد أحمد" data-validate="required|min:3">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label required">البريد الإلكتروني</label>
+                    <input type="email" class="form-input" id="edit-email" value="mohamed@school.edu" data-validate="required|email" disabled>
+                    <p class="form-hint">لا يمكن تغيير البريد الإلكتروني</p>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="edit-phone" value="+20 100 123 4567" data-validate="phone">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">الصف الدراسي</label>
+                    <select class="form-select" id="edit-class">
+                      <option value="1">الصف الأول الثانوي</option>
+                      <option value="2" selected>الصف الثاني الثانوي</option>
+                      <option value="3">الصف الثالث الثانوي</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">نبذة عني</label>
+                  <textarea class="form-textarea" id="edit-bio" rows="3" placeholder="اكتب نبذة قصيرة عنك...">طالب مجتهد في الصف الثاني الثانوي، أحب الرياضيات والفيزياء.</textarea>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                  <button type="submit" class="btn btn-primary" id="save-profile-btn">
+                    <span>💾</span> حفظ التغييرات
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="resetProfile()">إلغاء</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Security -->
+            <div class="settings-section">
+              <h3>🔒 كلمة المرور</h3>
+              <form id="password-form" onsubmit="updatePassword(event)">
+                <div class="form-group">
+                  <label class="form-label required">كلمة المرور الحالية</label>
+                  <input type="password" class="form-input" id="current-password" data-validate="required|min:6" placeholder="••••••••">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label required">كلمة المرور الجديدة</label>
+                    <input type="password" class="form-input" id="new-password" data-validate="required|min:8" placeholder="••••••••" oninput="checkPasswordStrength(this.value)">
+                    <div class="password-strength" id="password-strength" style="background: var(--gray-200);"></div>
+                    <p class="form-hint" id="password-hint">8 أحرف على الأقل، حرف كبير، حرف صغير، رقم</p>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label required">تأكيد كلمة المرور</label>
+                    <input type="password" class="form-input" id="confirm-password" data-validate="required" placeholder="••••••••">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="save-password-btn">
+                  <span>🔒</span> تغيير كلمة المرور
+                </button>
+              </form>
+            </div>
+
+            <!-- Preferences -->
+            <div class="settings-section">
+              <h3>⚙️ التفضيلات</h3>
+              <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--gray-100);">
+                  <div>
+                    <div style="font-weight: 500; color: var(--gray-900);">🔔 الإشعارات</div>
+                    <div style="font-size: 0.875rem; color: var(--gray-500);">استلام إشعارات الاختبارات والنتائج</div>
+                  </div>
+                  <label style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                    <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+                    <span style="position: absolute; cursor: pointer; inset: 0; background: var(--primary); border-radius: 26px; transition: 0.3s;">
+                      <span style="position: absolute; content: ''; height: 20px; width: 20px; right: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </span>
+                  </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--gray-100);">
+                  <div>
+                    <div style="font-weight: 500; color: var(--gray-900);">🌙 الوضع المظلم</div>
+                    <div style="font-size: 0.875rem; color: var(--gray-500);">تفعيل الوضع المظلم في الليل</div>
+                  </div>
+                  <label style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                    <input type="checkbox" style="opacity: 0; width: 0; height: 0;">
+                    <span style="position: absolute; cursor: pointer; inset: 0; background: var(--gray-300); border-radius: 26px; transition: 0.3s;">
+                      <span style="position: absolute; content: ''; height: 20px; width: 20px; right: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </span>
+                  </label>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+                  <div>
+                    <div style="font-weight: 500; color: var(--gray-900);">📧 البريد الإلكتروني</div>
+                    <div style="font-size: 0.875rem; color: var(--gray-500);">استلام نتائج الاختبارات على البريد</div>
+                  </div>
+                  <label style="position: relative; display: inline-block; width: 48px; height: 26px;">
+                    <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+                    <span style="position: absolute; cursor: pointer; inset: 0; background: var(--primary); border-radius: 26px; transition: 0.3s;">
+                      <span style="position: absolute; content: ''; height: 20px; width: 20px; right: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;"></span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-section" style="border-color: var(--danger-light);">
+              <h3 style="color: var(--danger);">⚠️ منطقة الخطر</h3>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 500; color: var(--gray-900);">🗑️ حذف الحساب</div>
+                  <div style="font-size: 0.875rem; color: var(--gray-500);">حذف الحساب وجميع البيانات نهائياً</div>
+                </div>
+                <button class="btn btn-danger" onclick="confirmDeleteAccount()">
+                  حذف الحساب
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../shared/app.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script>
+    requireAuth('student');
+    renderLayout('student', 'profile');
+    document.title = 'الملف الشخصي';
+
+    function updateProfile(e) {
+      e.preventDefault();
+      if (!validateForm(e.target)) return;
+
+      showLoading(document.getElementById('save-profile-btn'), 'جاري الحفظ...');
+
+      setTimeout(() => {
+        hideLoading(document.getElementById('save-profile-btn'));
+        showToast('✅ تم تحديث الملف الشخصي بنجاح', 'success');
+
+        // Update displayed name
+        const name = document.getElementById('edit-name').value;
+        document.getElementById('profile-name').textContent = name;
+        document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase();
+      }, 1500);
+    }
+
+    function updatePassword(e) {
+      e.preventDefault();
+      if (!validateForm(e.target)) return;
+
+      const newPass = document.getElementById('new-password').value;
+      const confirmPass = document.getElementById('confirm-password').value;
+
+      if (newPass !== confirmPass) {
+        showToast('❌ كلمتا المرور غير متطابقتين', 'error');
+        return;
+      }
+
+      showLoading(document.getElementById('save-password-btn'), 'جاري التغيير...');
+
+      setTimeout(() => {
+        hideLoading(document.getElementById('save-password-btn'));
+        showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+        e.target.reset();
+        document.getElementById('password-strength').style.background = 'var(--gray-200)';
+      }, 1500);
+    }
+
+    function checkPasswordStrength(password) {
+      const strengthBar = document.getElementById('password-strength');
+      const hint = document.getElementById('password-hint');
+
+      let strength = 0;
+      if (password.length >= 8) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[a-z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+      const colors = ['var(--danger)', 'var(--danger)', 'var(--warning)', 'var(--warning)', 'var(--success)', 'var(--success)'];
+      const widths = ['20%', '40%', '60%', '80%', '100%', '100%'];
+
+      strengthBar.style.background = colors[strength];
+      strengthBar.style.width = widths[strength];
+
+      const hints = [
+        'ضعيفة جداً',
+        'ضعيفة',
+        'متوسطة',
+        'جيدة',
+        'قوية',
+        'قوية جداً'
+      ];
+      hint.textContent = hints[strength];
+      hint.style.color = colors[strength];
+    }
+
+    function resetProfile() {
+      document.getElementById('profile-form').reset();
+      showToast('تم إلغاء التغييرات', 'info');
+    }
+
+    function confirmDeleteAccount() {
+      confirmDialog(
+        'هل أنت متأكد من حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه!',
+        () => {
+          showToast('⏳ جاري حذف الحساب...', 'warning');
+          setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '/login.html';
+          }, 2000);
+        }
+      );
+    }
+  </script>
+</body>
+</html>
