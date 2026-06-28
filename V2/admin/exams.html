@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الاختبارات - لوحة التحكم</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📝 جميع الاختبارات</h2>
+            <div class="filter-bar" style="margin:0;">
+              <select class="form-select" id="filter-status" onchange="loadExams()">
+                <option value="">كل الحالات</option>
+                <option value="published">منشور</option>
+                <option value="draft">مسودة</option>
+                <option value="closed">مغلق</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-container">
+              <table class="data-table" id="exams-table">
+                <thead>
+                  <tr><th>الاختبار</th><th>المعلم</th><th>المجموعة</th><th>المدة</th><th>الحالة</th><th>المشاركون</th><th>إجراءات</th></tr>
+                </thead>
+                <tbody id="exams-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('admin')) throw new Error('Unauthorized');
+    renderLayout('admin', 'exams');
+
+    const demoExams = [
+      { id: 1, title: 'اختبار الفيزياء - الفصل الأول', teacher: 'د. سارة علي', group: 'ثالثة ثانوي - أ', duration: 60, status: 'published', participants: 32 },
+      { id: 2, title: 'اختبار الرياضيات - التفاضل', teacher: 'أ. محمد أحمد', group: 'ثالثة ثانوي - ب', duration: 45, status: 'draft', participants: 0 },
+      { id: 3, title: 'اختبار كيمياء عضوية', teacher: 'د. خالد محمود', group: 'تحضيرية جامعة', duration: 90, status: 'closed', participants: 45 },
+    ];
+
+    function loadExams() {
+      const status = document.getElementById('filter-status').value;
+      let filtered = status ? demoExams.filter(e => e.status === status) : demoExams;
+      
+      const tbody = document.getElementById('exams-tbody');
+      tbody.innerHTML = filtered.map(e => `
+        <tr>
+          <td><strong>${e.title}</strong></td>
+          <td>${e.teacher}</td>
+          <td>${e.group}</td>
+          <td>${e.duration} د</td>
+          <td><span class="badge ${e.status === 'published' ? 'badge-success' : e.status === 'draft' ? 'badge-warning' : 'badge-secondary'}">${e.status === 'published' ? 'منشور' : e.status === 'draft' ? 'مسودة' : 'مغلق'}</span></td>
+          <td>${e.participants}</td>
+          <td class="table-actions"><button class="btn btn-sm btn-secondary" onclick="showToast('معاينة...','info')">👁️</button><button class="btn btn-sm btn-danger" onclick="confirmDialog('حذف الاختبار؟', 'showToast(`تم الحذف`,`success`)')">🗑️</button></td>
+        </tr>
+      `).join('');
+    }
+    loadExams();
+  </script>
+</body>
+</html>
