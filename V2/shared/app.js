@@ -278,11 +278,20 @@ async function handleLogout(e) {
 
 function goToProfile() {
   const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-  const paths = { admin: 'admin/profile.html', teacher: 'profile.html', student: 'profile.html' };
+  if (!user.role) return;
+  
   const currentPath = window.location.pathname;
-  if (currentPath.includes('/admin/')) { window.location.href = 'profile.html'; return; }
-  if (currentPath.includes('/teacher/')) { window.location.href = '../student/profile.html'; }
-  else { window.location.href = 'profile.html'; }
+  let target = 'profile.html';
+  
+  if (currentPath.includes('/admin/')) {
+    target = 'profile.html';
+  } else if (currentPath.includes('/teacher/')) {
+    target = 'profile.html'; // هننشئها تحت
+  } else if (currentPath.includes('/student/')) {
+    target = 'profile.html';
+  }
+  
+  window.location.href = target;
 }
 
 function showNotifications() {
