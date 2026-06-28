@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ملفي الشخصي - المعلم</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="card" style="max-width: 700px;">
+          <div class="card-header"><h2 class="card-title">👤 ملف المعلم الشخصي</h2></div>
+          <div class="card-body">
+            <form id="profile-form" onsubmit="event.preventDefault(); saveProfile();">
+              <div class="form-row">
+                <div class="form-group"><label class="form-label required">الاسم الكامل</label><input type="text" class="form-input" value="د. سارة علي" data-validate="required"></div>
+                <div class="form-group"><label class="form-label required">البريد الإلكتروني</label><input type="email" class="form-input" value="sara@school.com" data-validate="required|email"></div>
+              </div>
+              <div class="form-group"><label class="form-label">التخصص</label><input type="text" class="form-input" value="فيزياء"></div>
+              <div class="form-group"><label class="form-label">نبذة</label><textarea class="form-textarea" rows="3">معلمة فيزياء بخبرة 10 سنوات...</textarea></div>
+              <div class="card-footer" style="padding:1.5rem 0 0; margin-top:1.5rem; border-top:1px solid var(--gray-200);">
+                <button type="submit" class="btn btn-primary">💾 حفظ التغييرات</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('teacher')) throw new Error('Unauthorized');
+    renderLayout('teacher', 'profile');
+    function saveProfile() {
+      if (!validateForm(document.getElementById('profile-form'))) return;
+      showToast('تم تحديث الملف الشخصي', 'success');
+    }
+  </script>
+</body>
+</html>
