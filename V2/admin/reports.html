@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التقارير - لوحة التحكم</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">📝</div>
+            <div class="stat-info"><h3>1,245</h3><p>إجمالي الاختبارات</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">👨‍🎓</div>
+            <div class="stat-info"><h3>8,932</h3><p>إجمالي الطلاب</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📊</div>
+            <div class="stat-info"><h3>78%</h3><p>معدل النجاح العام</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">⏱️</div>
+            <div class="stat-info"><h3>42 د</h3><p>متوسط مدة الاختبار</p></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+          <div class="card-header">
+            <h2 class="card-title">📈 أداء الاختبارات (آخر 6 أشهر)</h2>
+          </div>
+          <div class="card-body">
+            <div style="height: 300px; display: flex; align-items: flex-end; gap: 1rem; padding: 1rem 0; border-bottom: 2px solid var(--gray-200);">
+              ${[65, 72, 58, 80, 75, 82].map((h, i) => `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                  <div style="width: 100%; background: linear-gradient(to top, var(--primary), var(--secondary)); border-radius: 8px 8px 0 0; height: ${h * 3}px; opacity: 0.85; transition: opacity 0.2s;"></div>
+                  <span style="font-size: 0.75rem; color: var(--gray-500);">${['يناير','فبراير','مارس','أبريل','مايو','يونيو'][i]}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">🏆 أفضل 5 معلمين</h3></div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>المعلم</th><th>الاختبارات</th><th>المشاركة</th></tr></thead>
+                <tbody>
+                  <tr><td>د. سارة علي</td><td>24</td><td>96%</td></tr>
+                  <tr><td>أ. محمد أحمد</td><td>18</td><td>88%</td></tr>
+                  <tr><td>د. خالد محمود</td><td>15</td><td>85%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">⚠️ أكثر 5 أخطاء شائعة</h3></div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>السؤال</th><th>نسبة الخطأ</th></tr></thead>
+                <tbody>
+                  <tr><td>القانون الثالث لنيوتن</td><td>68%</td></tr>
+                  <tr><td>اشتقاق الدوال الأسية</td><td>55%</td></tr>
+                  <tr><td>التوتر السطحي</td><td>48%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('admin')) throw new Error('Unauthorized');
+    renderLayout('admin', 'reports');
+  </script>
+</body>
+</html>
