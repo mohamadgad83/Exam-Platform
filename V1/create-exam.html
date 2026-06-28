@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء امتحان جديد - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .question-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .question-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        .question-card.selected {
+            background: #d1fae5;
+            border-color: #10b981;
+        }
+        
+        .selected-summary {
+            position: sticky;
+            bottom: 20px;
+            background: white;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; }
+            .selected-summary { position: relative; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- شريط المدير -->
+        <div id="adminHeader" class="admin-bar" style="display: none;">
+            <div><span style="font-size:20px;">👑</span> إنشاء امتحان - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-exams.html'">📝 الامتحانات</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+        
+        <!-- شريط المعلم -->
+        <div id="teacherHeader" class="top-bar" style="display: none;">
+            <div class="logo">📚 منصة الاختبارات - إنشاء امتحان</div>
+            <div class="user-info">
+                <span class="user-name">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-exams.html'">📝 امتحاناتي</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <!-- معلومات الامتحان -->
+        <div class="card">
+            <div class="card-header">
+                <h1>📝 إنشاء امتحان جديد</h1>
+                <p>املأ بيانات الامتحان، ثم اختر الأسئلة والطلاب</p>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group" id="teacherSelectGroup" style="display: none;">
+                    <label>👨‍🏫 اختر المعلم *</label>
+                    <select id="examTeacher" onchange="onTeacherChange()">
+                        <option value="">-- اختر المعلم --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🎓 الصف *</label>
+                    <select id="examClass" onchange="onClassChange()">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📖 المادة *</label>
+                    <select id="examSubject">
+                        <option value="">-- اختر الصف أولاً --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>⏱️ المدة (دقائق) *</label>
+                    <input type="number" id="examDuration" value="60" min="1" max="180">
+                </div>
+                <div class="form-group">
+                    <label>⭐ درجة النجاح (%)</label>
+                    <input type="number" id="examPassingScore" value="50" min="0" max="100">
+                </div>
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📅 تاريخ البدء (اختياري)</label>
+                    <input type="datetime-local" id="examStartDate">
+                </div>
+                <div class="form-group">
+                    <label>📅 تاريخ الانتهاء (اختياري)</label>
+                    <input type="datetime-local" id="examEndDate">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>📖 وصف الامتحان</label>
+                <textarea id="examDesc" rows="3" placeholder="وصف الامتحان (اختياري)"></textarea>
+            </div>
+        </div>
+
+        <!-- التبويبات -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('questions')">📚 الأسئلة (<span id="questionsCountInTab">0</span>)</button>
+            <button class="tab-btn" onclick="showTab('students')">👨‍🎓 الطلاب (<span id="studentsCountInTab">0</span>)</button>
+        </div>
+
+        <!-- تبويب الأسئلة -->
+        <div id="questionsTab">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="questionSearch" placeholder="بحث في الأسئلة...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 نوع السؤال</label>
+                        <select id="typeFilter">
+                            <option value="all">كل الأنواع</option>
+                            <option value="mcq">اختيار من متعدد</option>
+                            <option value="multi_select">اختيار متعدد</option>
+                            <option value="true_false">صح/خطأ</option>
+                            <option value="essay">مقالي</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='teacher-questions.html'">➕ إضافة سؤال</button>
+                        <button class="btn btn-outline btn-sm" onclick="loadQuestions()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+                <div id="questionsList"></div>
+                <div id="questionsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- تبويب الطلاب -->
+        <div id="studentsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="studentSearch" placeholder="بحث باسم الطالب أو رقم الهاتف...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline btn-sm" onclick="selectAllStudents()">✅ تحديد الكل</button>
+                        <button class="btn btn-outline btn-sm" onclick="deselectAllStudents()">⬜ إلغاء الكل</button>
+                    </div>
+                </div>
+                <div id="studentsList"></div>
+            </div>
+        </div>
+
+        <!-- ملخص الاختيارات -->
+        <div class="selected-summary" id="selectedSummary" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <span>✅ الأسئلة: <strong id="selectedQuestionsCount">0</strong></span>
+                    <span style="margin-right: 20px;">📊 إجمالي الدرجات: <strong id="totalPoints">0</strong></span>
+                    <span style="margin-right: 20px;">👨‍🎓 الطلاب: <strong id="selectedStudentsCount">0</strong></span>
+                </div>
+                <button class="btn btn-primary" onclick="createExam()">💾 حفظ ونشر الامتحان</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        const currentUser = getUser();
+        if (!currentUser) window.location.href = 'index.html';
+        
+        const isAdmin = (currentUser.role === 'admin');
+        let currentTeacherId = isAdmin ? null : currentUser.id;
+        
+        // ==================== المتغيرات العامة ====================
+        let allQuestions = [];
+        let selectedQuestions = [];
+        let allStudents = [];
+        let selectedStudents = new Set();
+        let teacherAssignments = [];
+        let teachersList = [];
+        
+        // Pagination
+        let questionsPage = 1;
+        let itemsPerPage = 10;
+        
+        // ==================== إعداد الواجهة حسب الدور ====================
+        function setupUI() {
+            if (isAdmin) {
+                document.getElementById('adminHeader').style.display = 'flex';
+                document.getElementById('teacherHeader').style.display = 'none';
+                document.getElementById('teacherSelectGroup').style.display = 'block';
+                document.getElementById('adminName').innerHTML = currentUser.name;
+                loadTeachers();
+            } else {
+                document.getElementById('adminHeader').style.display = 'none';
+                document.getElementById('teacherHeader').style.display = 'flex';
+                document.getElementById('teacherSelectGroup').style.display = 'none';
+                document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
+                loadTeacherAssignments();
+            }
+        }
+        
+        // ==================== تحميل المعلمين (للمدير) ====================
+        async function loadTeachers() {
+            try {
+                const { data: teachers } = await sb
+                    .from('users')
+                    .select('id, name, username')
+                    .eq('role', 'teacher');
+                
+                teachersList = teachers || [];
+                const teacherSelect = document.getElementById('examTeacher');
+                teacherSelect.innerHTML = '<option value="">-- اختر المعلم --</option>';
+                teachersList.forEach(t => {
+                    teacherSelect.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+            }
+        }
+        
+        // ==================== عند تغيير المعلم (للمدير) ====================
+        async function onTeacherChange() {
+            const teacherId = document.getElementById('examTeacher').value;
+            currentTeacherId = teacherId || null;
+            
+            if (!teacherId) {
+                document.getElementById('examClass').innerHTML = '<option value="">-- اختر المعلم أولاً --</option>';
+                document.getElementById('examClass').disabled = true;
+                return;
+            }
+            
+            await loadTeacherAssignments(parseInt(teacherId));
+        }
+        
+        // ==================== تحميل تعيينات المعلم ====================
+        async function loadTeacherAssignments(teacherId = null) {
+            try {
+                const id = teacherId || currentUser.id;
+                const { data: assignments } = await sb
+                    .from('teacher_assignments')
+                    .select('*, classes:class_id(id, name), subjects:subject_id(id, name)')
+                    .eq('teacher_id', id);
+                
+                teacherAssignments = assignments || [];
+                
+                const classMap = new Map();
+                teacherAssignments.forEach(a => {
+                    if (a.classes && !classMap.has(a.class_id)) {
+                        classMap.set(a.class_id, { id: a.class_id, name: a.classes.name });
+                    }
+                });
+                const teacherClasses = Array.from(classMap.values());
+                
+                const classSelect = document.getElementById('examClass');
+                classSelect.disabled = false;
+                classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+                teacherClasses.forEach(c => {
+                    classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+                });
+                
+                document.getElementById('examSubject').innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+                document.getElementById('examSubject').disabled = true;
+                
+                await loadQuestions();
+                
+            } catch (error) {
+                console.error('Error loading teacher assignments:', error);
+            }
+        }
+        
+        // ==================== عند تغيير الصف ====================
+        async function onClassChange() {
+            const classId = document.getElementById('examClass').value;
+            const subjectSelect = document.getElementById('examSubject');
+            
+            if (!classId) {
+                subjectSelect.innerHTML = '<option value="">-- اختر الصف أولاً --</option>';
+                subjectSelect.disabled = true;
+                return;
+            }
+            
+            const availableSubjects = teacherAssignments
+                .filter(a => a.class_id == classId)
+                .map(a => ({ id: a.subject_id, name: a.subjects?.name }));
+            
+            subjectSelect.disabled = false;
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            availableSubjects.forEach(s => {
+                if (s.name) {
+                    subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+                }
+            });
+            
+            questionsPage = 1;
+            await loadQuestions();
+            await loadStudents();
+        }
+        
+        // ==================== تحميل الأسئلة مع Pagination ====================
+        async function loadQuestions() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
+            try {
+                const search = document.getElementById('questionSearch').value;
+                const type = document.getElementById('typeFilter').value;
+                const classId = document.getElementById('examClass').value;
+                const subjectId = document.getElementById('examSubject').value;
+                
+                let query = sb.from('questions').select('*').eq('status', 'approved');
+                
+                if (currentTeacherId) {
+                    query = query.eq('teacher_id', currentTeacherId);
+                }
+                if (type !== 'all') {
+                    query = query.eq('type', type);
+                }
+                if (classId) {
+                    query = query.eq('class_id', parseInt(classId));
+                }
+                if (subjectId && subjectId !== 'all') {
+                    query = query.eq('subject_id', parseInt(subjectId));
+                }
+                
+                const { data: questions, error } = await query.order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allQuestions = questions || [];
+                
+                let filtered = allQuestions;
+                if (search) {
+                    filtered = filtered.filter(q => q.text && q.text.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                // Pagination
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                const startIndex = (questionsPage - 1) * itemsPerPage;
+                const paginatedQuestions = filtered.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderQuestionsList(paginatedQuestions);
+                renderQuestionsPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                document.getElementById('questionsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الأسئلة</div>';
+            } finally {
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        function renderQuestionsList(questions) {
+            const container = document.getElementById('questionsList');
+            
+            if (!questions || questions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>لا توجد أسئلة معتمدة</p>
+                        <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'" style="margin-top: 15px;">➕ أضف سؤالاً جديداً</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            for (const q of questions) {
+                const isSelected = selectedQuestions.find(s => s.id === q.id);
+                const typeText = getTypeText(q.type);
+                const typeClass = getTypeClass(q.type);
+                
+                const card = document.createElement('div');
+                card.className = `question-card ${isSelected ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; margin-bottom: 8px;">${escapeHtml(q.text)}</div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <span class="badge ${typeClass}">${typeText}</span>
+                                <span class="badge badge-info">⭐ ${q.points} درجة</span>
+                                <span class="badge badge-gray">${q.difficulty === 'easy' ? '🟢 سهل' : q.difficulty === 'medium' ? '🟡 متوسط' : '🔴 صعب'}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="number" id="points-${q.id}" value="${q.points}" style="width: 80px; padding: 8px; border-radius: 12px; border: 1px solid #e2e8f0;" min="0.5" step="0.5" ${isSelected ? '' : 'disabled'}>
+                            <button class="btn ${isSelected ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleSelectQuestion(${q.id})">
+                                ${isSelected ? '✖ إزالة' : '➕ إضافة'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function renderQuestionsPagination(totalPages) {
+            const container = document.getElementById('questionsPagination');
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (questionsPage > 1) html += `<button class="page-btn" onclick="goToQuestionsPage(${questionsPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === questionsPage ? 'active' : ''}" onclick="goToQuestionsPage(${i})">${i}</button>`;
+            }
+            
+            if (questionsPage < totalPages) html += `<button class="page-btn" onclick="goToQuestionsPage(${questionsPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToQuestionsPage(page) {
+            questionsPage = page;
+            loadQuestions();
+        }
+        
+        function getTypeText(type) {
+            const types = {
+                'mcq': 'اختيار من متعدد',
+                'multi_select': 'اختيار متعدد',
+                'true_false': 'صح/خطأ',
+                'essay': 'مقالي'
+            };
+            return types[type] || type;
+        }
+        
+        function getTypeClass(type) {
+            const classes = {
+                'mcq': 'badge-primary',
+                'multi_select': 'badge-info',
+                'true_false': 'badge-warning',
+                'essay': 'badge-success'
+            };
+            return classes[type] || 'badge-gray';
+        }
+        
+        // ==================== اختيار/إزالة سؤال ====================
+        function toggleSelectQuestion(questionId) {
+            const existingIndex = selectedQuestions.findIndex(s => s.id === questionId);
+            const question = allQuestions.find(q => q.id === questionId);
+            
+            if (!question) return;
+            
+            if (existingIndex !== -1) {
+                selectedQuestions.splice(existingIndex, 1);
+                const pointsInput = document.getElementById(`points-${questionId}`);
+                if (pointsInput) pointsInput.disabled = true;
+            } else {
+                const pointsInput = document.getElementById(`points-${questionId}`);
+                let points = question.points;
+                if (pointsInput && pointsInput.value) {
+                    points = parseFloat(pointsInput.value);
+                }
+                selectedQuestions.push({ id: questionId, points: points });
+                if (pointsInput) pointsInput.disabled = false;
+            }
+            
+            updateSelectedSummary();
+            loadQuestions();
+            updateTabCounts();
+        }
+        
+        // ==================== تحميل الطلاب ====================
+        async function loadStudents() {
+            try {
+                const classId = document.getElementById('examClass').value;
+                const search = document.getElementById('studentSearch')?.value || '';
+                
+                if (!classId) {
+                    document.getElementById('studentsList').innerHTML = '<div class="empty-state">🎓 اختر الصف أولاً لعرض الطلاب</div>';
+                    return;
+                }
+                
+                const { data: students, error } = await sb
+                    .from('users')
+                    .select('id, name, phone')
+                    .eq('role', 'student')
+                    .eq('class_id', parseInt(classId))
+                    .order('name');
+                
+                if (error) throw error;
+                
+                allStudents = students || [];
+                
+                let filtered = allStudents;
+                if (search) {
+                    filtered = filtered.filter(s => 
+                        s.name.toLowerCase().includes(search.toLowerCase()) ||
+                        (s.phone && s.phone.includes(search))
+                    );
+                }
+                
+                renderStudentsList(filtered);
+                
+            } catch (error) {
+                console.error('Error loading students:', error);
+                document.getElementById('studentsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الطلاب</div>';
+            }
+        }
+        
+        function renderStudentsList(students) {
+            const container = document.getElementById('studentsList');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<div class="empty-state">👨‍🎓 لا يوجد طلاب في هذا الصف</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const s of students) {
+                const isSelected = selectedStudents.has(s.id);
+                
+                const card = document.createElement('div');
+                card.className = `question-card ${isSelected ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong>${escapeHtml(s.name)}</strong>
+                            <div style="font-size: 12px; color: #64748b;">📞 ${s.phone || 'لا يوجد رقم'}</div>
+                        </div>
+                        <button class="btn ${isSelected ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleSelectStudent(${s.id})">
+                            ${isSelected ? '✖ إزالة' : '➕ إضافة'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        // ==================== اختيار/إزالة طالب ====================
+        function toggleSelectStudent(studentId) {
+            if (selectedStudents.has(studentId)) {
+                selectedStudents.delete(studentId);
+            } else {
+                selectedStudents.add(studentId);
+            }
+            updateSelectedSummary();
+            loadStudents();
+            updateTabCounts();
+        }
+        
+        function selectAllStudents() {
+            allStudents.forEach(s => selectedStudents.add(s.id));
+            updateSelectedSummary();
+            loadStudents();
+            updateTabCounts();
+        }
+        
+        function deselectAllStudents() {
+            selectedStudents.clear();
+            updateSelectedSummary();
+            loadStudents();
+            updateTabCounts();
+        }
+        
+        // ==================== تحديث الملخص والأعداد ====================
+        function updateSelectedSummary() {
+            const questionsCount = selectedQuestions.length;
+            const totalPoints = selectedQuestions.reduce((sum, s) => sum + (s.points || 0), 0);
+            const studentsCount = selectedStudents.size;
+            
+            document.getElementById('selectedQuestionsCount').innerHTML = questionsCount;
+            document.getElementById('totalPoints').innerHTML = totalPoints;
+            document.getElementById('selectedStudentsCount').innerHTML = studentsCount;
+            
+            document.getElementById('selectedSummary').style.display = questionsCount > 0 ? 'flex' : 'none';
+        }
+        
+        function updateTabCounts() {
+            document.getElementById('questionsCountInTab').innerHTML = selectedQuestions.length;
+            document.getElementById('studentsCountInTab').innerHTML = selectedStudents.size;
+        }
+        
+        // ==================== التبويبات ====================
+        function showTab(tabName) {
+            document.getElementById('questionsTab').style.display = tabName === 'questions' ? 'block' : 'none';
+            document.getElementById('studentsTab').style.display = tabName === 'students' ? 'block' : 'none';
+            
+            const tabs = document.querySelectorAll('.tabs .tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            if (tabName === 'questions') tabs[0].classList.add('active');
+            else tabs[1].classList.add('active');
+            
+            if (tabName === 'students' && allStudents.length === 0) {
+                loadStudents();
+            }
+        }
+        
+        // ==================== إنشاء الامتحان ====================
+        async function createExam() {
+            const title = document.getElementById('examTitle').value;
+            const description = document.getElementById('examDesc').value;
+            const classId = document.getElementById('examClass').value;
+            const subjectId = document.getElementById('examSubject').value;
+            const duration = document.getElementById('examDuration').value;
+            const passingScore = document.getElementById('examPassingScore').value;
+            const startDate = document.getElementById('examStartDate').value;
+            const endDate = document.getElementById('examEndDate').value;
+            
+            if (!title) {
+                showToast('عنوان الامتحان مطلوب', 'error');
+                return;
+            }
+            if (!classId) {
+                showToast('اختر الصف', 'error');
+                return;
+            }
+            if (!subjectId) {
+                showToast('اختر المادة', 'error');
+                return;
+            }
+            if (selectedQuestions.length === 0) {
+                showToast('اختر سؤالاً واحداً على الأقل', 'error');
+                return;
+            }
+            
+            // تحديث الدرجات من الحقول
+            for (const sq of selectedQuestions) {
+                const pointsInput = document.getElementById(`points-${sq.id}`);
+                if (pointsInput) {
+                    sq.points = parseFloat(pointsInput.value) || sq.points;
+                }
+            }
+            
+            const teacherId = isAdmin ? (currentTeacherId || null) : currentUser.id;
+            
+            showToast('جاري إنشاء الامتحان...', 'info');
+            
+            // 1. إنشاء الامتحان
+            const examData = {
+                title: title,
+                description: description || null,
+                class_id: parseInt(classId),
+                subject_id: parseInt(subjectId),
+                teacher_id: teacherId,
+                duration_minutes: parseInt(duration),
+                passing_score: parseInt(passingScore),
+                start_date: startDate || null,
+                end_date: endDate || null,
+                status: 'published',
+                exam_type: 'free',
+                exam_price: 0,
+                is_announced: true
+            };
+            
+            const { data: exam, error: examError } = await sb
+                .from('exams')
+                .insert(examData)
+                .select()
+                .single();
+            
+            if (examError) {
+                showToast('حدث خطأ في إنشاء الامتحان', 'error');
+                console.error(examError);
+                return;
+            }
+            
+            // 2. إضافة الأسئلة إلى الامتحان
+            for (let i = 0; i < selectedQuestions.length; i++) {
+                const sq = selectedQuestions[i];
+                await sb
+                    .from('exam_questions')
+                    .insert({
+                        exam_id: exam.id,
+                        question_id: sq.id,
+                        points: sq.points,
+                        order_index: i + 1
+                    });
+            }
+            
+            // 3. إضافة الطلاب المختارين
+            if (selectedStudents.size > 0) {
+                const studentIds = Array.from(selectedStudents);
+                const requests = studentIds.map(studentId => ({
+                    student_id: studentId,
+                    exam_id: exam.id,
+                    status: 'approved'
+                }));
+                
+                await sb.from('exam_requests').insert(requests);
+            }
+            
+            showToast('✅ تم إنشاء الامتحان ونشره بنجاح!', 'success');
+            setTimeout(() => {
+                if (isAdmin) {
+                    window.location.href = 'admin-exams.html';
+                } else {
+                    window.location.href = 'teacher-exams.html';
+                }
+            }, 1500);
+        }
+        
+        // ==================== دوال مساعدة ====================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ==================== أحداث ====================
+        document.getElementById('questionSearch').addEventListener('input', () => {
+            questionsPage = 1;
+            loadQuestions();
+        });
+        document.getElementById('typeFilter').addEventListener('change', () => {
+            questionsPage = 1;
+            loadQuestions();
+        });
+        document.getElementById('studentSearch').addEventListener('input', () => loadStudents());
+        
+        window.showTab = showTab;
+        window.onTeacherChange = onTeacherChange;
+        window.onClassChange = onClassChange;
+        window.toggleSelectQuestion = toggleSelectQuestion;
+        window.toggleSelectStudent = toggleSelectStudent;
+        window.selectAllStudents = selectAllStudents;
+        window.deselectAllStudents = deselectAllStudents;
+        window.goToQuestionsPage = goToQuestionsPage;
+        window.createExam = createExam;
+        
+        // ==================== تحميل أولي ====================
+        setupUI();
+    </script>
+</body>
+</html>

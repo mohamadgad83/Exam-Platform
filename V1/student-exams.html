@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الامتحانات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
+        .tab-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .exam-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .exam-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 550px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+        }
+        
+        .empty-state { text-align: center; padding: 60px; color: #64748b; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        
+        .screenshot-img { max-width: 100%; border-radius: 12px; margin: 10px 0; cursor: pointer; }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; align-items: stretch; }
+            .tabs { justify-content: center; }
+            .tab-btn { padding: 6px 16px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div class="user-info">
+                <span class="user-name">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-groups.html'">👥 المجموعات</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('available')">📝 الامتحانات المتاحة</button>
+            <button class="tab-btn" onclick="showTab('myExams')">📋 امتحاناتي</button>
+            <button class="tab-btn" onclick="showTab('requests')">📊 طلباتي</button>
+        </div>
+
+        <!-- تبويب الامتحانات المتاحة -->
+        <div id="availableTab">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="searchInput" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadAvailableExams()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+                <div id="availableExamsList"></div>
+                <div id="availablePagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- تبويب امتحاناتي (المقبول فيها) -->
+        <div id="myExamsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="myExamsSearch" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadMyExams()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="myExamsList"></div>
+                <div id="myExamsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- تبويب طلباتي -->
+        <div id="requestsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="requestStatusFilter" class="search-input" style="width: auto;" onchange="loadMyRequests()">
+                            <option value="all">كل الطلبات</option>
+                            <option value="pending_admin">⏳ قيد المراجعة</option>
+                            <option value="approved">✅ مقبول</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadMyRequests()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="myRequestsList"></div>
+                <div id="requestsPagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال التقديم للامتحان (مدفوع) -->
+    <div id="applyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 التقديم للامتحان</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeApplyModal()">✖</button>
+            </div>
+            <div id="applyContent"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" id="submitApplyBtn" onclick="submitApplication()">💾 إرسال الطلب</button>
+                <button class="btn btn-outline" onclick="closeApplyModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        const currentUser = getUser();
+        if (!currentUser || (currentUser.role !== 'student' && currentUser.role !== 'admin')) {
+            window.location.href = 'index.html';
+        }
+        document.getElementById('studentName').innerHTML = currentUser.name || currentUser.username || 'طالب';
+        
+        // ==================== المتغيرات العامة ====================
+        let currentExam = null;
+        let currentCoupon = null;
+        
+        // Pagination variables
+        let availableExamsList = [];
+        let availablePage = 1;
+        let myExamsList = [];
+        let myExamsPage = 1;
+        let requestsList = [];
+        let requestsPage = 1;
+        let itemsPerPage = 10;
+        
+        // ==================== التبويبات ====================
+        function showTab(tabName) {
+            document.getElementById('availableTab').style.display = tabName === 'available' ? 'block' : 'none';
+            document.getElementById('myExamsTab').style.display = tabName === 'myExams' ? 'block' : 'none';
+            document.getElementById('requestsTab').style.display = tabName === 'requests' ? 'block' : 'none';
+            
+            const tabs = document.querySelectorAll('.tabs .tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tabName === 'available') loadAvailableExams();
+            else if (tabName === 'myExams') loadMyExams();
+            else if (tabName === 'requests') loadMyRequests();
+        }
+        
+        // ==================== الامتحانات المتاحة ====================
+        async function loadAvailableExams() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
+            try {
+                const search = document.getElementById('searchInput').value;
+                
+                // جلب الامتحانات المنشورة والمعلن عنها
+                let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)')
+                    .eq('status', 'published')
+                    .eq('is_announced', true);
+                
+                // جلب صف الطالب
+                const { data: student } = await sb
+                    .from('users')
+                    .select('class_id')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (student?.class_id) {
+                    query = query.eq('class_id', student.class_id);
+                }
+                
+                // جلب طلبات الطالب الحالية
+                const { data: myRequests } = await sb
+                    .from('exam_requests')
+                    .select('exam_id')
+                    .eq('student_id', currentUser.id);
+                
+                const requestedExamIds = new Set((myRequests || []).map(r => r.exam_id));
+                
+                const { data: exams, error } = await query;
+                if (error) throw error;
+                
+                let available = (exams || []).filter(e => !requestedExamIds.has(e.id));
+                
+                if (search) {
+                    available = available.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                availableExamsList = available;
+                
+                // Pagination
+                const totalPages = Math.ceil(availableExamsList.length / itemsPerPage);
+                const startIndex = (availablePage - 1) * itemsPerPage;
+                const paginatedExams = availableExamsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderAvailableExams(paginatedExams);
+                renderPagination('availablePagination', totalPages, availablePage, (page) => goToAvailablePage(page));
+                
+            } catch (error) {
+                console.error('Error loading available exams:', error);
+                document.getElementById('availableExamsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        function renderAvailableExams(exams) {
+            const container = document.getElementById('availableExamsList');
+            
+            if (exams.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد امتحانات متاحة</p></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const exam of exams) {
+                const examType = exam.exam_type === 'paid' ? `💰 ${exam.exam_price} جنيه` : '🆓 مجاني';
+                const card = document.createElement('div');
+                card.className = 'exam-card';
+                card.innerHTML = `
+                    <div>
+                        <h3>${escapeHtml(exam.title)}</h3>
+                        <p style="color: #64748b; margin: 8px 0;">${escapeHtml(exam.description || 'لا يوجد وصف')}</p>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px; color: #64748b;">
+                            <span>📖 ${exam.subjects?.name || '-'}</span>
+                            <span>🎓 ${exam.classes?.name || '-'}</span>
+                            <span>⏱️ ${exam.duration_minutes} دقيقة</span>
+                            <span>⭐ ${exam.passing_score}%</span>
+                            <span>${examType}</span>
+                        </div>
+                        <button class="btn btn-primary btn-sm" style="margin-top: 15px;" onclick="openApplyModal(${exam.id})">➕ التقديم</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToAvailablePage(page) {
+            availablePage = page;
+            loadAvailableExams();
+        }
+        
+        // ==================== فتح مودال التقديم ====================
+        async function openApplyModal(examId) {
+            const { data: exam, error } = await sb.from('exams').select('*').eq('id', examId).single();
+            if (error) return;
+            currentExam = exam;
+            
+            const methods = await fetchPaymentMethods();
+            
+            let content = `
+                <div class="form-group"><label>📝 الامتحان:</label> ${escapeHtml(exam.title)}</div>
+                <div class="form-group"><label>💰 السعر:</label> ${exam.exam_type === 'paid' ? `${exam.exam_price} جنيه` : 'مجاني'}</div>
+            `;
+            
+            if (exam.exam_type === 'paid') {
+                content += `
+                    <div class="form-group">
+                        <label>🎫 كود الخصم (اختياري)</label>
+                        <input type="text" id="couponCode" placeholder="أدخل كود الخصم إن وجد">
+                        <button class="btn btn-outline btn-sm" style="margin-top: 5px;" onclick="applyCoupon()">تطبيق</button>
+                        <div id="couponResult"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>💳 طريقة الدفع</label>
+                        <select id="paymentMethod">
+                            <option value="">-- اختر طريقة الدفع --</option>
+                            ${methods.map(m => `<option value="${m.id}">${escapeHtml(m.name)}${m.account_number ? ` (${m.account_number})` : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📸 إرفاق إيصال الدفع</label>
+                        <input type="file" id="paymentScreenshot" accept="image/*" capture="environment">
+                        <div id="screenshotPreview"></div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('applyContent').innerHTML = content;
+            document.getElementById('applyModal').style.display = 'flex';
+            
+            if (exam.exam_type === 'paid') {
+                document.getElementById('paymentScreenshot').addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            document.getElementById('screenshotPreview').innerHTML = `<img src="${ev.target.result}" style="max-width: 100%; max-height: 150px; border-radius: 12px; margin-top: 10px;">`;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+        
+        async function applyCoupon() {
+            const code = document.getElementById('couponCode').value;
+            if (!code) return;
+            
+            const result = await validateCoupon(code, currentExam.id, currentUser.id);
+            if (result.valid) {
+                currentCoupon = result.coupon;
+                let discountText = currentCoupon.discount_type === 'percentage' ? `${currentCoupon.discount_value}%` : `${currentCoupon.discount_value} جنيه`;
+                let finalPrice = currentExam.exam_price;
+                if (currentCoupon.discount_type === 'percentage') {
+                    finalPrice = currentExam.exam_price * (1 - currentCoupon.discount_value / 100);
+                } else {
+                    finalPrice = Math.max(0, currentExam.exam_price - currentCoupon.discount_value);
+                }
+                document.getElementById('couponResult').innerHTML = `<span style="color: #10b981;">✅ تم تطبيق الكوبون! السعر بعد الخصم: ${finalPrice.toFixed(2)} جنيه</span>`;
+            } else {
+                document.getElementById('couponResult').innerHTML = `<span style="color: #ef4444;">❌ ${result.message}</span>`;
+                currentCoupon = null;
+            }
+        }
+        
+        async function submitApplication() {
+            let finalAmount = currentExam.exam_price;
+            let discountAmount = 0;
+            
+            if (currentCoupon) {
+                if (currentCoupon.discount_type === 'percentage') {
+                    finalAmount = currentExam.exam_price * (1 - currentCoupon.discount_value / 100);
+                    discountAmount = currentExam.exam_price - finalAmount;
+                } else {
+                    finalAmount = Math.max(0, currentExam.exam_price - currentCoupon.discount_value);
+                    discountAmount = currentExam.exam_price - finalAmount;
+                }
+            }
+            
+            // إنشاء طلب الاشتراك
+            const { data: request, error: reqError } = await sb
+                .from('exam_requests')
+                .insert({
+                    exam_id: currentExam.id,
+                    student_id: currentUser.id,
+                    status: currentExam.exam_type === 'paid' ? 'pending_admin' : 'pending_admin',
+                    coupon_code: currentCoupon?.code || null,
+                    discount_amount: discountAmount,
+                    final_amount: finalAmount
+                })
+                .select()
+                .single();
+            
+            if (reqError) {
+                showToast('حدث خطأ', 'error');
+                return;
+            }
+            
+            // إذا كان مدفوع، إنشاء سجل دفع
+            if (currentExam.exam_type === 'paid') {
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const file = document.getElementById('paymentScreenshot').files[0];
+                
+                let screenshotUrl = null;
+                if (file) {
+                    const fileName = `payments/${Date.now()}_${currentUser.id}.jpg`;
+                    const { error: uploadError } = await sb.storage
+                        .from('exam-images')
+                        .upload(fileName, file);
+                    
+                    if (!uploadError) {
+                        const { data } = sb.storage.from('exam-images').getPublicUrl(fileName);
+                        screenshotUrl = data.publicUrl;
+                    }
+                }
+                
+                await sb.from('payments').insert({
+                    exam_request_id: request.id,
+                    student_id: currentUser.id,
+                    exam_id: currentExam.id,
+                    amount: finalAmount,
+                    payment_method_id: paymentMethod || null,
+                    payment_screenshot: screenshotUrl,
+                    status: 'pending'
+                });
+            }
+            
+            showToast('تم إرسال طلبك بنجاح، في انتظار الموافقة', 'success');
+            closeApplyModal();
+            loadAvailableExams();
+            loadMyRequests();
+        }
+        
+        // ==================== امتحاناتي (المقبول فيها) ====================
+        async function loadMyExams() {
+            const search = document.getElementById('myExamsSearch').value;
+            
+            const { data: enrollments, error } = await sb
+                .from('exam_enrollments')
+                .select('*, exam:exam_id(*, subjects:subject_id(name), classes:class_id(name))')
+                .eq('student_id', currentUser.id);
+            
+            if (error) throw error;
+            
+            let exams = (enrollments || []).map(e => e.exam).filter(e => e);
+            
+            if (search) {
+                exams = exams.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            myExamsList = exams;
+            
+            const totalPages = Math.ceil(myExamsList.length / itemsPerPage);
+            const startIndex = (myExamsPage - 1) * itemsPerPage;
+            const paginatedExams = myExamsList.slice(startIndex, startIndex + itemsPerPage);
+            
+            renderMyExams(paginatedExams);
+            renderPagination('myExamsPagination', totalPages, myExamsPage, (page) => goToMyExamsPage(page));
+        }
+        
+        function renderMyExams(exams) {
+            const container = document.getElementById('myExamsList');
+            
+            if (exams.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لم يتم قبولك في أي امتحان بعد</p></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const exam of exams) {
+                const card = document.createElement('div');
+                card.className = 'exam-card';
+                card.innerHTML = `
+                    <div>
+                        <h3>${escapeHtml(exam.title)}</h3>
+                        <p style="color: #64748b;">${escapeHtml(exam.description || 'لا يوجد وصف')}</p>
+                        <div style="display: flex; gap: 15px; font-size: 13px;">
+                            <span>⏱️ ${exam.duration_minutes} دقيقة</span>
+                            <span>⭐ ${exam.passing_score}%</span>
+                        </div>
+                        <button class="btn btn-success btn-sm" style="margin-top: 15px;" onclick="startExam(${exam.id})">🚀 بدء الامتحان</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToMyExamsPage(page) {
+            myExamsPage = page;
+            loadMyExams();
+        }
+        
+        function startExam(examId) {
+            localStorage.setItem('currentExamId', examId);
+            window.location.href = 'student-exam-attempt.html';
+        }
+        
+        // ==================== طلباتي ====================
+        async function loadMyRequests() {
+            const statusFilter = document.getElementById('requestStatusFilter').value;
+            
+            let query = sb.from('exam_requests').select('*, exam:exam_id(title, exam_type, exam_price)')
+                .eq('student_id', currentUser.id);
+            
+            if (statusFilter !== 'all') {
+                query = query.eq('status', statusFilter);
+            }
+            
+            const { data: requests, error } = await query.order('created_at', { ascending: false });
+            if (error) throw error;
+            
+            requestsList = requests || [];
+            
+            const totalPages = Math.ceil(requestsList.length / itemsPerPage);
+            const startIndex = (requestsPage - 1) * itemsPerPage;
+            const paginatedRequests = requestsList.slice(startIndex, startIndex + itemsPerPage);
+            
+            renderMyRequests(paginatedRequests);
+            renderPagination('requestsPagination', totalPages, requestsPage, (page) => goToRequestsPage(page));
+        }
+        
+        function renderMyRequests(requests) {
+            const container = document.getElementById('myRequestsList');
+            
+            if (!requests || requests.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد طلبات</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending_admin': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'approved': { text: '✅ مقبول', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            
+            container.innerHTML = '';
+            for (const req of requests) {
+                const examType = req.exam?.exam_type === 'paid' ? `💰 ${req.exam?.exam_price} جنيه` : '🆓 مجاني';
+                const card = document.createElement('div');
+                card.className = 'exam-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <div>
+                            <h4>${escapeHtml(req.exam?.title || 'امتحان')}</h4>
+                            <div style="font-size: 13px;">${examType}</div>
+                            ${req.final_amount ? `<div style="font-size: 13px;">💵 المبلغ: ${req.final_amount} جنيه</div>` : ''}
+                        </div>
+                        <div>
+                            <span class="badge ${statusMap[req.status]?.class}">${statusMap[req.status]?.text}</span>
+                            ${req.rejection_reason ? `<div style="font-size: 12px; color: #ef4444;">السبب: ${escapeHtml(req.rejection_reason)}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToRequestsPage(page) {
+            requestsPage = page;
+            loadMyRequests();
+        }
+        
+        // ==================== دوال مساعدة ====================
+        function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="(${onPageChange})(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="(${onPageChange})(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function closeApplyModal() {
+            document.getElementById('applyModal').style.display = 'none';
+            currentExam = null;
+            currentCoupon = null;
+        }
+        
+        window.showTab = showTab;
+        window.openApplyModal = openApplyModal;
+        window.applyCoupon = applyCoupon;
+        window.submitApplication = submitApplication;
+        window.startExam = startExam;
+        window.closeApplyModal = closeApplyModal;
+        window.goToAvailablePage = goToAvailablePage;
+        window.goToMyExamsPage = goToMyExamsPage;
+        window.goToRequestsPage = goToRequestsPage;
+        
+        // أحداث البحث
+        document.getElementById('searchInput').addEventListener('input', () => {
+            availablePage = 1;
+            loadAvailableExams();
+        });
+        document.getElementById('myExamsSearch').addEventListener('input', () => {
+            myExamsPage = 1;
+            loadMyExams();
+        });
+        
+        // تحميل أولي
+        loadAvailableExams();
+        loadMyExams();
+        loadMyRequests();
+    </script>
+</body>
+</html>

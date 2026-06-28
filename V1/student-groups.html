@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المجموعات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
+        .tab-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .group-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .group-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        .group-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .group-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        
+        .empty-state { text-align: center; padding: 60px; color: #64748b; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; align-items: stretch; }
+            .tabs { justify-content: center; }
+            .tab-btn { padding: 6px 16px; font-size: 12px; }
+            .group-info { flex-direction: column; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- الشريط العلوي -->
+        <div class="top-bar">
+            <div class="logo">📚 منصة الاختبارات</div>
+            <div class="user-info">
+                <span class="user-name">👋 مرحباً <span id="studentName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-exams.html'">📝 الامتحانات</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='student-results.html'">📊 نتائجي</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <!-- عنوان الصفحة -->
+        <div class="card">
+            <div class="card-header">
+                <h1>👥 المجموعات الدراسية</h1>
+                <p>استعرض المجموعات المتاحة وانضم إليها، أو تابع طلباتك</p>
+            </div>
+        </div>
+
+        <!-- تبويبات المجموعات -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('available')">🌍 المجموعات المتاحة</button>
+            <button class="tab-btn" onclick="showTab('myGroups')">✅ مجموعاتي</button>
+            <button class="tab-btn" onclick="showTab('requests')">📋 طلباتي</button>
+        </div>
+
+        <!-- تبويب المجموعات المتاحة -->
+        <div id="availableTab">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="searchAvailable" placeholder="بحث باسم المجموعة...">
+                    </div>
+                    <div class="filter-group">
+                        <label>🎓 الصف</label>
+                        <select id="filterClass">
+                            <option value="all">كل الصفوف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📖 المادة</label>
+                        <select id="filterSubject">
+                            <option value="all">كل المواد</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadAvailableGroups()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+                <div id="availableGroupsList"></div>
+                <div id="availablePagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- تبويب مجموعاتي -->
+        <div id="myGroupsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="searchMyGroups" placeholder="بحث باسم المجموعة...">
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadMyGroups()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="myGroupsList"></div>
+                <div id="myGroupsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- تبويب طلباتي -->
+        <div id="requestsTab" style="display: none;">
+            <div class="card">
+                <div class="tabs" style="margin-bottom: 15px; border-bottom: none;">
+                    <button class="tab-btn active" onclick="loadMyRequests('pending')">⏳ قيد المراجعة</button>
+                    <button class="tab-btn" onclick="loadMyRequests('approved')">✅ مقبولة</button>
+                    <button class="tab-btn" onclick="loadMyRequests('rejected')">❌ مرفوضة</button>
+                </div>
+                <div id="myRequestsList"></div>
+                <div id="requestsPagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        const currentUser = getUser();
+        if (!currentUser || (currentUser.role !== 'student' && currentUser.role !== 'admin')) {
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('studentName').innerHTML = currentUser.name || currentUser.username || 'طالب';
+        
+        // ==================== المتغيرات العامة ====================
+        let allGroups = [];
+        let myGroupIds = new Set();
+        let myMemberships = [];
+        let classesList = [];
+        let subjectsList = [];
+        
+        // Pagination variables
+        let availableGroupsList = [];
+        let availablePage = 1;
+        let myGroupsList = [];
+        let myGroupsPage = 1;
+        let requestsList = [];
+        let requestsPage = 1;
+        let requestsStatus = 'pending';
+        let itemsPerPage = 10;
+        
+        // ==================== التبويبات ====================
+        function showTab(tabName) {
+            document.getElementById('availableTab').style.display = tabName === 'available' ? 'block' : 'none';
+            document.getElementById('myGroupsTab').style.display = tabName === 'myGroups' ? 'block' : 'none';
+            document.getElementById('requestsTab').style.display = tabName === 'requests' ? 'block' : 'none';
+            
+            const tabs = document.querySelectorAll('.tabs .tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            if (tabName === 'available') tabs[0].classList.add('active');
+            else if (tabName === 'myGroups') tabs[1].classList.add('active');
+            else if (tabName === 'requests') tabs[2].classList.add('active');
+            
+            if (tabName === 'available') {
+                loadAvailableGroups();
+            } else if (tabName === 'myGroups') {
+                loadMyGroups();
+            } else if (tabName === 'requests') {
+                loadMyRequests('pending');
+            }
+        }
+        
+        // ==================== تحميل خيارات الفلاتر ====================
+        async function loadFiltersOptions() {
+            try {
+                const { data: classes } = await sb.from('classes').select('*').order('name');
+                classesList = classes || [];
+                const classFilter = document.getElementById('filterClass');
+                classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
+                for (const c of classesList) {
+                    classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+                }
+                
+                const { data: subjects } = await sb.from('subjects').select('*').order('name');
+                subjectsList = subjects || [];
+                const subjectFilter = document.getElementById('filterSubject');
+                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
+                for (const s of subjectsList) {
+                    subjectFilter.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+                }
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+        
+        // ==================== تحميل عضوية الطالب ====================
+        async function loadMyMemberships() {
+            try {
+                const { data: memberships } = await sb
+                    .from('group_members')
+                    .select('group_id, status, groups:group_id(id, name, description, class_id, subject_id, teacher_id, max_capacity, is_open, users:teacher_id(name))')
+                    .eq('student_id', currentUser.id);
+                
+                myMemberships = memberships || [];
+                myGroupIds.clear();
+                for (const m of myMemberships) {
+                    if (m.status === 'approved') {
+                        myGroupIds.add(m.group_id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading memberships:', error);
+                myMemberships = [];
+            }
+        }
+        
+        // ==================== المجموعات المتاحة ====================
+        async function loadAvailableGroups() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
+            try {
+                await loadMyMemberships();
+                
+                const search = document.getElementById('searchAvailable').value;
+                const classId = document.getElementById('filterClass').value;
+                const subjectId = document.getElementById('filterSubject').value;
+                
+                let query = sb.from('groups').select('*, classes:class_id(id, name), subjects:subject_id(id, name), users:teacher_id(id, name)').eq('is_open', true);
+                
+                // جلب صف الطالب للتصفية
+                const { data: student } = await sb
+                    .from('users')
+                    .select('class_id')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (student?.class_id) {
+                    query = query.eq('class_id', student.class_id);
+                }
+                
+                const { data: groups, error } = await query.order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                let available = (groups || []).filter(g => !myGroupIds.has(g.id));
+                
+                if (classId !== 'all') {
+                    available = available.filter(g => g.class_id == classId);
+                }
+                if (subjectId !== 'all') {
+                    available = available.filter(g => g.subject_id == subjectId);
+                }
+                if (search) {
+                    available = available.filter(g => g.name && g.name.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                // جلب عدد الأعضاء لكل مجموعة
+                for (const g of available) {
+                    const { count } = await sb
+                        .from('group_members')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('group_id', g.id)
+                        .eq('status', 'approved');
+                    g.member_count = count || 0;
+                }
+                
+                availableGroupsList = available;
+                
+                const totalPages = Math.ceil(availableGroupsList.length / itemsPerPage);
+                const startIndex = (availablePage - 1) * itemsPerPage;
+                const paginatedGroups = availableGroupsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderAvailableGroups(paginatedGroups);
+                renderPagination('availablePagination', totalPages, availablePage, (page) => goToAvailablePage(page));
+                
+            } catch (error) {
+                console.error('Error loading available groups:', error);
+                document.getElementById('availableGroupsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل المجموعات</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        function renderAvailableGroups(groups) {
+            const container = document.getElementById('availableGroupsList');
+            
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌍</div><p>لا توجد مجموعات متاحة للانضمام</p></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const g of groups) {
+                const className = g.classes ? g.classes.name : '-';
+                const subjectName = g.subjects ? g.subjects.name : '-';
+                const teacherName = g.users ? g.users.name : '-';
+                const memberText = (g.member_count || 0) + (g.max_capacity ? '/' + g.max_capacity : '');
+                
+                const card = document.createElement('div');
+                card.className = 'group-card';
+                card.innerHTML = `
+                    <div class="group-title">📌 ${escapeHtml(g.name)}</div>
+                    <p style="color: #64748b; margin: 8px 0;">${escapeHtml(g.description || 'لا يوجد وصف')}</p>
+                    <div class="group-info">
+                        <span>👨‍🏫 ${escapeHtml(teacherName)}</span>
+                        <span>🎓 ${escapeHtml(className)}</span>
+                        <span>📖 ${escapeHtml(subjectName)}</span>
+                        <span>👥 ${memberText} طالب</span>
+                        <span class="badge ${g.is_open ? 'badge-success' : 'badge-danger'}">${g.is_open ? 'مفتوح' : 'مغلق'}</span>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="joinGroup(${g.id})">➕ انضمام</button>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToAvailablePage(page) {
+            availablePage = page;
+            loadAvailableGroups();
+        }
+        
+        // ==================== الانضمام لمجموعة ====================
+        async function joinGroup(groupId) {
+            try {
+                const { data: existing } = await sb
+                    .from('group_members')
+                    .select('status')
+                    .eq('group_id', groupId)
+                    .eq('student_id', currentUser.id)
+                    .maybeSingle();
+                
+                if (existing) {
+                    if (existing.status === 'pending') {
+                        showToast('لديك طلب قيد المراجعة بالفعل', 'warning');
+                    } else if (existing.status === 'approved') {
+                        showToast('أنت بالفعل عضو في هذه المجموعة', 'warning');
+                    }
+                    return;
+                }
+                
+                const { error } = await sb
+                    .from('group_members')
+                    .insert({
+                        group_id: groupId,
+                        student_id: currentUser.id,
+                        status: 'pending',
+                        joined_at: new Date()
+                    });
+                
+                if (error) throw error;
+                
+                showToast('تم إرسال طلب الانضمام، في انتظار موافقة المعلم', 'success');
+                availablePage = 1;
+                loadAvailableGroups();
+                loadMyRequests('pending');
+                
+            } catch (error) {
+                console.error('Error joining group:', error);
+                showToast('حدث خطأ', 'error');
+            }
+        }
+        
+        // ==================== مجموعاتي ====================
+        async function loadMyGroups() {
+            try {
+                const search = document.getElementById('searchMyGroups').value;
+                
+                const { data: memberships } = await sb
+                    .from('group_members')
+                    .select('group_id, groups:group_id(*, classes:class_id(id, name), subjects:subject_id(id, name), users:teacher_id(id, name))')
+                    .eq('student_id', currentUser.id)
+                    .eq('status', 'approved');
+                
+                let myGroups = (memberships || []).map(m => m.groups).filter(g => g);
+                
+                if (search) {
+                    myGroups = myGroups.filter(g => g.name && g.name.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                // جلب عدد الأعضاء لكل مجموعة
+                for (const g of myGroups) {
+                    const { count } = await sb
+                        .from('group_members')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('group_id', g.id)
+                        .eq('status', 'approved');
+                    g.member_count = count || 0;
+                }
+                
+                myGroupsList = myGroups;
+                
+                const totalPages = Math.ceil(myGroupsList.length / itemsPerPage);
+                const startIndex = (myGroupsPage - 1) * itemsPerPage;
+                const paginatedGroups = myGroupsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderMyGroups(paginatedGroups);
+                renderPagination('myGroupsPagination', totalPages, myGroupsPage, (page) => goToMyGroupsPage(page));
+                
+            } catch (error) {
+                console.error('Error loading my groups:', error);
+                document.getElementById('myGroupsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل المجموعات</div>';
+            }
+        }
+        
+        function renderMyGroups(groups) {
+            const container = document.getElementById('myGroupsList');
+            
+            if (groups.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>لم تنضم إلى أي مجموعة بعد</p><button class="btn btn-primary" onclick="showTab(\'available\')">🔍 استعرض المجموعات المتاحة</button></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const g of groups) {
+                const className = g.classes ? g.classes.name : '-';
+                const subjectName = g.subjects ? g.subjects.name : '-';
+                const teacherName = g.users ? g.users.name : '-';
+                const memberText = (g.member_count || 0) + (g.max_capacity ? '/' + g.max_capacity : '');
+                
+                const card = document.createElement('div');
+                card.className = 'group-card';
+                card.innerHTML = `
+                    <div class="group-title">📌 ${escapeHtml(g.name)}</div>
+                    <p style="color: #64748b; margin: 8px 0;">${escapeHtml(g.description || 'لا يوجد وصف')}</p>
+                    <div class="group-info">
+                        <span>👨‍🏫 ${escapeHtml(teacherName)}</span>
+                        <span>🎓 ${escapeHtml(className)}</span>
+                        <span>📖 ${escapeHtml(subjectName)}</span>
+                        <span>👥 ${memberText} طالب</span>
+                        <span class="badge badge-success">✅ عضو</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToMyGroupsPage(page) {
+            myGroupsPage = page;
+            loadMyGroups();
+        }
+        
+        // ==================== طلباتي ====================
+        async function loadMyRequests(status) {
+            requestsStatus = status;
+            requestsPage = 1;
+            
+            const btns = document.querySelectorAll('#requestsTab .tabs .tab-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+            if (status === 'pending') btns[0].classList.add('active');
+            else if (status === 'approved') btns[1].classList.add('active');
+            else if (status === 'rejected') btns[2].classList.add('active');
+            
+            try {
+                const { data: memberships } = await sb
+                    .from('group_members')
+                    .select('*, groups:group_id(id, name, description, users:teacher_id(name))')
+                    .eq('student_id', currentUser.id)
+                    .eq('status', status);
+                
+                const requests = memberships || [];
+                requestsList = requests;
+                
+                const totalPages = Math.ceil(requestsList.length / itemsPerPage);
+                const startIndex = (requestsPage - 1) * itemsPerPage;
+                const paginatedRequests = requestsList.slice(startIndex, startIndex + itemsPerPage);
+                
+                renderMyRequests(paginatedRequests, status);
+                renderPagination('requestsPagination', totalPages, requestsPage, (page) => goToRequestsPage(page));
+                
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                document.getElementById('myRequestsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الطلبات</div>';
+            }
+        }
+        
+        function renderMyRequests(requests, status) {
+            const container = document.getElementById('myRequestsList');
+            
+            if (requests.length === 0) {
+                let emptyMessage = '';
+                if (status === 'pending') emptyMessage = 'لا توجد طلبات قيد المراجعة';
+                else if (status === 'approved') emptyMessage = 'لا توجد طلبات مقبولة';
+                else emptyMessage = 'لا توجد طلبات مرفوضة';
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>${emptyMessage}</p></div>`;
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'approved': { text: '✅ مقبول', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            const statusInfo = statusMap[status] || { text: status, class: 'badge-gray' };
+            
+            container.innerHTML = '';
+            for (const r of requests) {
+                const group = r.groups;
+                const teacherName = group?.users?.name || '-';
+                
+                const card = document.createElement('div');
+                card.className = 'group-card';
+                card.innerHTML = `
+                    <div class="group-title">📌 ${escapeHtml(group?.name || 'غير معروف')}</div>
+                    <p style="color: #64748b; margin: 8px 0;">${escapeHtml(group?.description || 'لا يوجد وصف')}</p>
+                    <div class="group-info">
+                        <span>👨‍🏫 ${escapeHtml(teacherName)}</span>
+                        <span>📅 ${formatDate(r.created_at)}</span>
+                        <span class="badge ${statusInfo.class}">${statusInfo.text}</span>
+                    </div>
+                    ${status === 'approved' ? `<button class="btn btn-primary btn-sm" onclick="showTab('myGroups')">👥 عرض المجموعة</button>` : ''}
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function goToRequestsPage(page) {
+            requestsPage = page;
+            loadMyRequests(requestsStatus);
+        }
+        
+        // ==================== دوال مساعدة ====================
+        function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="(${onPageChange})(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="(${onPageChange})(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="(${onPageChange})(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ==================== أحداث الفلاتر ====================
+        document.getElementById('searchAvailable').addEventListener('input', () => {
+            availablePage = 1;
+            loadAvailableGroups();
+        });
+        document.getElementById('filterClass').addEventListener('change', () => {
+            availablePage = 1;
+            loadAvailableGroups();
+        });
+        document.getElementById('filterSubject').addEventListener('change', () => {
+            availablePage = 1;
+            loadAvailableGroups();
+        });
+        document.getElementById('searchMyGroups').addEventListener('input', () => {
+            myGroupsPage = 1;
+            loadMyGroups();
+        });
+        
+        window.showTab = showTab;
+        window.joinGroup = joinGroup;
+        window.loadMyRequests = loadMyRequests;
+        window.goToAvailablePage = goToAvailablePage;
+        window.goToMyGroupsPage = goToMyGroupsPage;
+        window.goToRequestsPage = goToRequestsPage;
+        
+        // ==================== تحميل أولي ====================
+        async function init() {
+            await loadFiltersOptions();
+            await loadAvailableGroups();
+            await loadMyMemberships();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

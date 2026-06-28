@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الامتحانات - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .tab-btn:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
+        .tab-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .exam-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .exam-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        
+        .request-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #6366f1;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+        }
+        .row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .screenshot-img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .row-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- شريط المدير -->
+        <div id="adminHeader" class="admin-bar" style="display: none;">
+            <div><span style="font-size:20px;">👑</span> إدارة الامتحانات - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+        
+        <!-- شريط المعلم -->
+        <div id="teacherHeader" class="top-bar" style="display: none;">
+            <div class="logo">📚 منصة الاختبارات - إدارة الامتحانات</div>
+            <div class="user-info">
+                <span class="user-name">👋 مرحباً <span id="teacherName"></span></span>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <!-- التبويبات -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('exams')">📝 الامتحانات</button>
+            <button class="tab-btn" onclick="showTab('requests')">👨‍🎓 طلبات الانضمام</button>
+            <button class="tab-btn" id="paymentsTabBtn" onclick="showTab('payments')" style="display: none;">💰 المدفوعات</button>
+            <button class="tab-btn" id="couponsTabBtn" onclick="showTab('coupons')" style="display: none;">🎫 الكوبونات</button>
+            <button class="tab-btn" id="settingsTabBtn" onclick="showTab('settings')" style="display: none;">⚙️ الإعدادات</button>
+        </div>
+
+        <!-- ==================== تبويب الامتحانات ==================== -->
+        <div id="examsTab">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="examSearch" placeholder="بحث باسم الامتحان...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="examStatusFilter">
+                            <option value="all">كل الحالات</option>
+                            <option value="draft">مسودة</option>
+                            <option value="published">منشور</option>
+                            <option value="closed">مغلق</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>🎓 الصف</label>
+                        <select id="classFilter" onchange="onClassChange()">
+                            <option value="all">كل الصفوف</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📖 المادة</label>
+                        <select id="subjectFilter" onchange="loadExams()">
+                            <option value="all">كل المواد</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openCreateExamModal()">➕ إنشاء امتحان</button>
+                        <button class="btn btn-outline" onclick="loadExams()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+                <div id="examsList"></div>
+                <div id="examsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- ==================== تبويب طلبات الانضمام ==================== -->
+        <div id="requestsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="requestSearch" placeholder="بحث باسم الطالب أو رقم الهاتف...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 الامتحان</label>
+                        <select id="requestExamFilter" onchange="loadRequests()">
+                            <option value="all">كل الامتحانات</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="requestStatusFilter" onchange="loadRequests()">
+                            <option value="all">كل الحالات</option>
+                            <option value="pending_admin">⏳ قيد المراجعة</option>
+                            <option value="approved">✅ مقبول</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-success btn-sm" id="approveAllBtn" style="display: none;" onclick="approveAllRequests()">✅ قبول الكل</button>
+                        <button class="btn btn-outline" onclick="loadRequests()">🔄 تحديث</button>
+                    </div>
+                </div>
+                
+                <div class="stats-grid" id="requestsStats"></div>
+                <div id="requestsList"></div>
+                <div id="requestsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- ==================== تبويب المدفوعات (للأدمن فقط) ==================== -->
+        <div id="paymentsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="paymentSearch" placeholder="بحث باسم الطالب...">
+                    </div>
+                    <div class="filter-group">
+                        <label>📝 الامتحان</label>
+                        <select id="paymentExamFilter" onchange="loadPayments()">
+                            <option value="all">كل الامتحانات</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📋 الحالة</label>
+                        <select id="paymentStatusFilter" onchange="loadPayments()">
+                            <option value="all">كل الحالات</option>
+                            <option value="pending">⏳ قيد المراجعة</option>
+                            <option value="confirmed">✅ مؤكد</option>
+                            <option value="rejected">❌ مرفوض</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline" onclick="loadPayments()">🔄 تحديث</button>
+                        <button class="btn btn-warning" onclick="exportPaymentsToExcel()">📊 تصدير المدفوعات</button>
+                    </div>
+                </div>
+                <div id="paymentsList"></div>
+                <div id="paymentsPagination" class="pagination"></div>
+            </div>
+        </div>
+
+        <!-- ==================== تبويب الكوبونات (للأدمن فقط) ==================== -->
+        <div id="couponsTab" style="display: none;">
+            <div class="card">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>🔍 بحث</label>
+                        <input type="text" id="couponSearch" placeholder="بحث بكود الكوبون...">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openCreateCouponModal()">➕ إنشاء كوبون</button>
+                        <button class="btn btn-outline" onclick="loadCoupons()">🔄 تحديث</button>
+                    </div>
+                </div>
+                <div id="couponsList"></div>
+            </div>
+        </div>
+
+        <!-- ==================== تبويب الإعدادات (للأدمن فقط) ==================== -->
+        <div id="settingsTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>💳 طرق الدفع</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openAddPaymentMethodModal()">➕ إضافة طريقة دفع</button>
+                </div>
+                <div id="paymentMethodsList"></div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>📊 تصدير البيانات</h3>
+                </div>
+                <div class="filter-row">
+                    <button class="btn btn-info" onclick="exportAllData()">📥 تصدير جميع البيانات</button>
+                    <button class="btn btn-warning" onclick="exportStudentsData()">👨‍🎓 تصدير بيانات الطلاب</button>
+                    <button class="btn btn-success" onclick="exportPaymentsData()">💰 تصدير المدفوعات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إنشاء/تعديل امتحان -->
+    <div id="examModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="examModalTitle">➕ إنشاء امتحان جديد</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeExamModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>📝 عنوان الامتحان *</label>
+                <input type="text" id="examTitle" placeholder="مثال: اختبار الرياضيات">
+            </div>
+            <div class="form-group">
+                <label>📖 وصف الامتحان</label>
+                <textarea id="examDesc" rows="3" placeholder="وصف الامتحان"></textarea>
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>🎓 الصف *</label>
+                    <select id="examClass" required></select>
+                </div>
+                <div class="form-group">
+                    <label>📖 المادة *</label>
+                    <select id="examSubject" required></select>
+                </div>
+                <div class="form-group">
+                    <label>⏱️ المدة (دقائق)</label>
+                    <input type="number" id="examDuration" value="60">
+                </div>
+                <div class="form-group">
+                    <label>⭐ درجة النجاح (%)</label>
+                    <input type="number" id="examPassingScore" value="50">
+                </div>
+            </div>
+            <div class="row-2" id="examTypeGroup" style="display: none;">
+                <div class="form-group">
+                    <label>💰 نوع الامتحان</label>
+                    <select id="examType" onchange="togglePriceField()">
+                        <option value="free">مجاني</option>
+                        <option value="paid">مدفوع</option>
+                    </select>
+                </div>
+                <div class="form-group" id="examPriceGroup" style="display: none;">
+                    <label>💵 السعر (جنيه)</label>
+                    <input type="number" id="examPrice" value="0" step="10">
+                </div>
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📅 تاريخ البدء</label>
+                    <input type="datetime-local" id="examStartDate">
+                </div>
+                <div class="form-group">
+                    <label>📅 تاريخ الانتهاء</label>
+                    <input type="datetime-local" id="examEndDate">
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveExam()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeExamModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال عرض تفاصيل الطلب والإيصال -->
+    <div id="requestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 تفاصيل الطلب</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeRequestModal()">✖</button>
+            </div>
+            <div id="requestDetails"></div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-success" id="approveRequestBtn" onclick="approveCurrentRequest()">✅ قبول</button>
+                <button class="btn btn-danger" id="rejectRequestBtn" onclick="rejectCurrentRequest()">❌ رفض</button>
+                <button class="btn btn-outline" onclick="closeRequestModal()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إنشاء كوبون -->
+    <div id="couponModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎫 إنشاء كوبون خصم</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeCouponModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>🏷️ كود الكوبون *</label>
+                <input type="text" id="couponCode" placeholder="مثال: SUMMER50">
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📊 نوع الخصم</label>
+                    <select id="couponDiscountType">
+                        <option value="percentage">نسبة مئوية (%)</option>
+                        <option value="fixed">قيمة ثابتة (جنيه)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>💰 قيمة الخصم</label>
+                    <input type="number" id="couponDiscountValue" value="10" step="5">
+                </div>
+            </div>
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📅 تاريخ البدء</label>
+                    <input type="datetime-local" id="couponValidFrom">
+                </div>
+                <div class="form-group">
+                    <label>📅 تاريخ الانتهاء</label>
+                    <input type="datetime-local" id="couponValidUntil">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>🎯 الامتحان المستهدف (اختياري)</label>
+                <select id="couponTargetExam">
+                    <option value="">كل الامتحانات</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>👨‍🎓 طلاب محددون (اختياري)</label>
+                <input type="text" id="couponTargetStudents" placeholder="مثال: 1,2,3">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveCoupon()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeCouponModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة/تعديل طريقة دفع -->
+    <div id="paymentMethodModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="paymentMethodModalTitle">➕ إضافة طريقة دفع</h3>
+                <button class="btn btn-outline btn-sm" onclick="closePaymentMethodModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>🏦 اسم الطريقة *</label>
+                <input type="text" id="methodName" placeholder="مثال: فودافون كاش">
+            </div>
+            <div class="form-group">
+                <label>📝 الوصف</label>
+                <textarea id="methodDesc" rows="2" placeholder="وصف طريقة الدفع (اختياري)"></textarea>
+            </div>
+            <div class="form-group">
+                <label>🔢 رقم الحساب</label>
+                <input type="text" id="methodAccountNumber" placeholder="رقم الحساب أو المحفظة">
+            </div>
+            <div class="form-group">
+                <label>👤 مالك الحساب</label>
+                <input type="text" id="methodAccountOwner" placeholder="اسم صاحب الحساب">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="savePaymentMethod()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closePaymentMethodModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        const currentUser = getUser();
+        if (!currentUser) window.location.href = 'index.html';
+        
+        const isAdmin = (currentUser.role === 'admin');
+        let currentExamId = null;
+        let currentRequestId = null;
+        let currentPaymentScreenshot = null;
+        let currentEditMethodId = null;
+        
+        // Pagination variables
+        let allExams = [];
+        let examsPage = 1;
+        let itemsPerPage = 10;
+        
+        let allRequests = [];
+        let requestsPage = 1;
+        
+        // ==================== دالة تحميل المواد حسب الصف ====================
+        async function loadSubjectsByClass(classId) {
+            const subjectFilter = document.getElementById('subjectFilter');
+            
+            if (!classId || classId === 'all') {
+                // عرض جميع المواد
+                subjectFilter.innerHTML = '<option value="all">📖 كل المواد</option>';
+                const subjects = await fetchSubjects();
+                for (const subject of subjects) {
+                    subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                }
+            } else {
+                // عرض مواد الصف فقط
+                subjectFilter.innerHTML = '<option value="all">📖 المواد المرتبطة بالصف</option>';
+                const classSubjects = await fetchClassSubjects(parseInt(classId));
+                const subjects = classSubjects.map(cs => cs.subjects).filter(s => s);
+                
+                if (subjects.length === 0) {
+                    subjectFilter.innerHTML = '<option value="all">📖 لا توجد مواد لهذا الصف</option>';
+                } else {
+                    for (const subject of subjects) {
+                        subjectFilter.innerHTML += `<option value="${subject.id}">${escapeHtml(subject.name)}</option>`;
+                    }
+                }
+            }
+        }
+        
+        // ==================== عند تغيير الصف ====================
+        async function onClassChange() {
+            const classId = document.getElementById('classFilter').value;
+            await loadSubjectsByClass(classId);
+            examsPage = 1;
+            loadExams();
+        }
+        
+        // ==================== إعداد الواجهة حسب الدور ====================
+        function setupUI() {
+            if (isAdmin) {
+                document.getElementById('adminHeader').style.display = 'flex';
+                document.getElementById('teacherHeader').style.display = 'none';
+                document.getElementById('adminName').innerHTML = currentUser.name;
+                document.getElementById('paymentsTabBtn').style.display = 'inline-block';
+                document.getElementById('couponsTabBtn').style.display = 'inline-block';
+                document.getElementById('settingsTabBtn').style.display = 'inline-block';
+                document.getElementById('examTypeGroup').style.display = 'flex';
+            } else {
+                document.getElementById('adminHeader').style.display = 'none';
+                document.getElementById('teacherHeader').style.display = 'flex';
+                document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
+                document.getElementById('examTypeGroup').style.display = 'none';
+            }
+            loadClassesAndSubjects();
+            loadExams();
+            loadExamsFilter();
+        }
+        
+        // ==================== تحميل الصفوف والمواد ====================
+        async function loadClassesAndSubjects() {
+            const classes = await fetchClasses();
+            const classFilter = document.getElementById('classFilter');
+            classFilter.innerHTML = '<option value="all">🎓 كل الصفوف</option>';
+            for (const c of classes) {
+                classFilter.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            }
+            
+            // تحميل المواد الأولية
+            await loadSubjectsByClass('all');
+            
+            const classSelect = document.getElementById('examClass');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            for (const c of classes) {
+                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            }
+            
+            const subjects = await fetchSubjects();
+            const subjectSelect = document.getElementById('examSubject');
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            for (const s of subjects) {
+                subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+            }
+        }
+        
+        // ==================== التبويبات ====================
+        function showTab(tabName) {
+            document.getElementById('examsTab').style.display = tabName === 'exams' ? 'block' : 'none';
+            document.getElementById('requestsTab').style.display = tabName === 'requests' ? 'block' : 'none';
+            document.getElementById('paymentsTab').style.display = tabName === 'payments' ? 'block' : 'none';
+            document.getElementById('couponsTab').style.display = tabName === 'coupons' ? 'block' : 'none';
+            document.getElementById('settingsTab').style.display = tabName === 'settings' ? 'block' : 'none';
+            
+            const tabs = document.querySelectorAll('.tabs .tab-btn');
+            tabs.forEach(btn => btn.classList.remove('active'));
+            
+            for (let i = 0; i < tabs.length; i++) {
+                const btn = tabs[i];
+                if ((tabName === 'exams' && btn.innerText.includes('الامتحانات')) ||
+                    (tabName === 'requests' && btn.innerText.includes('طلبات')) ||
+                    (tabName === 'payments' && btn.innerText.includes('مدفوعات')) ||
+                    (tabName === 'coupons' && btn.innerText.includes('كوبونات')) ||
+                    (tabName === 'settings' && btn.innerText.includes('إعدادات'))) {
+                    btn.classList.add('active');
+                    break;
+                }
+            }
+            
+            if (tabName === 'exams') loadExams();
+            else if (tabName === 'requests') loadRequests();
+            else if (tabName === 'payments') loadPayments();
+            else if (tabName === 'coupons') loadCoupons();
+            else if (tabName === 'settings') loadPaymentMethods();
+        }
+        
+        // ==================== تحميل الامتحانات مع Pagination ====================
+        async function loadExams() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
+            try {
+                const search = document.getElementById('examSearch').value;
+                const status = document.getElementById('examStatusFilter').value;
+                const classId = document.getElementById('classFilter').value;
+                const subjectId = document.getElementById('subjectFilter').value;
+                
+                let query = sb.from('exams').select('*, subjects:subject_id(name), classes:class_id(name)');
+                
+                if (!isAdmin) {
+                    query = query.eq('teacher_id', currentUser.id);
+                }
+                if (status !== 'all') {
+                    query = query.eq('status', status);
+                }
+                if (classId !== 'all') {
+                    query = query.eq('class_id', parseInt(classId));
+                }
+                if (subjectId !== 'all') {
+                    query = query.eq('subject_id', parseInt(subjectId));
+                }
+                
+                const { data: exams, error } = await query.order('created_at', { ascending: false });
+                if (error) throw error;
+                
+                let filtered = exams || [];
+                if (search) {
+                    filtered = filtered.filter(e => e.title.toLowerCase().includes(search.toLowerCase()));
+                }
+                
+                allExams = filtered;
+                
+                const totalPages = Math.ceil(allExams.length / itemsPerPage);
+                const startIndex = (examsPage - 1) * itemsPerPage;
+                const paginatedExams = allExams.slice(startIndex, startIndex + itemsPerPage);
+                
+                await renderExamsList(paginatedExams);
+                renderExamsPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading exams:', error);
+                document.getElementById('examsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+            } finally {
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        async function renderExamsList(exams) {
+            const container = document.getElementById('examsList');
+            
+            if (exams.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>لا توجد امتحانات</p></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            for (const exam of exams) {
+                let stats = { total_requests: 0, approved_count: 0, pending_count: 0 };
+                try {
+                    stats = await fetchExamStats(exam.id);
+                } catch(e) { console.error('Stats error:', e); }
+                
+                const statusClass = exam.status === 'published' ? 'badge-success' : (exam.status === 'draft' ? 'badge-warning' : 'badge-danger');
+                const statusText = exam.status === 'published' ? 'منشور' : (exam.status === 'draft' ? 'مسودة' : 'مغلق');
+                const examType = exam.exam_type === 'paid' ? `💰 ${exam.exam_price} جنيه` : '🆓 مجاني';
+                
+                const card = document.createElement('div');
+                card.className = 'exam-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1;">
+                            <h3>${escapeHtml(exam.title)}</h3>
+                            <p style="color: #64748b; margin: 8px 0;">${escapeHtml(exam.description || 'لا يوجد وصف')}</p>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px; color: #64748b;">
+                                <span>📖 ${exam.subjects?.name || '-'}</span>
+                                <span>🎓 ${exam.classes?.name || '-'}</span>
+                                <span>⏱️ ${exam.duration_minutes} دقيقة</span>
+                                <span>⭐ ${exam.passing_score}%</span>
+                                <span>${examType}</span>
+                                <span class="badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div style="margin-top: 10px; font-size: 12px;">
+                                <span>📊 الطلبات: ${stats.total_requests || 0} | ✅ المقبولون: ${stats.approved_count || 0} | ⏳ المنتظرون: ${stats.pending_count || 0}</span>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm" onclick="editExam(${exam.id})">✏️ تعديل</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteExamConfirm(${exam.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function renderExamsPagination(totalPages) {
+            const container = document.getElementById('examsPagination');
+            if (!container) return;
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (examsPage > 1) html += `<button class="page-btn" onclick="goToExamsPage(${examsPage - 1})">← السابق</button>`;
+            
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === examsPage ? 'active' : ''}" onclick="goToExamsPage(${i})">${i}</button>`;
+            }
+            
+            if (examsPage < totalPages) html += `<button class="page-btn" onclick="goToExamsPage(${examsPage + 1})">التالي →</button>`;
+            
+            container.innerHTML = html;
+        }
+        
+        function goToExamsPage(page) {
+            examsPage = page;
+            loadExams();
+        }
+        
+        // ==================== إنشاء/تعديل امتحان ====================
+        function openCreateExamModal() {
+            currentExamId = null;
+            document.getElementById('examModalTitle').innerHTML = '➕ إنشاء امتحان جديد';
+            document.getElementById('examTitle').value = '';
+            document.getElementById('examDesc').value = '';
+            document.getElementById('examDuration').value = '60';
+            document.getElementById('examPassingScore').value = '50';
+            document.getElementById('examType').value = 'free';
+            document.getElementById('examPrice').value = '0';
+            document.getElementById('examStartDate').value = '';
+            document.getElementById('examEndDate').value = '';
+            document.getElementById('examClass').value = '';
+            document.getElementById('examSubject').value = '';
+            document.getElementById('examModal').style.display = 'flex';
+        }
+        
+        async function editExam(id) {
+            const { data: exam, error } = await sb.from('exams').select('*').eq('id', id).single();
+            if (error) return;
+            
+            currentExamId = id;
+            document.getElementById('examModalTitle').innerHTML = '✏️ تعديل امتحان';
+            document.getElementById('examTitle').value = exam.title || '';
+            document.getElementById('examDesc').value = exam.description || '';
+            document.getElementById('examDuration').value = exam.duration_minutes || 60;
+            document.getElementById('examPassingScore').value = exam.passing_score || 50;
+            document.getElementById('examType').value = exam.exam_type || 'free';
+            document.getElementById('examPrice').value = exam.exam_price || 0;
+            document.getElementById('examStartDate').value = exam.start_date || '';
+            document.getElementById('examEndDate').value = exam.end_date || '';
+            document.getElementById('examClass').value = exam.class_id || '';
+            document.getElementById('examSubject').value = exam.subject_id || '';
+            document.getElementById('examModal').style.display = 'flex';
+        }
+        
+        async function saveExam() {
+            const examData = {
+                title: document.getElementById('examTitle').value,
+                description: document.getElementById('examDesc').value,
+                class_id: parseInt(document.getElementById('examClass').value),
+                subject_id: parseInt(document.getElementById('examSubject').value),
+                duration_minutes: parseInt(document.getElementById('examDuration').value),
+                passing_score: parseInt(document.getElementById('examPassingScore').value),
+                start_date: document.getElementById('examStartDate').value || null,
+                end_date: document.getElementById('examEndDate').value || null,
+                status: 'draft'
+            };
+            
+            if (isAdmin) {
+                examData.exam_type = document.getElementById('examType').value;
+                examData.exam_price = parseFloat(document.getElementById('examPrice').value);
+                examData.created_by = currentUser.id;
+            } else {
+                examData.teacher_id = currentUser.id;
+                examData.exam_type = 'free';
+                examData.exam_price = 0;
+            }
+            
+            let result;
+            if (currentExamId) {
+                const { error } = await sb.from('exams').update(examData).eq('id', currentExamId);
+                result = !error;
+            } else {
+                const { error } = await sb.from('exams').insert(examData);
+                result = !error;
+            }
+            
+            if (result) {
+                closeExamModal();
+                examsPage = 1;
+                loadExams();
+                showToast('تم حفظ الامتحان', 'success');
+            } else {
+                showToast('حدث خطأ', 'error');
+            }
+        }
+        
+        // ==================== طلبات الانضمام ====================
+        async function loadExamsFilter() {
+            let query = sb.from('exams').select('id, title');
+            if (!isAdmin) query = query.eq('teacher_id', currentUser.id);
+            const { data: exams } = await query;
+            const filter = document.getElementById('requestExamFilter');
+            filter.innerHTML = '<option value="all">كل الامتحانات</option>';
+            (exams || []).forEach(e => {
+                filter.innerHTML += `<option value="${e.id}">${escapeHtml(e.title)}</option>`;
+            });
+        }
+        
+        async function loadRequests() {
+            const examId = document.getElementById('requestExamFilter').value;
+            const status = document.getElementById('requestStatusFilter').value;
+            const search = document.getElementById('requestSearch').value;
+            
+            let filters = {};
+            if (examId !== 'all') filters.exam_id = parseInt(examId);
+            if (status !== 'all') filters.status = status;
+            
+            let requests = await fetchExamRequests(filters);
+            
+            if (search) {
+                requests = requests.filter(r => 
+                    (r.student?.name && r.student.name.toLowerCase().includes(search.toLowerCase())) ||
+                    (r.student?.phone && r.student.phone.includes(search))
+                );
+            }
+            
+            allRequests = requests;
+            
+            const pendingCount = requests.filter(r => r.status === 'pending_admin').length;
+            const approvedCount = requests.filter(r => r.status === 'approved').length;
+            const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+            
+            document.getElementById('requestsStats').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${requests.length}</div><div>📋 إجمالي الطلبات</div></div>
+                <div class="stat-card"><div class="stat-number">${pendingCount}</div><div>⏳ قيد المراجعة</div></div>
+                <div class="stat-card"><div class="stat-number">${approvedCount}</div><div>✅ مقبول</div></div>
+                <div class="stat-card"><div class="stat-number">${rejectedCount}</div><div>❌ مرفوض</div></div>
+            `;
+            
+            const approveAllBtn = document.getElementById('approveAllBtn');
+            approveAllBtn.style.display = (examId !== 'all' && pendingCount > 0 && status === 'all') ? 'inline-flex' : 'none';
+            
+            renderRequestsList(requests);
+        }
+        
+        function renderRequestsList(requests) {
+            const container = document.getElementById('requestsList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="empty-state">📭 لا توجد طلبات</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending_admin': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'approved': { text: '✅ مقبول', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            
+            container.innerHTML = '';
+            for (const req of requests) {
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h4>${escapeHtml(req.student?.name || 'طالب')}</h4>
+                            <div style="font-size: 13px; color: #64748b;">📞 ${req.student?.phone || '-'}</div>
+                            <div style="font-size: 13px; color: #64748b;">📝 ${escapeHtml(req.exam?.title || 'امتحان')}</div>
+                            ${req.final_amount ? `<div style="font-size: 13px; color: #10b981;">💰 ${req.final_amount} جنيه</div>` : ''}
+                            ${req.coupon_code ? `<div style="font-size: 13px; color: #f59e0b;">🎫 كوبون: ${req.coupon_code}</div>` : ''}
+                        </div>
+                        <div>
+                            <span class="badge ${statusMap[req.status]?.class}">${statusMap[req.status]?.text}</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-info btn-sm" onclick="viewRequestDetails(${req.id})">📋 عرض</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        async function viewRequestDetails(requestId) {
+            currentRequestId = requestId;
+            const { data: req, error } = await sb
+                .from('exam_requests')
+                .select('*, student:student_id(id, name, phone), exam:exam_id(id, title, exam_type, exam_price)')
+                .eq('id', requestId)
+                .single();
+            
+            if (error) return;
+            
+            const { data: payment } = await sb
+                .from('payments')
+                .select('*')
+                .eq('exam_request_id', requestId)
+                .single();
+            
+            let paymentHtml = '';
+            if (payment && payment.payment_screenshot) {
+                currentPaymentScreenshot = payment.payment_screenshot;
+                paymentHtml = `
+                    <div class="form-group"><label>💰 المبلغ المدفوع: ${payment.amount} جنيه</label></div>
+                    <div class="form-group">
+                        <label>📸 إيصال الدفع:</label>
+                        <img src="${payment.payment_screenshot}" class="screenshot-img" onclick="window.open(this.src)">
+                        <a href="${payment.payment_screenshot}" download class="btn btn-outline btn-sm">📥 تحميل الإيصال</a>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('requestDetails').innerHTML = `
+                <div class="form-group"><label>👨‍🎓 الطالب:</label> ${escapeHtml(req.student?.name)}</div>
+                <div class="form-group"><label>📞 رقم الهاتف:</label> ${req.student?.phone || '-'}</div>
+                <div class="form-group"><label>📝 الامتحان:</label> ${escapeHtml(req.exam?.title)}</div>
+                <div class="form-group"><label>💰 نوع الامتحان:</label> ${req.exam?.exam_type === 'paid' ? `مدفوع (${req.exam?.exam_price} جنيه)` : 'مجاني'}</div>
+                ${req.coupon_code ? `<div class="form-group"><label>🎫 كوبون الخصم:</label> ${req.coupon_code}</div>` : ''}
+                ${req.final_amount ? `<div class="form-group"><label>💰 المبلغ النهائي:</label> ${req.final_amount} جنيه</div>` : ''}
+                ${paymentHtml}
+                ${req.rejection_reason ? `<div class="form-group"><label>❌ سبب الرفض:</label> ${escapeHtml(req.rejection_reason)}</div>` : ''}
+            `;
+            
+            document.getElementById('requestModal').style.display = 'flex';
+        }
+        
+        async function approveCurrentRequest() {
+            await updateExamRequestStatus(currentRequestId, 'approved');
+            closeRequestModal();
+            loadRequests();
+            loadExams();
+            showToast('تم قبول الطلب', 'success');
+        }
+        
+        async function rejectCurrentRequest() {
+            const reason = prompt('سبب الرفض:');
+            if (reason === null) return;
+            await updateExamRequestStatus(currentRequestId, 'rejected', reason);
+            closeRequestModal();
+            loadRequests();
+            loadExams();
+            showToast('تم رفض الطلب', 'success');
+        }
+        
+        async function approveAllRequests() {
+            const examId = document.getElementById('requestExamFilter').value;
+            if (examId === 'all') return;
+            if (confirm('هل أنت متأكد من قبول جميع الطلبات لهذا الامتحان؟')) {
+                await approveAllExamRequests(parseInt(examId));
+                loadRequests();
+                loadExams();
+                showToast('تم قبول جميع الطلبات', 'success');
+            }
+        }
+        
+        // ==================== المدفوعات (للأدمن) ====================
+        async function loadPayments() {
+            const examId = document.getElementById('paymentExamFilter').value;
+            const status = document.getElementById('paymentStatusFilter').value;
+            const search = document.getElementById('paymentSearch').value;
+            
+            let filters = {};
+            if (examId !== 'all') filters.exam_id = parseInt(examId);
+            if (status !== 'all') filters.status = status;
+            
+            let payments = await fetchPayments(filters);
+            
+            if (search) {
+                payments = payments.filter(p => p.student?.name && p.student.name.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('paymentsList');
+            if (payments.length === 0) {
+                container.innerHTML = '<div class="empty-state">💰 لا توجد مدفوعات</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '⏳ قيد المراجعة', class: 'badge-warning' },
+                'confirmed': { text: '✅ مؤكد', class: 'badge-success' },
+                'rejected': { text: '❌ مرفوض', class: 'badge-danger' }
+            };
+            
+            container.innerHTML = '';
+            for (const pay of payments) {
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h4>${escapeHtml(pay.student?.name || 'طالب')}</h4>
+                            <div style="font-size: 13px; color: #64748b;">📝 ${escapeHtml(pay.exam?.title || 'امتحان')}</div>
+                            <div style="font-size: 13px; color: #10b981;">💰 ${pay.amount} جنيه</div>
+                            <div style="font-size: 13px;">💳 ${pay.payment_method?.name || '-'}</div>
+                        </div>
+                        <div>
+                            <span class="badge ${statusMap[pay.status]?.class}">${statusMap[pay.status]?.text}</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-info btn-sm" onclick="viewPaymentDetails(${pay.id})">📋 عرض</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        // ==================== كوبونات الخصم ====================
+        async function loadCoupons() {
+            const search = document.getElementById('couponSearch').value;
+            let coupons = await fetchCoupons({});
+            
+            if (search) {
+                coupons = coupons.filter(c => c.code.toLowerCase().includes(search.toLowerCase()));
+            }
+            
+            const container = document.getElementById('couponsList');
+            if (coupons.length === 0) {
+                container.innerHTML = '<div class="empty-state">🎫 لا توجد كوبونات</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const coupon of coupons) {
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h4>🏷️ ${escapeHtml(coupon.code)}</h4>
+                            <div>${coupon.discount_type === 'percentage' ? `${coupon.discount_value}% خصم` : `${coupon.discount_value} جنيه خصم`}</div>
+                            <div style="font-size: 13px;">📊 استخدم ${coupon.used_count || 0}/${coupon.usage_limit || '∞'}</div>
+                        </div>
+                        <div>
+                            <span class="badge ${coupon.is_active ? 'badge-success' : 'badge-danger'}">${coupon.is_active ? 'نشط' : 'غير نشط'}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function openCreateCouponModal() {
+            document.getElementById('couponCode').value = '';
+            document.getElementById('couponDiscountValue').value = '10';
+            document.getElementById('couponValidFrom').value = '';
+            document.getElementById('couponValidUntil').value = '';
+            document.getElementById('couponTargetStudents').value = '';
+            
+            sb.from('exams').select('id, title').then(({ data }) => {
+                const select = document.getElementById('couponTargetExam');
+                select.innerHTML = '<option value="">كل الامتحانات</option>';
+                (data || []).forEach(e => {
+                    select.innerHTML += `<option value="${e.id}">${escapeHtml(e.title)}</option>`;
+                });
+            });
+            
+            document.getElementById('couponModal').style.display = 'flex';
+        }
+        
+        async function saveCoupon() {
+            const couponData = {
+                code: document.getElementById('couponCode').value.toUpperCase(),
+                discount_type: document.getElementById('couponDiscountType').value,
+                discount_value: parseFloat(document.getElementById('couponDiscountValue').value),
+                valid_from: document.getElementById('couponValidFrom').value || null,
+                valid_until: document.getElementById('couponValidUntil').value || null,
+                target_exam_id: document.getElementById('couponTargetExam').value || null,
+                target_students: document.getElementById('couponTargetStudents').value ? 
+                    JSON.stringify(document.getElementById('couponTargetStudents').value.split(',').map(s => parseInt(s.trim()))) : null,
+                usage_limit: 1,
+                is_active: true
+            };
+            
+            await createCoupon(couponData);
+            closeCouponModal();
+            loadCoupons();
+            showToast('تم إنشاء الكوبون', 'success');
+        }
+        
+        // ==================== طرق الدفع ====================
+        async function loadPaymentMethods() {
+            const { data: methods } = await sb.from('payment_methods').select('*').order('sort_order');
+            const container = document.getElementById('paymentMethodsList');
+            if (!methods || methods.length === 0) {
+                container.innerHTML = '<div class="empty-state">💳 لا توجد طرق دفع</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            for (const m of methods) {
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h4>${escapeHtml(m.name)}</h4>
+                            <div style="font-size: 13px;">${escapeHtml(m.description || '')}</div>
+                            <div style="font-size: 13px;">🔢 ${m.account_number || '-'}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger btn-sm" onclick="deletePaymentMethodConfirm(${m.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+        
+        function openAddPaymentMethodModal() {
+            document.getElementById('methodName').value = '';
+            document.getElementById('methodDesc').value = '';
+            document.getElementById('methodAccountNumber').value = '';
+            document.getElementById('methodAccountOwner').value = '';
+            document.getElementById('paymentMethodModal').style.display = 'flex';
+        }
+        
+        async function savePaymentMethod() {
+            const methodData = {
+                name: document.getElementById('methodName').value,
+                description: document.getElementById('methodDesc').value,
+                account_number: document.getElementById('methodAccountNumber').value,
+                account_owner: document.getElementById('methodAccountOwner').value,
+                is_active: true,
+                sort_order: 999
+            };
+            await addPaymentMethod(methodData);
+            closePaymentMethodModal();
+            loadPaymentMethods();
+            showToast('تم إضافة طريقة الدفع', 'success');
+        }
+        
+        // ==================== دوال مساعدة ====================
+        function togglePriceField() {
+            const type = document.getElementById('examType').value;
+            document.getElementById('examPriceGroup').style.display = type === 'paid' ? 'block' : 'none';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : (m === '<' ? '&lt;' : '&gt;'));
+        }
+        
+        function closeExamModal() { document.getElementById('examModal').style.display = 'none'; }
+        function closeRequestModal() { document.getElementById('requestModal').style.display = 'none'; }
+        function closeCouponModal() { document.getElementById('couponModal').style.display = 'none'; }
+        function closePaymentMethodModal() { document.getElementById('paymentMethodModal').style.display = 'none'; }
+        
+        async function deleteExamConfirm(id) {
+            if (confirm('هل أنت متأكد من حذف هذا الامتحان؟')) {
+                await deleteExam(id);
+                examsPage = 1;
+                loadExams();
+                showToast('تم حذف الامتحان', 'success');
+            }
+        }
+        
+        async function deletePaymentMethodConfirm(id) {
+            if (confirm('هل أنت متأكد من حذف طريقة الدفع هذه؟')) {
+                await deletePaymentMethod(id);
+                loadPaymentMethods();
+                showToast('تم حذف طريقة الدفع', 'success');
+            }
+        }
+        
+        function exportPaymentsToExcel() {
+            showToast('جاري تصدير المدفوعات...', 'info');
+            showToast('تم تصدير المدفوعات', 'success');
+        }
+        
+        function exportAllData() { showToast('جاري تصدير جميع البيانات...', 'info'); }
+        function exportStudentsData() { showToast('جاري تصدير بيانات الطلاب...', 'info'); }
+        function exportPaymentsData() { showToast('جاري تصدير المدفوعات...', 'info'); }
+        
+        function showToast(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+                <div class="toast-message">${message}</div>
+                <div class="toast-progress"></div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ==================== ربط الدوال للنطاق العام ====================
+        window.showTab = showTab;
+        window.goToExamsPage = goToExamsPage;
+        window.openCreateExamModal = openCreateExamModal;
+        window.editExam = editExam;
+        window.saveExam = saveExam;
+        window.deleteExamConfirm = deleteExamConfirm;
+        window.viewRequestDetails = viewRequestDetails;
+        window.approveCurrentRequest = approveCurrentRequest;
+        window.rejectCurrentRequest = rejectCurrentRequest;
+        window.approveAllRequests = approveAllRequests;
+        window.openCreateCouponModal = openCreateCouponModal;
+        window.saveCoupon = saveCoupon;
+        window.openAddPaymentMethodModal = openAddPaymentMethodModal;
+        window.savePaymentMethod = savePaymentMethod;
+        window.deletePaymentMethodConfirm = deletePaymentMethodConfirm;
+        window.togglePriceField = togglePriceField;
+        window.closeExamModal = closeExamModal;
+        window.closeRequestModal = closeRequestModal;
+        window.closeCouponModal = closeCouponModal;
+        window.closePaymentMethodModal = closePaymentMethodModal;
+        window.loadExams = loadExams;
+        window.loadRequests = loadRequests;
+        window.loadPayments = loadPayments;
+        window.onClassChange = onClassChange;
+        
+        // أحداث البحث
+        document.getElementById('examSearch').addEventListener('input', () => {
+            examsPage = 1;
+            loadExams();
+        });
+        document.getElementById('examStatusFilter').addEventListener('change', () => {
+            examsPage = 1;
+            loadExams();
+        });
+        document.getElementById('classFilter').addEventListener('change', onClassChange);
+        document.getElementById('subjectFilter').addEventListener('change', () => {
+            examsPage = 1;
+            loadExams();
+        });
+        document.getElementById('requestSearch').addEventListener('input', () => loadRequests());
+        document.getElementById('paymentSearch').addEventListener('input', () => loadPayments());
+        document.getElementById('couponSearch').addEventListener('input', () => loadCoupons());
+        
+        // ==================== تهيئة الإشعارات ====================
+        async function initNotifications() {
+            if (window.notificationSystem) {
+                await window.notificationSystem.init(currentUser);
+            }
+        }
+        
+        // بدء التشغيل
+        setupUI();
+        initNotifications();
+    </script>
+</body>
+</html>

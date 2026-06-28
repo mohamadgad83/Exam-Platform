@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المعلم - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* الشريط العلوي */
+        .main-header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 32px; }
+        .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-area { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .user-name { font-weight: 600; color: #1e293b; background: #f1f5f9; padding: 8px 16px; border-radius: 40px; }
+        
+        /* إحصائيات */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 24px;
+            padding: 22px;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(99,102,241,0.3); }
+        .stat-number { font-size: 42px; font-weight: 800; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+        
+        /* إحصائيات سريعة */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .quick-stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .quick-stat-number { font-size: 28px; font-weight: 800; color: #6366f1; }
+        .quick-stat-label { font-size: 13px; color: #64748b; margin-top: 5px; }
+        
+        /* بطاقات الامتحانات */
+        .exam-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .exam-card:hover {
+            transform: translateX(-5px);
+            border-right: 4px solid #6366f1;
+            background: white;
+        }
+        .exam-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .exam-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        
+        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99,102,241,0.4); }
+        .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+        .btn-outline:hover { background: #6366f1; color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .impersonate-banner {
+            background: linear-gradient(135deg, #fef3c7, #fffbeb);
+            border: 1px solid #f59e0b;
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .quick-stats { grid-template-columns: repeat(2, 1fr); }
+            .stat-number { font-size: 28px; }
+            .main-header { flex-direction: column; text-align: center; }
+            .action-buttons { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- شريط العودة للأدمن -->
+        <div id="impersonateBanner" class="impersonate-banner" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 28px;">👑</span>
+                <span>أنت تتصفح كـ <strong><span id="impersonateUserName"></span></strong></span>
+                <span class="badge badge-warning">وضع المشاهدة</span>
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="returnToAdmin()">🔙 العودة للوحة الأدمن</button>
+        </div>
+
+        <!-- الشريط العلوي الرئيسي -->
+        <div class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">📚</div>
+                <div class="logo-text">منصة الاختبارات</div>
+            </div>
+            <div class="user-area">
+                <span class="user-name">👋 مرحباً <span id="teacherName"></span></span>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='exams.html'">📝 إدارة الامتحانات</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='questions-bank.html'">📚 بنك الأسئلة</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-groups.html'">👥 مجموعاتي</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher-students.html'">👨‍🎓 طلابي</button>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- بطاقة الترحيب -->
+        <div class="card">
+            <div class="card-header">
+                <h2>👨‍🏫 لوحة تحكم المعلم</h2>
+                <p style="color: #64748b;">مرحباً بك، قم بإدارة امتحاناتك وأسئلتك ومجموعاتك من هنا</p>
+            </div>
+        </div>
+
+        <!-- الإحصائيات الرئيسية -->
+        <div class="stats-grid" id="statsArea">
+            <div class="stat-card" onclick="window.location.href='exams.html'">
+                <div class="stat-number" id="totalExams">0</div>
+                <div class="stat-label">📝 إجمالي الامتحانات</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='exams.html'">
+                <div class="stat-number" id="publishedExams">0</div>
+                <div class="stat-label">✅ منشور</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='exams.html?tab=requests'">
+                <div class="stat-number" id="pendingRequests">0</div>
+                <div class="stat-label">⏳ طلبات انتظار</div>
+            </div>
+            <div class="stat-card" onclick="window.location.href='teacher-questions.html'">
+                <div class="stat-number" id="totalQuestions">0</div>
+                <div class="stat-label">📚 الأسئلة</div>
+            </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="quick-stats" id="quickStats"></div>
+
+        <!-- الإجراءات السريعة -->
+        <div class="card">
+            <div class="card-header">
+                <h3>⚡ الإجراءات السريعة</h3>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="window.location.href='create-exam.html'">📝 إنشاء امتحان جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-questions.html'">❓ إضافة سؤال جديد</button>
+                <button class="btn btn-primary" onclick="window.location.href='teacher-groups.html'">👥 إنشاء مجموعة جديدة</button>
+                <button class="btn btn-outline" onclick="window.location.href='exams.html?tab=requests'">📋 مراجعة طلبات الامتحانات</button>
+            </div>
+        </div>
+
+        <!-- آخر الامتحانات -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📝 آخر الامتحانات</h3>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='exams.html'">عرض الكل →</button>
+            </div>
+            <div id="recentExamsList"></div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        const currentUser = getUser();
+        
+        let originalUser = null;
+        let isImpersonating = false;
+        
+        try {
+            const storedOriginal = localStorage.getItem('originalUser');
+            if (storedOriginal && storedOriginal !== 'undefined') {
+                originalUser = JSON.parse(storedOriginal);
+                isImpersonating = currentUser && currentUser.isImpersonating === true;
+            }
+        } catch(e) {
+            console.log('خطأ في قراءة originalUser', e);
+        }
+        
+        if (!currentUser) window.location.href = 'index.html';
+        
+        const allowedRoles = ['teacher', 'admin'];
+        if (!allowedRoles.includes(currentUser.role) && !isImpersonating) window.location.href = 'index.html';
+        
+        document.getElementById('teacherName').innerHTML = currentUser.name || currentUser.username || 'معلم';
+        
+        if (isImpersonating && originalUser && originalUser.role === 'admin') {
+            const banner = document.getElementById('impersonateBanner');
+            banner.style.display = 'flex';
+            document.getElementById('impersonateUserName').innerHTML = currentUser.name || currentUser.username;
+        }
+        
+        window.returnToAdmin = function() {
+            try {
+                const original = JSON.parse(localStorage.getItem('originalUser'));
+                if (original && original.role === 'admin') {
+                    localStorage.setItem('user', JSON.stringify(original));
+                    localStorage.removeItem('originalUser');
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    window.location.href = 'admin-dashboard.html';
+                }
+            } catch(e) {
+                window.location.href = 'admin-dashboard.html';
+            }
+        };
+        
+        // ==================== تحميل الإحصائيات ====================
+        async function loadStats() {
+            try {
+                // جلب امتحانات المعلم
+                const { data: exams } = await sb
+                    .from('exams')
+                    .select('id, status, exam_type')
+                    .eq('teacher_id', currentUser.id);
+                
+                const totalExams = exams?.length || 0;
+                const publishedExams = exams?.filter(e => e.status === 'published').length || 0;
+                const draftExams = exams?.filter(e => e.status === 'draft').length || 0;
+                const paidExams = exams?.filter(e => e.exam_type === 'paid').length || 0;
+                
+                // جلب عدد الأسئلة
+                const { count: totalQuestions } = await sb
+                    .from('questions')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('teacher_id', currentUser.id);
+                
+                // جلب عدد المجموعات
+                const { count: totalGroups } = await sb
+                    .from('groups')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('teacher_id', currentUser.id);
+                
+                // جلب طلبات الانتظار
+                const { data: examIds } = await sb
+                    .from('exams')
+                    .select('id')
+                    .eq('teacher_id', currentUser.id);
+                
+                let pendingRequests = 0;
+                if (examIds && examIds.length > 0) {
+                    const examIdList = examIds.map(e => e.id);
+                    const { count } = await sb
+                        .from('exam_requests')
+                        .select('*', { count: 'exact', head: true })
+                        .in('exam_id', examIdList)
+                        .eq('status', 'pending_admin');
+                    pendingRequests = count || 0;
+                }
+                
+                // جلب عدد الطلاب
+                const { data: assignments } = await sb
+                    .from('teacher_assignments')
+                    .select('class_id')
+                    .eq('teacher_id', currentUser.id);
+                
+                let totalStudents = 0;
+                if (assignments && assignments.length > 0) {
+                    const classIds = assignments.map(a => a.class_id);
+                    const { count } = await sb
+                        .from('users')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role', 'student')
+                        .in('class_id', classIds);
+                    totalStudents = count || 0;
+                }
+                
+                document.getElementById('totalExams').innerHTML = totalExams;
+                document.getElementById('publishedExams').innerHTML = publishedExams;
+                document.getElementById('pendingRequests').innerHTML = pendingRequests;
+                document.getElementById('totalQuestions').innerHTML = totalQuestions || 0;
+                
+                document.getElementById('quickStats').innerHTML = `
+                    <div class="quick-stat-card" onclick="window.location.href='exams.html'">
+                        <div class="quick-stat-number">${draftExams}</div>
+                        <div class="quick-stat-label">📝 مسودة</div>
+                    </div>
+                    <div class="quick-stat-card" onclick="window.location.href='exams.html'">
+                        <div class="quick-stat-number">${paidExams}</div>
+                        <div class="quick-stat-label">💰 مدفوع</div>
+                    </div>
+                    <div class="quick-stat-card" onclick="window.location.href='teacher-groups.html'">
+                        <div class="quick-stat-number">${totalGroups || 0}</div>
+                        <div class="quick-stat-label">👥 المجموعات</div>
+                    </div>
+                    <div class="quick-stat-card" onclick="window.location.href='teacher-students.html'">
+                        <div class="quick-stat-number">${totalStudents}</div>
+                        <div class="quick-stat-label">👨‍🎓 الطلاب</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // ==================== آخر الامتحانات ====================
+        async function loadRecentExams() {
+            try {
+                const { data: exams, error } = await sb
+                    .from('exams')
+                    .select('*, subjects:subject_id(name), classes:class_id(name)')
+                    .eq('teacher_id', currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                const container = document.getElementById('recentExamsList');
+                
+                if (!exams || exams.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>لا توجد امتحانات</p>
+                            <button class="btn btn-primary btn-sm" onclick="window.location.href='create-exam.html'" style="margin-top: 15px;">➕ إنشاء أول امتحان</button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = '';
+                for (const e of exams) {
+                    const statusClass = e.status === 'published' ? 'badge-success' : (e.status === 'draft' ? 'badge-warning' : 'badge-danger');
+                    const statusText = e.status === 'published' ? 'منشور' : (e.status === 'draft' ? 'مسودة' : 'مغلق');
+                    const examType = e.exam_type === 'paid' ? `💰 ${e.exam_price} جنيه` : '🆓 مجاني';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'exam-card';
+                    card.onclick = () => window.location.href = 'exams.html';
+                    card.innerHTML = `
+                        <div class="exam-title">${escapeHtml(e.title)}</div>
+                        <div class="exam-info">
+                            <span>📖 ${e.subjects?.name || 'بدون مادة'}</span>
+                            <span>🎓 ${e.classes?.name || 'بدون صف'}</span>
+                            <span>⏱️ ${e.duration_minutes} دقيقة</span>
+                            <span>${examType}</span>
+                            <span class="badge ${statusClass}">${statusText}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+                
+            } catch (error) {
+                console.error('Error loading recent exams:', error);
+                document.getElementById('recentExamsList').innerHTML = '<div class="empty-state">حدث خطأ في تحميل الامتحانات</div>';
+            }
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // تحميل أولي
+        loadStats();
+        loadRecentExams();
+    </script>
+</body>
+</html>

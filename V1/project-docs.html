@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>توثيق المشروع - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', monospace;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .version-badge {
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 14px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #334155;
+        }
+        .card h2 {
+            color: #818cf8;
+            border-right: 4px solid #818cf8;
+            padding-right: 15px;
+            margin-bottom: 20px;
+        }
+        .card h3 {
+            color: #a5b4fc;
+            margin: 20px 0 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            text-align: right;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            background: #0f172a;
+            color: #818cf8;
+        }
+        .file-tree {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: monospace;
+            direction: ltr;
+            text-align: left;
+            overflow-x: auto;
+        }
+        .file-tree .folder { color: #f59e0b; }
+        .file-tree .file { color: #10b981; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        .badge-admin { background: #ef4444; color: white; }
+        .badge-teacher { background: #3b82f6; color: white; }
+        .badge-student { background: #10b981; color: white; }
+        .badge-warning { background: #f59e0b; color: #1e293b; }
+        .badge-info { background: #3b82f6; color: white; }
+        .badge-success { background: #10b981; color: white; }
+        .badge-danger { background: #ef4444; color: white; }
+        .code-block {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 13px;
+            direction: ltr;
+            text-align: left;
+        }
+        .edit-date {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 12px;
+            border-top: 1px solid #334155;
+            margin-top: 30px;
+        }
+        .btn-copy {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .btn-copy:hover {
+            background: #475569;
+        }
+        .note {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            border-right: 3px solid #f59e0b;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .feature-list {
+            padding-right: 20px;
+        }
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+        .new-feature {
+            color: #10b981;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .card { padding: 15px; }
+            th, td { padding: 8px; font-size: 12px; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 منصة الاختبارات</h1>
+            <p>Exam Platform - نظام متكامل لإدارة الاختبارات</p>
+            <div class="version-badge">الإصدار 3.0.0 | آخر تحديث: <span id="lastUpdate"></span></div>
+        </div>
+
+        <!-- ==================== هيكل المجلدات والملفات ==================== -->
+        <div class="card">
+            <h2>📁 هيكل المجلدات والملفات</h2>
+            <div class="file-tree">
+                <span class="folder">Exam-Platform/</span><br>
+                │<br>
+                ├── 📄 <span class="file">index.html</span>                    <span style="color:#64748b;"># تسجيل الدخول الموحد</span><br>
+                ├── 📄 <span class="file">register.html</span>                 <span style="color:#64748b;"># تسجيل طالب جديد</span><br>
+                ├── 📄 <span class="file">reset-password.html</span>           <span style="color:#64748b;"># استعادة كلمة المرور (جديد)</span><br>
+                ├── 📄 <span class="file">add-question.html</span>             <span style="color:#64748b;"># إضافة سؤال (للأدمن)</span><br>
+                ├── 📄 <span class="file">questions-bank.html</span>           <span style="color:#64748b;"># بنك الأسئلة (موحد)</span><br>
+                ├── 📄 <span class="file">exams.html</span>                    <span style="color:#64748b;"># إدارة الامتحانات (موحد)</span><br>
+                ├── 📄 <span class="file">create-exam.html</span>              <span style="color:#64748b;"># إنشاء امتحان (موحد)</span><br>
+                ├── 📄 <span class="file">project-docs.html</span>             <span style="color:#64748b;"># توثيق المشروع</span><br>
+                │<br>
+                ├── 📂 <span class="folder">css/</span><br>
+                │   └── 📄 <span class="file">style.css</span>                 <span style="color:#64748b;"># التصميم الموحد</span><br>
+                │<br>
+                ├── 📂 <span class="folder">js/</span><br>
+                │   ├── 📄 <span class="file">supabase-config.js</span>        <span style="color:#64748b;"># الاتصال بـ Supabase وجميع الدوال</span><br>
+                │   └── 📄 <span class="file">notifications.js</span>          <span style="color:#64748b;"># نظام الإشعارات الفورية (جديد)</span><br>
+                │<br>
+                ├── 📂 <span class="folder">admin/</span>                      <span style="color:#64748b;"># صفحات المدير</span><br>
+                │   ├── 📄 <span class="file">dashboard.html</span><br>
+                │   ├── 📄 <span class="file">users.html</span><br>
+                │   ├── 📄 <span class="file">classes.html</span><br>
+                │   ├── 📄 <span class="file">exams.html</span><br>
+                │   ├── 📄 <span class="file">groups.html</span><br>
+                │   ├── 📄 <span class="file">questions.html</span><br>
+                │   └── 📄 <span class="file">reports.html</span><br>
+                │<br>
+                ├── 📂 <span class="folder">teacher/</span>                    <span style="color:#64748b;"># صفحات المعلم</span><br>
+                │   ├── 📄 <span class="file">dashboard.html</span><br>
+                │   ├── 📄 <span class="file">exams.html</span><br>
+                │   ├── 📄 <span class="file">create-exam.html</span><br>
+                │   ├── 📄 <span class="file">questions.html</span><br>
+                │   ├── 📄 <span class="file">groups.html</span><br>
+                │   ├── 📄 <span class="file">students.html</span><br>
+                │   └── 📄 <span class="file">submissions.html</span><br>
+                │<br>
+                └── 📂 <span class="folder">student/</span>                    <span style="color:#64748b;"># صفحات الطالب</span><br>
+                    ├── 📄 <span class="file">dashboard.html</span><br>
+                    ├── 📄 <span class="file">exams.html</span><br>
+                    ├── 📄 <span class="file">exam-attempt.html</span><br>
+                    ├── 📄 <span class="file">result.html</span><br>
+                    ├── 📄 <span class="file">results.html</span><br>
+                    └── 📄 <span class="file">groups.html</span><br>
+            </div>
+            <div class="note">
+                💡 <strong>ملاحظة:</strong> الملفات <span class="badge badge-info">exams.html</span> و <span class="badge badge-info">create-exam.html</span> و <span class="badge badge-info">questions-bank.html</span> في الجذر تعمل كصفحات موحدة للمعلم والأدمن.
+            </div>
+        </div>
+
+        <!-- ==================== الروابط بين الصفحات ==================== -->
+        <div class="card">
+            <h2>🔗 الروابط بين الصفحات</h2>
+            <table>
+                <thead>
+                    <tr><th>من</th><th>إلى</th><th>الوصف</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="3"><strong>📂 ملفات الجذر</strong></td></tr>
+                    <tr><td>index.html</td><td>admin-dashboard.html / teacher-dashboard.html / student-dashboard.html</td><td>حسب دور المستخدم</td></tr>
+                    <tr><td>index.html</td><td>reset-password.html</td><td>رابط نسيت كلمة السر</td></tr>
+                    <tr><td>admin-dashboard.html</td><td>admin-users.html, admin-classes.html, admin-exams.html, admin-groups.html, admin-questions.html, admin-reports.html</td><td>جميع صفحات الأدمن</td></tr>
+                    <tr><td>teacher-dashboard.html</td><td>teacher-exams.html, teacher-questions.html, teacher-groups.html, teacher-students.html, teacher-submissions.html</td><td>جميع صفحات المعلم</td></tr>
+                    <tr><td>student-dashboard.html</td><td>student-exams.html, student-results.html, student-groups.html</td><td>جميع صفحات الطالب</td></tr>
+                    <tr><td colspan="3"><strong>📂 الصفحات الموحدة</strong></td></tr>
+                    <tr><td>exams.html</td><td>create-exam.html, questions-bank.html</td><td>إدارة الامتحانات (يعمل للمعلم والأدمن)</td></tr>
+                    <tr><td>questions-bank.html</td><td>add-question.html, teacher-questions.html</td><td>بنك الأسئلة (يعمل للمعلم والأدمن)</td></tr>
+                    <tr><td>create-exam.html</td><td>exams.html</td><td>إنشاء امتحان (يعمل للمعلم والأدمن)</td></tr>
+                    <tr><td>student-dashboard.html</td><td>(داخلي) تغيير كلمة المرور / سؤال الأمان</td><td>إعدادات الأمان داخل نفس الصفحة</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== الميزات الجديدة ==================== -->
+        <div class="card">
+            <h2>🎉 الميزات الجديدة (الإصدار 3.0.0)</h2>
+            <div class="feature-grid">
+                <div>
+                    <h3>📊 تحليلات وتقارير</h3>
+                    <ul class="feature-list">
+                        <li>✅ <span class="new-feature">رسم بياني لتقدم الطالب</span> - باستخدام Chart.js</li>
+                        <li>✅ <span class="new-feature">تصدير بيانات الطلاب إلى Excel</span> - في teacher-students.html</li>
+                        <li>✅ فلتر المواد حسب الصف في جميع الصفحات</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>🔐 الأمان والحماية</h3>
+                    <ul class="feature-list">
+                        <li>✅ <span class="new-feature">سؤال الأمان</span> - 10 أسئلة مقترحة + إمكانية كتابة سؤال مخصص</li>
+                        <li>✅ <span class="new-feature">تغيير كلمة المرور</span> - من داخل لوحة الطالب</li>
+                        <li>✅ <span class="new-feature">استعادة كلمة المرور</span> - باستخدام سؤال الأمان (بدون SMS)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>🔔 إشعارات فورية</h3>
+                    <ul class="feature-list">
+                        <li>✅ <span class="new-feature">إشعارات Realtime</span> - باستخدام Supabase Realtime</li>
+                        <li>✅ إشعارات منبثقة (Toast) عند قبول/رفض الطلبات</li>
+                        <li>✅ عداد الإشعارات غير المقروءة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== هيكل قاعدة البيانات ==================== -->
+        <div class="card">
+            <h2>🗄️ هيكل قاعدة البيانات (Supabase)</h2>
+            <button class="btn-copy" onclick="copySQL()">📋 نسخ SQL كامل</button>
+            <div class="code-block" id="sqlCode">
+-- ============================================
+-- database.sql - جميع الجداول (INTEGER IDs)
+-- لمنصة الاختبارات المتكاملة
+-- ============================================
+
+-- 1. جدول المستخدمين
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    username VARCHAR(100) UNIQUE,
+    phone VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) CHECK (role IN ('admin', 'teacher', 'student')),
+    status VARCHAR(50) DEFAULT 'pending',
+    class_id INTEGER,
+    security_question TEXT,        -- سؤال الأمان
+    security_answer TEXT,           -- إجابة سؤال الأمان (مشفرة)
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. جدول الصفوف
+CREATE TABLE classes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    grade_level VARCHAR(100),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. جدول المواد
+CREATE TABLE subjects (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. جدول ربط المواد بالصفوف
+CREATE TABLE class_subjects (
+    id SERIAL PRIMARY KEY,
+    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(class_id, subject_id)
+);
+
+-- 5. جدول تعيينات المعلمين
+CREATE TABLE teacher_assignments (
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+    subject_id INTEGER REFERENCES subjects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 6. جدول الامتحانات
+CREATE TABLE exams (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    teacher_id INTEGER REFERENCES users(id),
+    duration_minutes INTEGER DEFAULT 60,
+    passing_score INTEGER DEFAULT 50,
+    exam_type VARCHAR(20) DEFAULT 'free',
+    exam_price DECIMAL(10,2) DEFAULT 0,
+    target_type VARCHAR(20) DEFAULT 'all',
+    target_ids TEXT,
+    is_announced BOOLEAN DEFAULT false,
+    announced_at TIMESTAMP,
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'draft',
+    created_by INTEGER REFERENCES users(id),
+    max_attempts INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 7. جدول exam_questions (أسئلة الامتحان)
+CREATE TABLE exam_questions (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    question_id INTEGER REFERENCES questions(id),
+    points DECIMAL(5,2) DEFAULT 1,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 8. جدول الأسئلة
+CREATE TABLE questions (
+    id SERIAL PRIMARY KEY,
+    teacher_id INTEGER REFERENCES users(id),
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    text TEXT NOT NULL,              -- نص السؤال
+    question_image TEXT,
+    type VARCHAR(50) DEFAULT 'mcq',
+    points INTEGER DEFAULT 5,
+    difficulty VARCHAR(20) DEFAULT 'medium',
+    options TEXT,                    -- الخيارات (JSON أو ARRAY)
+    correct_answer TEXT,
+    model_answer TEXT,               -- نموذج الإجابة للمقالي
+    is_multi_select BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) DEFAULT 'pending',
+    feedback TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 9. جدول المجموعات
+CREATE TABLE groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    class_id INTEGER REFERENCES classes(id),
+    subject_id INTEGER REFERENCES subjects(id),
+    teacher_id INTEGER REFERENCES users(id),
+    max_capacity INTEGER,
+    is_open BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 10. جدول أعضاء المجموعات
+CREATE TABLE group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending',
+    joined_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(group_id, student_id)
+);
+
+-- 11. جدول exam_requests (طلبات الاشتراك)
+CREATE TABLE exam_requests (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending_admin',
+    approved_by INTEGER REFERENCES users(id),
+    approved_at TIMESTAMP,
+    rejection_reason TEXT,
+    coupon_code VARCHAR(50),
+    discount_amount DECIMAL(10,2) DEFAULT 0,
+    final_amount DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(exam_id, student_id)
+);
+
+-- 12. جدول exam_enrollments (الطلاب المقبولون)
+CREATE TABLE exam_enrollments (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    exam_request_id INTEGER REFERENCES exam_requests(id),
+    enrolled_by INTEGER REFERENCES users(id),
+    enrolled_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(exam_id, student_id)
+);
+
+-- 13. جدول exam_attempts (محاولات الامتحان)
+CREATE TABLE exam_attempts (
+    id SERIAL PRIMARY KEY,
+    exam_id INTEGER REFERENCES exams(id),
+    student_id INTEGER REFERENCES users(id),
+    start_time TIMESTAMP,
+    submitted_at TIMESTAMP,
+    answers JSONB,
+    essay_scores JSONB DEFAULT '{}'::jsonb,
+    score DECIMAL(10,2),
+    total_points DECIMAL(10,2),
+    status VARCHAR(20) DEFAULT 'in_progress',
+    enrollment_id INTEGER REFERENCES exam_enrollments(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 14. جدول exam_violations (مخالفات الامتحان)
+CREATE TABLE exam_violations (
+    id SERIAL PRIMARY KEY,
+    exam_attempt_id INTEGER REFERENCES exam_attempts(id),
+    student_id INTEGER REFERENCES users(id),
+    violation_type VARCHAR(100),
+    details TEXT,
+    timestamp TIMESTAMP DEFAULT NOW()
+);
+
+-- 15. جدول payment_methods (طرق الدفع)
+CREATE TABLE payment_methods (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    account_number VARCHAR(100),
+    account_owner VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    sort_order INTEGER DEFAULT 0,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 16. جدول payments (المدفوعات)
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    exam_request_id INTEGER REFERENCES exam_requests(id) ON DELETE CASCADE,
+    student_id INTEGER REFERENCES users(id),
+    exam_id INTEGER REFERENCES exams(id),
+    amount DECIMAL(10,2),
+    payment_method_id INTEGER REFERENCES payment_methods(id),
+    payment_screenshot TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    confirmed_by INTEGER REFERENCES users(id),
+    confirmed_at TIMESTAMP,
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 17. جدول coupons (كوبونات الخصم)
+CREATE TABLE coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(20) DEFAULT 'percentage',
+    discount_value DECIMAL(10,2) NOT NULL,
+    max_discount DECIMAL(10,2),
+    min_amount DECIMAL(10,2),
+    valid_from TIMESTAMP,
+    valid_until TIMESTAMP,
+    usage_limit INTEGER DEFAULT 1,
+    used_count INTEGER DEFAULT 0,
+    target_exam_id INTEGER REFERENCES exams(id),
+    target_students TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 18. جدول coupon_usages (استخدامات الكوبونات)
+CREATE TABLE coupon_usages (
+    id SERIAL PRIMARY KEY,
+    coupon_id INTEGER REFERENCES coupons(id),
+    student_id INTEGER REFERENCES users(id),
+    exam_request_id INTEGER REFERENCES exam_requests(id),
+    used_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 19. جدول notifications (الإشعارات الداخلية)
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    message TEXT,
+    type VARCHAR(50),
+    link TEXT,
+    related_id VARCHAR(50),
+    is_read BOOLEAN DEFAULT false,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- تفعيل Realtime للإشعارات
+-- ============================================
+ALTER TABLE notifications REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+            </div>
+        </div>
+
+        <!-- ==================== نظام الصلاحيات ==================== -->
+        <div class="card">
+            <h2>🔐 نظام تسجيل الدخول والصلاحيات</h2>
+            <table>
+                <thead>
+                    <tr><th>الدور</th><th>طريقة الدخول</th><th>الصلاحيات</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="badge badge-admin">أدمن</span></td><td>اسم مستخدم + كلمة سر</td><td>يرى كل شيء - صلاحيات كاملة</td></tr>
+                    <tr><td><span class="badge badge-teacher">معلم</span></td><td>اسم مستخدم + كلمة سر</td><td>يرى فقط ما يخصه (صفوفه، مواده، طلابه)</td></tr>
+                    <tr><td><span class="badge badge-student">طالب</span></td><td>رقم هاتف + كلمة سر</td><td>يرى فقط الامتحانات المنشورة في صفه</td></tr>
+                </tbody>
+            </table>
+            <h3>📝 بيانات الدخول التجريبية</h3>
+            <div class="code-block">
+                أدمن:   username: admin      / password: 123456<br>
+                معلم:   username: teacher1   / password: 123456<br>
+                طالب:   phone: 01012345678   / password: 123456
+            </div>
+        </div>
+
+        <!-- ==================== الميزات المنفذة ==================== -->
+        <div class="card">
+            <h2>✅ الميزات المنفذة</h2>
+            <div class="feature-grid">
+                <div>
+                    <h3>👑 الأدمن</h3>
+                    <ul class="feature-list">
+                        <li>✅ إدارة المستخدمين (إضافة، تعديل، حذف)</li>
+                        <li>✅ تعيين الصفوف والمواد للمعلمين</li>
+                        <li>✅ إدارة الصفوف والمواد</li>
+                        <li>✅ إدارة الامتحانات (exams.html)</li>
+                        <li>✅ مراجعة واعتماد الأسئلة (questions-bank.html)</li>
+                        <li>✅ إدارة المجموعات (admin-groups.html)</li>
+                        <li>✅ إدارة المدفوعات وكوبونات الخصم</li>
+                        <li>✅ تقارير وإحصائيات (admin-reports.html)</li>
+                        <li>✅ الدخول كمعلم أو طالب (Impersonate)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>👨‍🏫 المعلم</h3>
+                    <ul class="feature-list">
+                        <li>✅ إنشاء/تعديل/حذف أسئلته (teacher-questions.html)</li>
+                        <li>✅ إنشاء/تعديل/حذف امتحاناته (exams.html)</li>
+                        <li>✅ نشر/إغلاق امتحاناته</li>
+                        <li>✅ إدارة مجموعاته (teacher-groups.html)</li>
+                        <li>✅ قبول/رفض طلاب للمجموعات</li>
+                        <li>✅ تصحيح الأسئلة المقالية (teacher-submissions.html)</li>
+                        <li>✅ عرض طلابه مع إمكانية تصدير Excel (teacher-students.html)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>👨‍🎓 الطالب</h3>
+                    <ul class="feature-list">
+                        <li>✅ تسجيل حساب جديد (register.html)</li>
+                        <li>✅ الاشتراك في الامتحانات (student-exams.html)</li>
+                        <li>✅ أداء الامتحان (مؤقت + حفظ تلقائي + حماية)</li>
+                        <li>✅ عرض النتائج مع رسم بياني (student-results.html)</li>
+                        <li>✅ الانضمام للمجموعات (student-groups.html)</li>
+                        <li>✅ تعيين سؤال الأمان وتغيير كلمة المرور (داخل dashboard)</li>
+                        <li>✅ عرض تقدمه في الامتحانات (رسم بياني)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== الدوال الرئيسية ==================== -->
+        <div class="card">
+            <h2>🔧 الدوال الرئيسية في supabase-config.js</h2>
+            <button class="btn-copy" onclick="copyFunctions()">📋 نسخ قائمة الدوال</button>
+            <div class="code-block" id="functionsList">
+// === المصادقة ===
+loginUser(identifier, password)
+registerStudent(name, phone, password, classId, email)
+hashPassword(password)
+
+// === المستخدمين ===
+fetchUsers(filters)
+updateUserStatus(id, status)
+deleteUser(id)
+resetUserPassword(id, newPassword)
+
+// === الصفوف والمواد ===
+fetchClasses()
+createClass(data)
+updateClass(id, data)
+deleteClass(id)
+fetchSubjects()
+createSubject(data)
+fetchClassSubjects(classId)
+addSubjectToClass(classId, subjectId)
+
+// === تعيينات المعلمين ===
+fetchTeacherAssignments(teacherId)
+addTeacherAssignment(teacherId, classId, subjectId)
+removeTeacherAssignment(id)
+
+// === الامتحانات ===
+fetchExams(filters)
+createExam(examData)
+updateExam(examId, examData)
+deleteExam(examId)
+updateExamStatusInDB(examId, status)
+fetchExamQuestions(examId)
+fetchExamStats(examId)
+
+// === الأسئلة ===
+fetchQuestions(filters)
+fetchTeacherQuestions(teacherId, filters)
+createQuestion(questionData)
+updateQuestionStatus(id, status, feedback)
+deleteQuestion(id)
+
+// === المجموعات ===
+fetchGroups(filters)
+createGroup(groupData)
+updateGroup(id, data)
+deleteGroup(id)
+joinGroup(groupId, studentId)
+updateGroupMemberStatus(groupId, studentId, status)
+fetchGroupMembers(groupId)
+fetchStudentGroupMemberships(studentId)
+
+// === طلبات الامتحان ===
+fetchExamRequests(filters)
+createExamRequest(studentId, examId)
+updateExamRequestStatus(requestId, status, rejectionReason)
+approveAllExamRequests(examId)
+
+// === محاولات الامتحان ===
+fetchExamAttempts(filters)
+startExamAttempt(examId, studentId)
+saveAnswerToAttempt(attemptId, questionId, answer)
+submitExamAttempt(attemptId, answers, score, totalPoints)
+
+// === المدفوعات ===
+fetchPayments(filters)
+confirmPayment(paymentId, status, rejectionReason)
+fetchPaymentMethods()
+addPaymentMethod(methodData)
+deletePaymentMethod(methodId)
+
+// === الكوبونات ===
+fetchCoupons(filters)
+createCoupon(couponData)
+validateCoupon(code, examId, studentId)
+useCoupon(code, examId, studentId, examRequestId)
+
+// === الإشعارات ===
+fetchNotifications(userId, limit)
+markNotificationAsRead(notificationId)
+addNotification(userId, title, message, type, relatedId)
+
+// === الإحصائيات ===
+fetchAdminStats()
+fetchTeacherStats(teacherId)
+fetchStudentStats(studentId)
+fetchStudentDetailedStats(studentId)
+fetchExamStatistics(examId)
+            </div>
+        </div>
+
+        <!-- ==================== نظام الحماية ==================== -->
+        <div class="card">
+            <h2>🛡️ نظام حماية الامتحانات</h2>
+            <table>
+                <thead><tr><th>الميزة</th><th>الوصف</th></tr></thead>
+                <tbody>
+                    <tr><td>وضع ملء الشاشة</td><td>يتم تفعيل ملء الشاشة تلقائياً عند بدء الامتحان</td></tr>
+                    <tr><td>كشف تبديل التبويب</td><td>يتم تسجيل مخالفة عند تبديل التبويب (يسمح بـ 3 محاولات)</td></tr>
+                    <tr><td>منع النسخ واللصق</td><td>تعطيل خاصية النسخ واللصق أثناء الامتحان</td></tr>
+                    <tr><td>منع أدوات المطور</td><td>منع F12 و Ctrl+Shift+I و Ctrl+U وغيرها</td></tr>
+                    <tr><td>حفظ تلقائي</td><td>حفظ الإجابات تلقائياً كل 30 ثانية</td></tr>
+                    <tr><td>تسليم تلقائي</td><td>تسليم الامتحان تلقائياً عند انتهاء الوقت أو تجاوز المخالفات</td></tr>
+                    <tr><td>تسجيل المخالفات</td><td>تسجيل جميع المخالفات في قاعدة البيانات</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== التقنيات المستخدمة ==================== -->
+        <div class="card">
+            <h2>🛠️ التقنيات المستخدمة</h2>
+            <div class="feature-grid">
+                <div>
+                    <h3>الواجهة الأمامية</h3>
+                    <ul class="feature-list">
+                        <li>✅ HTML5 / CSS3</li>
+                        <li>✅ JavaScript (ES6+)</li>
+                        <li>✅ Chart.js - للرسوم البيانية</li>
+                        <li>✅ SheetJS - لتصدير Excel</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>الخلفية وقاعدة البيانات</h3>
+                    <ul class="feature-list">
+                        <li>✅ Supabase (PostgreSQL)</li>
+                        <li>✅ Supabase Realtime - للإشعارات</li>
+                        <li>✅ Supabase Storage - للصور</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>الأمان</h3>
+                    <ul class="feature-list">
+                        <li>✅ تشفير كلمات المرور (SHA-256)</li>
+                        <li>✅ تشفير إجابات سؤال الأمان</li>
+                        <li>✅ حماية الامتحانات (منع الغش)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== التحديثات المستقبلية ==================== -->
+        <div class="card">
+            <h2>🚀 التحديثات المستقبلية المقترحة</h2>
+            <table>
+                <thead><tr><th>المهمة</th><th>الأولوية</th><th>الوصف</th></tr></thead>
+                <tbody>
+                    <tr><td>نسخ احتياطي للبيانات</td><td>عالية</td><td>تصدير البيانات إلى Excel/PDF</td></tr>
+                    <tr><td>لوحة تحليلات متقدمة للمعلم</td><td>متوسطة</td><td>رسوم بيانية لنتائج الطلاب</td>
+                    </tr>
+                    <tr><td>إشعارات البريد الإلكتروني</td><td>منخفضة</td><td>إضافة خدمة SMTP مجانية</td></tr>
+                    <tr><td>تطبيق جوال</td><td>مستقبلية</td><td>تحويل إلى React Native</td></tr>
+                    <tr><td>نظام التقييم</td><td>منخفضة</td><td>تقييم الطلاب للامتحانات</td></tr>
+                    <tr><td>إعادة محاولة الامتحان</td><td>متوسطة</td><td>تحديد عدد مرات إعادة المحاولة</td></tr>
+                    <tr><td>الوضع الليلي (Dark Mode)</td><td>منخفضة</td><td>دعم الوضع المظلم</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== ملاحظات مهمة ==================== -->
+        <div class="card">
+            <h2>📝 ملاحظات مهمة</h2>
+            <ul style="padding-right: 20px;">
+                <li>✅ جميع كلمات السر مشفرة باستخدام SHA-256</li>
+                <li>✅ نظام الإشعارات داخلي - لا يحتاج لبريد إلكتروني</li>
+                <li>✅ جميع الصفحات تعتمد على supabase-config.js</li>
+                <li>✅ الدخول كأدمن يحتفظ بجلسة الأدمن الأصلية للعودة</li>
+                <li>✅ لصق الصور بـ Ctrl+V يعمل في add-question.html</li>
+                <li>✅ نظام الحماية مفعل في student-exam-attempt.html</li>
+                <li>✅ الدفع والكوبونات يدعمها الأدمن فقط</li>
+                <li>✅ استعادة كلمة المرور عبر سؤال الأمان (بدون SMS)</li>
+                <li>✅ الرسم البياني للطالب يعرض تقدمه في الامتحانات</li>
+                <li>✅ تصدير Excel متاح في teacher-students.html</li>
+            </ul>
+        </div>
+
+        <div class="edit-date">
+            📅 آخر تحديث: <span id="updateDate"></span><br>
+            📂 موقع الملفات: الجذر الرئيسي للمشروع<br>
+            🔧 لتحديث هذا الملف، قم بتعديل HTML مباشرة<br>
+            🚀 الإصدار الحالي: 3.0.0 (يدعم الإشعارات، Excel، سؤال الأمان، الرسوم البيانية)
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // عرض تاريخ آخر تحديث
+        const now = new Date();
+        document.getElementById('lastUpdate').innerHTML = now.toLocaleDateString('ar-EG');
+        document.getElementById('updateDate').innerHTML = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
+        
+        function copySQL() {
+            const sql = document.getElementById('sqlCode').innerText;
+            navigator.clipboard.writeText(sql);
+            showToast('📋 تم نسخ SQL', 'success');
+        }
+        
+        function copyFunctions() {
+            const functions = document.getElementById('functionsList').innerText;
+            navigator.clipboard.writeText(functions);
+            showToast('📋 تم نسخ قائمة الدوال', 'success');
+        }
+        
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed; bottom:30px; right:30px; background:#10b981; color:white; padding:12px 24px; border-radius:12px; z-index:10000;';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+</body>
+</html>

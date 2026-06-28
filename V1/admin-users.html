@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: right;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-info { background: #3b82f6; color: white; }
+        .btn-outline { background: transparent; border: 1px solid #6366f1; color: #6366f1; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 650px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .assignment-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-color: transparent;
+        }
+        .stats-summary {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .stat-card-sm {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 16px;
+            padding: 12px 20px;
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+        }
+        .stat-number-sm {
+            font-size: 24px;
+            font-weight: 800;
+            color: #6366f1;
+        }
+        .loading-skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; }
+            .row-2 { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-bar">
+            <div><span style="font-size:20px;">👑</span> إدارة المستخدمين - <span id="adminName"></span></div>
+            <div>
+                <button class="btn btn-outline btn-sm" onclick="window.location.href='admin-dashboard.html'">🏠 الرئيسية</button>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="card header">
+            <h1>👥 إدارة المستخدمين</h1>
+            <p>إضافة وتعديل وحذف المستخدمين - إدارة الصلاحيات - تعيين الصفوف والمواد للمعلمين</p>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="stats-summary" id="statsSummary"></div>
+
+        <div class="card">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>🔍 بحث</label>
+                    <input type="text" id="searchInput" class="search-input" placeholder="بالاسم أو الهاتف أو البريد...">
+                </div>
+                <div class="filter-group">
+                    <label>🎭 الدور</label>
+                    <select id="roleFilter">
+                        <option value="all">كل الأدوار</option>
+                        <option value="admin">مدير</option>
+                        <option value="teacher">معلم</option>
+                        <option value="student">طالب</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>📋 الحالة</label>
+                    <select id="statusFilter">
+                        <option value="all">كل الحالات</option>
+                        <option value="active">نشط</option>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="suspended">موقوف</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="openAddUserModal()">➕ إضافة مستخدم</button>
+                    <button class="btn btn-outline" onclick="loadUsers()">🔄 تحديث</button>
+                </div>
+            </div>
+
+            <div id="loadingIndicator" class="loading-skeleton" style="display: none;"></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>الاسم</th><th>اسم المستخدم</th><th>رقم الهاتف</th><th>الصف/المواد</th><th>الدور</th><th>الحالة</th><th>الإجراءات</th></tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <!-- مودال إضافة/تعديل مستخدم -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">➕ إضافة مستخدم جديد</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('userModal')">✖</button>
+            </div>
+            
+            <div class="form-group">
+                <label>👤 الاسم الكامل *</label>
+                <input type="text" id="userName" placeholder="مثال: أحمد محمد علي">
+            </div>
+            
+            <div class="row-2">
+                <div class="form-group">
+                    <label>📞 رقم الهاتف *</label>
+                    <input type="tel" id="userPhone" placeholder="مثال: 01012345678">
+                </div>
+                <div class="form-group">
+                    <label>📧 البريد الإلكتروني</label>
+                    <input type="email" id="userEmail" placeholder="example@email.com">
+                </div>
+            </div>
+            
+            <div id="usernameField">
+                <div class="form-group">
+                    <label>👤 اسم المستخدم * (للمعلمين والأدمن)</label>
+                    <input type="text" id="userUsername" placeholder="مثال: ahmed_teacher">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>🎭 الدور</label>
+                <select id="userRole" onchange="onRoleChange()">
+                    <option value="student">طالب</option>
+                    <option value="teacher">معلم</option>
+                    <option value="admin">مدير</option>
+                </select>
+            </div>
+            
+            <!-- حقل الصف للطلاب -->
+            <div id="classField">
+                <div class="form-group">
+                    <label>🎓 الصف الدراسي</label>
+                    <select id="userClassId">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- قسم تعيينات المعلم (صفوف ومواد) -->
+            <div id="teacherAssignmentsSection" style="display: none;">
+                <h4>📚 تعيين الصفوف والمواد للمعلم</h4>
+                <div id="teacherAssignmentsList"></div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>الصف</label>
+                        <select id="assignClassId">
+                            <option value="">-- اختر الصف --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>المادة</label>
+                        <select id="assignSubjectId">
+                            <option value="">-- اختر المادة --</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addTeacherAssignment()">➕ إضافة تعيين</button>
+                <p style="font-size: 12px; color: #64748b; margin-top: 8px;">* يمكن للمعلم إدارة الامتحانات فقط في الصفوف والمواد المحددة</p>
+            </div>
+            
+            <div class="form-group">
+                <label>🔒 كلمة السر</label>
+                <input type="password" id="userPassword" placeholder="أدخل كلمة السر (6 أحرف على الأقل)">
+                <small style="color: #64748b;">اتركها فارغة إذا كنت لا تريد تغييرها (في حالة التعديل)</small>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
+                <button class="btn btn-outline" onclick="closeModal('userModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إعادة تعيين كلمة المرور -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 إعادة تعيين كلمة المرور</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('resetPasswordModal')">✖</button>
+            </div>
+            <div class="form-group">
+                <label>🔒 كلمة المرور الجديدة</label>
+                <input type="password" id="newPassword" placeholder="6 أحرف على الأقل">
+            </div>
+            <div class="form-group">
+                <label>✓ تأكيد كلمة المرور</label>
+                <input type="password" id="confirmNewPassword" placeholder="أعد كتابة كلمة المرور">
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="confirmResetPassword()">تأكيد</button>
+                <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== التحقق من صلاحية الدخول ====================
+        (function() {
+            const user = getUser();
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('adminName').innerHTML = user.name;
+        })();
+        
+        let currentUserId = null;
+        let currentResetUserId = null;
+        let currentTeacherAssignments = [];
+        let allUsers = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        
+        // ==================== تحميل الإحصائيات ====================
+        async function loadStats() {
+            try {
+                const { data: users } = await sb.from('users').select('role, status');
+                
+                const total = users?.length || 0;
+                const admins = (users || []).filter(u => u.role === 'admin').length;
+                const teachers = (users || []).filter(u => u.role === 'teacher').length;
+                const students = (users || []).filter(u => u.role === 'student').length;
+                const active = (users || []).filter(u => u.status === 'active').length;
+                const pending = (users || []).filter(u => u.status === 'pending').length;
+                
+                document.getElementById('statsSummary').innerHTML = `
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${total}</div>
+                        <div>👥 إجمالي</div>
+                    </div>
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${admins}</div>
+                        <div>👑 مديرين</div>
+                    </div>
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${teachers}</div>
+                        <div>👨‍🏫 معلمين</div>
+                    </div>
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${students}</div>
+                        <div>👨‍🎓 طلاب</div>
+                    </div>
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${active}</div>
+                        <div>✅ نشط</div>
+                    </div>
+                    <div class="stat-card-sm">
+                        <div class="stat-number-sm">${pending}</div>
+                        <div>⏳ قيد الانتظار</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // ==================== تحميل المستخدمين مع Pagination ====================
+        async function loadUsers() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+            
+            try {
+                const search = document.getElementById('searchInput').value;
+                const role = document.getElementById('roleFilter').value;
+                const status = document.getElementById('statusFilter').value;
+                
+                let query = sb.from('users').select('*');
+                
+                if (role !== 'all') {
+                    query = query.eq('role', role);
+                }
+                if (status !== 'all') {
+                    query = query.eq('status', status);
+                }
+                if (search) {
+                    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`);
+                }
+                
+                const { data: users, error } = await query.order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allUsers = users || [];
+                
+                // Pagination
+                const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedUsers = allUsers.slice(startIndex, startIndex + itemsPerPage);
+                
+                await renderUsersTable(paginatedUsers);
+                renderPagination(totalPages);
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="8" class="empty-state">حدث خطأ</td></tr>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        async function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<td><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < users.length; i++) {
+                const u = users[i];
+                let roleClass = 'badge-primary';
+                let roleText = '';
+                if (u.role === 'admin') { roleClass = 'badge-primary'; roleText = 'مدير'; }
+                else if (u.role === 'teacher') { roleClass = 'badge-info'; roleText = 'معلم'; }
+                else { roleClass = 'badge-success'; roleText = 'طالب'; }
+                
+                let statusClass = 'badge-warning';
+                let statusText = '';
+                if (u.status === 'active') { statusClass = 'badge-success'; statusText = 'نشط'; }
+                else if (u.status === 'pending') { statusClass = 'badge-warning'; statusText = 'قيد الانتظار'; }
+                else { statusClass = 'badge-danger'; statusText = 'موقوف'; }
+                
+                // عرض الصف للطالب أو عدد التعيينات للمعلم
+                let extraInfo = '';
+                if (u.role === 'student') {
+                    const classes = await fetchClasses();
+                    const cls = classes.find(c => c.id == u.class_id);
+                    extraInfo = cls?.name || 'بدون صف';
+                } else if (u.role === 'teacher') {
+                    const assignments = await fetchTeacherAssignments(u.id);
+                    extraInfo = `${assignments.length} تعيين`;
+                } else {
+                    extraInfo = '-';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${((currentPage - 1) * itemsPerPage) + i + 1}</td>
+                    <td><strong>${escapeHtml(u.name || '')}</strong></td>
+                    <td>${u.username || '-'}</td>
+                    <td>${u.phone || '-'}</td>
+                    <td><small>${escapeHtml(extraInfo)}</small></td>
+                    <td><span class="badge ${roleClass}">${roleText}</span></td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${u.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="approveUser(${u.id})">✅ تفعيل</button>` : ''}
+                            ${u.status === 'active' ? `<button class="btn btn-warning btn-sm" onclick="suspendUser(${u.id})">⛔ تعطيل</button>` : ''}
+                            ${u.status === 'suspended' ? `<button class="btn btn-success btn-sm" onclick="activateUser(${u.id})">▶️ تفعيل</button>` : ''}
+                            <button class="btn btn-info btn-sm" onclick="editUser(${u.id})">✏️ تعديل</button>
+                            <button class="btn btn-info btn-sm" onclick="openResetPassword(${u.id})">🔑 تغيير كلمة السر</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUserConfirm(${u.id})">🗑️ حذف</button>
+                            <button class="btn btn-primary btn-sm" onclick="goToUserDashboard(${u.id}, '${u.role}', '${escapeHtml(u.name).replace(/'/g, "\\'")}')">🚪 دخول</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function renderPagination(totalPages) {
+            const container = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← السابق</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span class="page-btn" style="cursor: default;">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">التالي →</button>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            loadUsers();
+        }
+        
+        // ==================== تغيير حالة المستخدم ====================
+        async function approveUser(id) {
+            await updateUserStatus(id, 'active');
+            await loadStats();
+            await loadUsers();
+        }
+        
+        async function suspendUser(id) {
+            showConfirm('هل أنت متأكد من تعطيل هذا المستخدم؟', async () => {
+                await updateUserStatus(id, 'suspended');
+                await loadStats();
+                await loadUsers();
+            });
+        }
+        
+        async function activateUser(id) {
+            await updateUserStatus(id, 'active');
+            await loadStats();
+            await loadUsers();
+        }
+        
+        // ==================== تعديل المستخدم ====================
+        async function editUser(id) {
+            const users = await fetchUsers({});
+            const user = users.find(u => u.id == id);
+            if (!user) return;
+            
+            currentUserId = id;
+            document.getElementById('modalTitle').innerHTML = '✏️ تعديل مستخدم';
+            document.getElementById('userName').value = user.name || '';
+            document.getElementById('userPhone').value = user.phone || '';
+            document.getElementById('userEmail').value = user.email || '';
+            document.getElementById('userUsername').value = user.username || '';
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userPassword').value = '';
+            
+            await loadClassesForSelect();
+            if (user.class_id) {
+                document.getElementById('userClassId').value = user.class_id;
+            }
+            
+            onRoleChange();
+            
+            if (user.role === 'teacher') {
+                await loadTeacherAssignmentsForEdit(user.id);
+            }
+            
+            document.getElementById('userModal').style.display = 'flex';
+        }
+        
+        async function loadTeacherAssignmentsForEdit(teacherId) {
+            currentTeacherAssignments = await fetchTeacherAssignments(teacherId);
+            renderTeacherAssignmentsList();
+            
+            const classes = await fetchClasses();
+            const subjects = await fetchSubjects();
+            
+            const classSelect = document.getElementById('assignClassId');
+            classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+            classes.forEach(c => {
+                classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+            
+            const subjectSelect = document.getElementById('assignSubjectId');
+            subjectSelect.innerHTML = '<option value="">-- اختر المادة --</option>';
+            subjects.forEach(s => {
+                subjectSelect.innerHTML += `<option value="${s.id}">${escapeHtml(s.name)}</option>`;
+            });
+        }
+        
+        function renderTeacherAssignmentsList() {
+            const container = document.getElementById('teacherAssignmentsList');
+            if (!currentTeacherAssignments || currentTeacherAssignments.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 20px;">لا توجد تعيينات</div>';
+                return;
+            }
+            
+            container.innerHTML = currentTeacherAssignments.map(assign => `
+                <div class="assignment-item">
+                    <div class="assignment-info">
+                        <span>📚 ${assign.classes?.name || 'بدون صف'}</span>
+                        <span>📖 ${assign.subjects?.name || 'بدون مادة'}</span>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="removeAssignment(${assign.id})">🗑️ إزالة</button>
+                </div>
+            `).join('');
+        }
+        
+        async function addTeacherAssignment() {
+            const classId = document.getElementById('assignClassId').value;
+            const subjectId = document.getElementById('assignSubjectId').value;
+            
+            if (!classId || !subjectId) {
+                showToast('اختر الصف والمادة', 'error');
+                return;
+            }
+            
+            const exists = currentTeacherAssignments.some(a => a.class_id == classId && a.subject_id == subjectId);
+            if (exists) {
+                showToast('هذا التعيين موجود بالفعل', 'error');
+                return;
+            }
+            
+            const newAssignment = {
+                teacher_id: currentUserId,
+                class_id: parseInt(classId),
+                subject_id: parseInt(subjectId)
+            };
+            
+            const { data, error } = await sb
+                .from('teacher_assignments')
+                .insert(newAssignment)
+                .select('*, classes(id, name), subjects(id, name)')
+                .single();
+            
+            if (error) {
+                showToast('حدث خطأ', 'error');
+                return;
+            }
+            
+            currentTeacherAssignments.push(data);
+            renderTeacherAssignmentsList();
+            showToast('تم إضافة التعيين', 'success');
+        }
+        
+        async function removeAssignment(assignmentId) {
+            showConfirm('هل أنت متأكد من إزالة هذا التعيين؟', async () => {
+                const { error } = await sb
+                    .from('teacher_assignments')
+                    .delete()
+                    .eq('id', assignmentId);
+                
+                if (error) {
+                    showToast('حدث خطأ', 'error');
+                    return;
+                }
+                
+                currentTeacherAssignments = currentTeacherAssignments.filter(a => a.id !== assignmentId);
+                renderTeacherAssignmentsList();
+                showToast('تم إزالة التعيين', 'success');
+            });
+        }
+        
+        // ==================== عند تغيير الدور ====================
+        function onRoleChange() {
+            const role = document.getElementById('userRole').value;
+            
+            document.getElementById('usernameField').style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none';
+            document.getElementById('classField').style.display = role === 'student' ? 'block' : 'none';
+            
+            const teacherSection = document.getElementById('teacherAssignmentsSection');
+            teacherSection.style.display = (role === 'teacher' && currentUserId) ? 'block' : 'none';
+            
+            if (role !== 'teacher') {
+                currentTeacherAssignments = [];
+                if (document.getElementById('teacherAssignmentsList')) {
+                    document.getElementById('teacherAssignmentsList').innerHTML = '';
+                }
+            }
+        }
+        
+        // ==================== فتح مودال إضافة مستخدم ====================
+        async function openAddUserModal() {
+            currentUserId = null;
+            currentTeacherAssignments = [];
+            document.getElementById('modalTitle').innerHTML = '➕ إضافة مستخدم جديد';
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
+            document.getElementById('userEmail').value = '';
+            document.getElementById('userUsername').value = '';
+            document.getElementById('userRole').value = 'student';
+            document.getElementById('userClassId').value = '';
+            document.getElementById('userPassword').value = '';
+            document.getElementById('teacherAssignmentsList').innerHTML = '';
+            
+            await loadClassesForSelect();
+            onRoleChange();
+            document.getElementById('userModal').style.display = 'flex';
+        }
+        
+        // ==================== تحميل الصفوف ====================
+        async function loadClassesForSelect() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('userClassId');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>';
+            for (let i = 0; i < classes.length; i++) {
+                select.innerHTML += `<option value="${classes[i].id}">${escapeHtml(classes[i].name)}</option>`;
+            }
+        }
+        
+        // ==================== حفظ المستخدم ====================
+        async function saveUser() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const email = document.getElementById('userEmail').value;
+            const role = document.getElementById('userRole').value;
+            const classId = document.getElementById('userClassId').value;
+            const username = document.getElementById('userUsername').value;
+            const password = document.getElementById('userPassword').value;
+            
+            if (!name || !phone) {
+                showToast('الاسم ورقم الهاتف مطلوبة', 'error');
+                return;
+            }
+            
+            if ((role === 'teacher' || role === 'admin') && !username) {
+                showToast('اسم المستخدم مطلوب للمعلمين والأدمن', 'error');
+                return;
+            }
+            
+            const updateData = {
+                name: name,
+                phone: phone,
+                email: email || null,
+                role: role,
+                class_id: classId || null
+            };
+            
+            if (role === 'teacher' || role === 'admin') {
+                updateData.username = username;
+            }
+            
+            if (password) {
+                if (password.length < 6) {
+                    showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+                    return;
+                }
+                updateData.password_hash = await hashPassword(password);
+            }
+            
+            let result;
+            if (currentUserId) {
+                const { error } = await sb
+                    .from('users')
+                    .update(updateData)
+                    .eq('id', currentUserId);
+                
+                if (error) {
+                    showToast('حدث خطأ: ' + error.message, 'error');
+                    return;
+                }
+                result = true;
+            } else {
+                if (!password) {
+                    showToast('كلمة السر مطلوبة للمستخدم الجديد', 'error');
+                    return;
+                }
+                updateData.password_hash = await hashPassword(password);
+                updateData.status = 'active';
+                
+                const { error } = await sb
+                    .from('users')
+                    .insert(updateData);
+                
+                if (error) {
+                    showToast('حدث خطأ: ' + error.message, 'error');
+                    return;
+                }
+                result = true;
+            }
+            
+            if (result) {
+                showToast('تم ' + (currentUserId ? 'تعديل' : 'إضافة') + ' المستخدم', 'success');
+                closeModal('userModal');
+                await loadStats();
+                await loadUsers();
+            }
+        }
+        
+        // ==================== إعادة تعيين كلمة المرور ====================
+        function openResetPassword(id) {
+            currentResetUserId = id;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            document.getElementById('resetPasswordModal').style.display = 'flex';
+        }
+        
+        async function confirmResetPassword() {
+            const newPass = document.getElementById('newPassword').value;
+            const confirmPass = document.getElementById('confirmNewPassword').value;
+            
+            if (!newPass || newPass.length < 6) {
+                showToast('كلمة السر يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                showToast('كلمة السر غير متطابقة', 'error');
+                return;
+            }
+            
+            await resetUserPassword(currentResetUserId, newPass);
+            closeModal('resetPasswordModal');
+        }
+        
+        // ==================== حذف المستخدم ====================
+        function deleteUserConfirm(id) {
+            showConfirm('⚠️ هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
+                await deleteUser(id);
+                await loadStats();
+                await loadUsers();
+            });
+        }
+        
+        // ==================== الدخول للوحة المستخدم ====================
+        window.goToUserDashboard = async function(userId, role, userName) {
+            const users = await fetchUsers({});
+            const targetUser = users.find(u => u.id == userId);
+            if (!targetUser) return;
+            
+            const adminUser = getUser();
+            localStorage.setItem('originalUser', JSON.stringify(adminUser));
+            localStorage.setItem('user', JSON.stringify({
+                id: targetUser.id,
+                name: targetUser.name,
+                role: targetUser.role,
+                username: targetUser.username,
+                phone: targetUser.phone,
+                class_id: targetUser.class_id,
+                isImpersonating: true
+            }));
+            
+            showToast(`جاري الدخول كـ ${userName}...`, 'success');
+            setTimeout(() => {
+                if (targetUser.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else if (targetUser.role === 'teacher') window.location.href = 'teacher-dashboard.html';
+                else window.location.href = 'student-dashboard.html';
+            }, 1000);
+        };
+        
+        // ==================== إغلاق المودال ====================
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ==================== أحداث البحث والفلاتر ====================
+        document.getElementById('searchInput').addEventListener('input', () => {
+            currentPage = 1;
+            loadUsers();
+        });
+        document.getElementById('roleFilter').addEventListener('change', () => {
+            currentPage = 1;
+            loadUsers();
+        });
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            currentPage = 1;
+            loadUsers();
+        });
+        
+        window.goToPage = goToPage;
+        window.approveUser = approveUser;
+        window.suspendUser = suspendUser;
+        window.activateUser = activateUser;
+        window.editUser = editUser;
+        window.openAddUserModal = openAddUserModal;
+        window.saveUser = saveUser;
+        window.openResetPassword = openResetPassword;
+        window.confirmResetPassword = confirmResetPassword;
+        window.deleteUserConfirm = deleteUserConfirm;
+        window.closeModal = closeModal;
+        window.onRoleChange = onRoleChange;
+        window.addTeacherAssignment = addTeacherAssignment;
+        window.removeAssignment = removeAssignment;
+        
+        // ==================== تحميل أولي ====================
+        async function init() {
+            await loadStats();
+            await loadUsers();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

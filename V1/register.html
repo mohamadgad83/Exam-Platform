@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل طالب جديد - منصة الاختبارات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .register-container { max-width: 550px; margin: 0 auto; }
+        .form-group { margin-bottom: 20px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .back-link { text-align: center; margin-top: 25px; }
+        .back-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            width: 100%;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(99,102,241,0.4); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        .logo { font-size: 48px; margin-bottom: 16px; }
+        .subtitle { color: var(--gray); margin-bottom: 30px; }
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .info-note {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 16px;
+            font-size: 13px;
+            text-align: right;
+            color: #64748b;
+        }
+        .info-note strong { color: #6366f1; }
+        @media (max-width: 480px) {
+            .card { padding: 25px 20px; }
+            .form-group input, .form-group select { padding: 12px 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="card">
+            <div class="logo">🎓</div>
+            <h1>تسجيل طالب جديد</h1>
+            <p class="subtitle">قم بإنشاء حسابك للبدء في أداء الامتحانات</p>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>👤 الاسم الكامل</label>
+                    <input type="text" id="fullName" placeholder="مثال: أحمد محمد علي" required autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label>📞 رقم الهاتف (اسم المستخدم للدخول)</label>
+                    <input type="tel" id="phone" placeholder="مثال: 01012345678" required autocomplete="off">
+                    <small style="color: #64748b; display: block; margin-top: 5px;">سيتم استخدام رقم الهاتف لتسجيل الدخول</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>📧 البريد الإلكتروني (اختياري)</label>
+                    <input type="email" id="email" placeholder="example@email.com" autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label>🎓 الصف الدراسي</label>
+                    <select id="classId" required>
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>🔒 كلمة السر</label>
+                    <input type="password" id="password" placeholder="6 أحرف على الأقل" required autocomplete="off">
+                </div>
+                
+                <div class="form-group">
+                    <label>🔐 تأكيد كلمة السر</label>
+                    <input type="password" id="confirmPassword" placeholder="أعد كتابة كلمة السر" required autocomplete="off">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="registerBtn">تسجيل</button>
+            </form>
+            
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            
+            <div class="back-link">
+                <a href="index.html">← العودة لتسجيل الدخول</a>
+            </div>
+            
+            <div class="info-note">
+                💡 <strong>ملاحظة:</strong> بعد التسجيل، سيتم إرسال طلبك إلى المدير للموافقة عليه. سيتم تفعيل حسابك خلال 24 ساعة.
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase-config.js"></script>
+    <script>
+        // ==================== المتغيرات ====================
+        const registerForm = document.getElementById('registerForm');
+        const registerBtn = document.getElementById('registerBtn');
+        const errorDiv = document.getElementById('errorMessage');
+        const successDiv = document.getElementById('successMessage');
+        
+        // ==================== تحميل الصفوف ====================
+        async function loadClasses() {
+            try {
+                const classes = await fetchClasses();
+                const classSelect = document.getElementById('classId');
+                
+                if (classes && classes.length > 0) {
+                    classSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
+                    for (const c of classes) {
+                        classSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+                    }
+                } else {
+                    classSelect.innerHTML = '<option value="">لا توجد صفوف متاحة حالياً</option>';
+                    classSelect.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                showError('حدث خطأ في تحميل الصفوف، يرجى تحديث الصفحة');
+            }
+        }
+        
+        // ==================== عرض الأخطاء ====================
+        function showError(msg) {
+            errorDiv.innerHTML = msg;
+            errorDiv.style.display = 'block';
+            successDiv.style.display = 'none';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showSuccess(msg) {
+            successDiv.innerHTML = msg;
+            successDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+        
+        // ==================== التحقق من صحة الإدخال ====================
+        function validateForm(name, phone, classId, password, confirm) {
+            if (!name.trim()) {
+                showError('❌ الاسم الكامل مطلوب');
+                return false;
+            }
+            
+            if (!phone.trim()) {
+                showError('❌ رقم الهاتف مطلوب');
+                return false;
+            }
+            
+            // التحقق من صحة رقم الهاتف (مصري)
+            const phoneRegex = /^(010|011|012|015)[0-9]{8}$/;
+            if (!phoneRegex.test(phone.trim())) {
+                showError('❌ رقم الهاتف غير صحيح. يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقم');
+                return false;
+            }
+            
+            if (!classId) {
+                showError('❌ يرجى اختيار الصف الدراسي');
+                return false;
+            }
+            
+            if (!password) {
+                showError('❌ كلمة السر مطلوبة');
+                return false;
+            }
+            
+            if (password.length < 6) {
+                showError('❌ كلمة السر يجب أن تكون 6 أحرف على الأقل');
+                return false;
+            }
+            
+            if (password !== confirm) {
+                showError('❌ كلمة السر غير متطابقة');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // ==================== التسجيل ====================
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const classId = document.getElementById('classId').value;
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            
+            // التحقق من صحة الإدخال
+            if (!validateForm(name, phone, classId, password, confirm)) {
+                return;
+            }
+            
+            // تعطيل الزر أثناء المعالجة
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = 'جاري التسجيل... <span class="loading-spinner"></span>';
+            
+            try {
+                // محاولة التسجيل
+                const result = await registerStudent(name, phone, password, classId, email || null);
+                
+                if (result.success) {
+                    showSuccess('✅ تم تسجيل حسابك بنجاح! جاري تحويلك إلى صفحة تسجيل الدخول...');
+                    
+                    // إرسال إشعار للأدمن (اختياري)
+                    try {
+                        await sb.from('notifications').insert({
+                            title: 'مستخدم جديد',
+                            message: `طالب جديد: ${name} ينتظر الموافقة`,
+                            type: 'new_user',
+                            created_at: new Date()
+                        });
+                    } catch(e) {
+                        console.log('Notification error:', e);
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2500);
+                } else {
+                    showError('❌ ' + result.error);
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = 'تسجيل';
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('❌ حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى');
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'تسجيل';
+            }
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ==================== ربط الأحداث ====================
+        registerForm.addEventListener('submit', handleRegister);
+        
+        // ==================== تحميل الصفوف عند بدء التشغيل ====================
+        loadClasses();
+    </script>
+</body>
+</html>
