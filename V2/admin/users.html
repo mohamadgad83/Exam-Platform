@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المستخدمين - لوحة التحكم</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">👥 إدارة المستخدمين</h2>
+            <button class="btn btn-primary" onclick="showAddUserModal()">+ مستخدم جديد</button>
+          </div>
+          <div class="card-body">
+            <div class="filter-bar">
+              <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-input" id="search-users" placeholder="ابحث بالاسم أو البريد...">
+              </div>
+              <select class="form-select" id="filter-role" onchange="loadUsers()">
+                <option value="">كل الأدوار</option>
+                <option value="student">طالب</option>
+                <option value="teacher">معلم</option>
+                <option value="admin">مدير</option>
+              </select>
+              <select class="form-select" id="filter-status" onchange="loadUsers()">
+                <option value="">كل الحالات</option>
+                <option value="active">نشط</option>
+                <option value="inactive">معطل</option>
+              </select>
+            </div>
+            <div class="table-container">
+              <table class="data-table" id="users-table">
+                <thead>
+                  <tr>
+                    <th>المستخدم</th>
+                    <th>الدور</th>
+                    <th>البريد</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody">
+                  <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">👥</div><h3>جاري التحميل...</h3></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('admin')) throw new Error('Unauthorized');
+    renderLayout('admin', 'users');
+
+    const demoUsers = [
+      { id: 1, name: 'أحمد محمد', role: 'student', email: 'ahmed@school.com', date: '2024-01-15', status: 'active' },
+      { id: 2, name: 'د. سارة علي', role: 'teacher', email: 'sara@school.com', date: '2023-11-20', status: 'active' },
+      { id: 3, name: 'محمد جاد', role: 'admin', email: 'admin@platform.com', date: '2023-01-01', status: 'active' },
+      { id: 4, name: 'خالد عمر', role: 'student', email: 'khaled@school.com', date: '2024-02-10', status: 'inactive' },
+    ];
+
+    function loadUsers() {
+      const role = document.getElementById('filter-role').value;
+      const status = document.getElementById('filter-status').value;
+      const search = document.getElementById('search-users').value.toLowerCase();
+      
+      let filtered = demoUsers.filter(u => {
+        return (!role || u.role === role) &&
+               (!status || u.status === status) &&
+               (!search || u.name.includes(search) || u.email.includes(search));
+      });
+
+      const tbody = document.getElementById('users-tbody');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">😕</div><h3>لا يوجد مستخدمين</h3></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(u => `
+        <tr>
+          <td><strong>${u.name}</strong></td>
+          <td><span class="badge ${u.role === 'admin' ? 'badge-danger' : u.role === 'teacher' ? 'badge-warning' : 'badge-info'}">${u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب'}</span></td>
+          <td>${u.email}</td>
+          <td>${formatDate(u.date)}</td>
+          <td><span class="badge ${u.status === 'active' ? 'badge-success' : 'badge-secondary'}">${u.status === 'active' ? 'نشط' : 'معطل'}</span></td>
+          <td class="table-actions">
+            <button class="btn btn-sm btn-secondary" onclick="editUser(${u.id})">تعديل</button>
+            <button class="btn btn-sm btn-danger" onclick="toggleUser(${u.id})">${u.status === 'active' ? 'تعطيل' : 'تفعيل'}</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddUserModal() {
+      showModal('إضافة مستخدم جديد', `
+        <div class="form-group">
+          <label class="form-label required">الاسم الكامل</label>
+          <input type="text" class="form-input" id="new-user-name" data-validate="required">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">البريد الإلكتروني</label>
+          <input type="email" class="form-input" id="new-user-email" data-validate="required|email">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">الدور</label>
+          <select class="form-select" id="new-user-role">
+            <option value="student">طالب</option>
+            <option value="teacher">معلم</option>
+            <option value="admin">مدير</option>
+          </select>
+        </div>
+      `, [
+        { text: 'إلغاء', class: 'btn-secondary', action: 'closeModal()' },
+        { text: 'إضافة', class: 'btn-primary', action: 'closeModal(); showToast("تم إضافة المستخدم بنجاح", "success");' }
+      ]);
+    }
+
+    function editUser(id) { showToast('جاري فتح التعديل...', 'info'); }
+    function toggleUser(id) { showToast('تم تغيير الحالة', 'success'); loadUsers(); }
+
+    document.getElementById('search-users')?.addEventListener('input', debounce(loadUsers, 300));
+    loadUsers();
+  </script>
+</body>
+</html>
