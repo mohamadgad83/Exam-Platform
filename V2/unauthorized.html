@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>غير مصرح - منصة الاختبارات</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <style>
+    .unauthorized-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--gray-100), var(--gray-200));
+    }
+    .unauthorized-box {
+      background: var(--white);
+      padding: 3rem;
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-xl);
+      max-width: 480px;
+      width: 100%;
+    }
+    .unauthorized-icon {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+    }
+    .unauthorized-box h1 {
+      font-size: 1.75rem;
+      color: var(--gray-900);
+      margin-bottom: 0.75rem;
+    }
+    .unauthorized-box p {
+      color: var(--gray-500);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="unauthorized-container">
+    <div class="unauthorized-box">
+      <div class="unauthorized-icon">🚫</div>
+      <h1>وصول غير مصرح</h1>
+      <p>لا تمتلك الصلاحية للوصول إلى هذه الصفحة. إذا كنت تعتقد أن هذا خطأ، تواصل مع مدير النظام.</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="login.html" class="btn btn-primary">تسجيل الدخول</a>
+        <a href="index.html" class="btn btn-secondary">الصفحة الرئيسية</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
