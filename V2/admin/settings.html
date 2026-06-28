@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إعدادات النظام - لوحة التحكم</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="card" style="max-width: 800px;">
+          <div class="card-header">
+            <h2 class="card-title">⚙️ إعدادات المنصة</h2>
+          </div>
+          <div class="card-body">
+            <form id="settings-form" onsubmit="event.preventDefault(); saveSettings();">
+              <h3 style="margin-bottom: 1rem; color: var(--gray-700);">🔖 معلومات أساسية</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label required">اسم المنصة</label>
+                  <input type="text" class="form-input" value="منصة الاختبارات" data-validate="required">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">البريد الافتراضي</label>
+                  <input type="email" class="form-input" value="support@exam-platform.com">
+                </div>
+              </div>
+              
+              <h3 style="margin: 1.5rem 0 1rem; color: var(--gray-700);">🔒 أمان الاختبارات</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">مدة الجلسة (دقيقة)</label>
+                  <input type="number" class="form-input" value="15" min="5" max="120">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">عدد المحاولات المسموحة</label>
+                  <input type="number" class="form-input" value="1" min="1" max="10">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" checked style="width: 18px; height: 18px;">
+                  تفعيل وضع الامتحان الآمن (منع النسخ والتبديل)
+                </label>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="checkbox" checked style="width: 18px; height: 18px;">
+                  إرسال إشعارات البريد الإلكتروني تلقائياً
+                </label>
+              </div>
+
+              <div class="card-footer" style="margin-top: 2rem; padding: 1.5rem 0 0; border-top: 1px solid var(--gray-200);">
+                <button type="submit" class="btn btn-primary">💾 حفظ الإعدادات</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('admin')) throw new Error('Unauthorized');
+    renderLayout('admin', 'settings');
+
+    function saveSettings() {
+      if (!validateForm(document.getElementById('settings-form'))) return;
+      showToast('تم حفظ الإعدادات بنجاح', 'success');
+    }
+  </script>
+</body>
+</html>
