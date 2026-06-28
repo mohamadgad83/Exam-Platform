@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مجموعاتي - الطالب</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <main class="main-content">
+      <div class="content-area">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">👥 مجموعاتي</h2>
+          </div>
+          <div class="card-body" id="groups-container">
+            <!-- groups loaded here -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../shared/app.js"></script>
+  <script>
+    if (!requireAuth('student')) throw new Error('Unauthorized');
+    renderLayout('student', 'groups');
+
+    const myGroups = [
+      { id: 1, name: 'الصف الثالث الثانوي - أ', teacher: 'د. سارة علي', subject: 'فيزياء', members: 32, exams: 5 },
+      { id: 2, name: 'مجموعة التحضيرية', teacher: 'د. خالد محمود', subject: 'كيمياء', members: 45, exams: 3 },
+    ];
+
+    function loadGroups() {
+      const container = document.getElementById('groups-container');
+      if (!myGroups.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><h3>لم تنضم لأي مجموعة بعد</h3></div>`;
+        return;
+      }
+      
+      container.innerHTML = myGroups.map(g => `
+        <div class="group-card">
+          <div class="group-header">
+            <div>
+              <div class="group-name">${g.name}</div>
+              <div class="group-teacher">👨‍🏫 ${g.teacher} • ${g.subject}</div>
+            </div>
+            <div style="text-align:left;">
+              <div style="font-size:1.5rem; font-weight:800; color:var(--primary);">${g.exams}</div>
+              <div style="font-size:0.75rem; color:var(--gray-500);">اختبار</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; flex-wrap:wrap; gap:1rem;">
+            <div class="group-members">
+              ${Array(Math.min(g.members, 5)).fill(0).map((_,i) => `<div class="member-avatar">${String.fromCharCode(1632+i)}</div>`).join('')}
+              ${g.members > 5 ? `<div class="member-avatar" style="background:var(--gray-200); color:var(--gray-600);">+${g.members-5}</div>` : ''}
+            </div>
+            <a href="exams.html?group=${g.id}" class="btn btn-sm btn-primary">عرض الاختبارات</a>
+          </div>
+        </div>
+      `).join('');
+    }
+    loadGroups();
+  </script>
+</body>
+</html>
