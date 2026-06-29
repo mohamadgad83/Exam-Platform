@@ -441,4 +441,114 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         App.Modal.closeAll();
     }
+    // ============================================
+// Demo Mode Handler
+// ============================================
+const DemoMode = {
+  isActive() {
+    return App.Storage.get('demo_user') !== null;
+  },
+
+  getUser() {
+    return App.Storage.get('demo_user');
+  },
+
+  getRole() {
+    return App.Storage.get('demo_role');
+  },
+
+  // Mock data for demo
+  getMockData(type) {
+    const mocks = {
+      admin: {
+        stats: { users: 1240, students: 980, teachers: 45, exams: 156, attempts: 8934 },
+        recentActivity: [
+          { user: 'أحمد محمد', action: 'أنشأ اختبار جديد', time: 'منذ 5 دقائق' },
+          { user: 'سارة علي', action: 'أكملت اختبار الرياضيات', time: 'منذ 12 دقيقة' }
+        ]
+      },
+      teacher: {
+        stats: { exams: 12, questions: 340, students: 85, avgScore: 78 },
+        performance: [65, 72, 80, 85, 78, 90, 88]
+      },
+      student: {
+        stats: { available: 5, completed: 12, average: 82, best: 96 },
+        upcoming: [
+          { title: 'اختبار الفيزياء', subject: 'الفيزياء', date: '2025-07-01', duration: 60 },
+          { title: 'اختبار اللغة العربية', subject: 'العربية', date: '2025-07-03', duration: 90 }
+        ],
+        results: [
+          { exam: 'اختبار الرياضيات', score: 85, total: 100, date: '2025-06-20' },
+          { exam: 'اختبار الكيمياء', score: 92, total: 100, date: '2025-06-15' }
+        ]
+      }
+    };
+    return mocks[this.getRole()]?.[type] || null;
+  },
+
+  init() {
+    if (!this.isActive()) return;
+    
+    // Override auth functions for demo
+    window.examAuth = {
+      ...window.examAuth,
+      getUser: async () => this.getUser(),
+      isAdmin: async () => this.getRole() === 'admin',
+      isTeacher: async () => this.getRole() === 'teacher',
+      getSession: async () => ({ data: { session: { user: this.getUser() } }, error: null })
+    };
+
+    // Show demo badge
+    const badge = document.createElement('div');
+    badge.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 9999;
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        color: #78350f;
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 0.875rem;
+        box-shadow: 0 10px 15px rgba(245, 158, 11, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: pulse 2s infinite;
+      ">
+        <span>⚡</span>
+        <span>وضع المعاينة — ${this.getRole() === 'admin' ? 'مدير' : this.getRole() === 'teacher' ? 'معلم' : 'طالب'}</span>
+        <button onclick="DemoMode.exit()" style="
+          background: rgba(255,255,255,0.3);
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          cursor: pointer;
+          margin-right: 8px;
+          font-weight: 700;
+        ">×</button>
+      </div>
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      </style>
+    `;
+    document.body.appendChild(badge);
+  },
+
+  exit() {
+    App.Storage.clear();
+    window.location.href = '../login.html';
+  }
+};
+
+// Auto-init demo on dashboard pages
+if (document.querySelector('.app-layout') || document.querySelector('.sidebar')) {
+  DemoMode.init();
+}
 });

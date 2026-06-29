@@ -3,316 +3,610 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الدخول - منصة الاختبارات</title>
+  <title>تسجيل الدخول — منصة الاختبارات</title>
   <link rel="stylesheet" href="shared/styles.css">
   <style>
+    /* Login Specific Styles */
     .login-page {
       min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg-body);
+    }
+
+    .login-hero {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-      padding: 2rem;
+      font-size: 2.5rem;
+      margin: 0 auto 32px;
+      border: 1px solid rgba(255,255,255,0.3);
     }
-    .login-card {
-      background: white;
-      border-radius: var(--radius-xl);
-      padding: 2.5rem;
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .hero-desc {
+      font-size: 1.125rem;
+      opacity: 0.9;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .hero-features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: right;
+    }
+
+    .hero-feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.15);
+      padding: 16px 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .hero-feature-icon {
+      font-size: 1.5rem;
+    }
+
+    .hero-feature-text {
+      font-weight: 600;
+    }
+
+    /* Demo Access Section */
+    .demo-section {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .demo-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .demo-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .demo-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .demo-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-2px);
+    }
+
+    .demo-btn .role-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Login Form Side */
+    .login-form-side {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px;
+    }
+
+    .login-container {
       width: 100%;
       max-width: 420px;
-      box-shadow: var(--shadow-lg);
     }
-    .login-card .logo {
+
+    .login-header {
+      margin-bottom: 32px;
       text-align: center;
-      margin-bottom: 2rem;
     }
-    .login-card .logo-icon {
-      width: 64px;
-      height: 64px;
-      background: var(--primary);
-      color: white;
-      border-radius: var(--radius-lg);
+
+    .login-header h1 {
+      font-size: 1.875rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .login-header p {
+      color: var(--text-muted);
+    }
+
+    .login-tabs {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      margin: 0 auto 1rem;
+      background: var(--bg-body);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border-color);
     }
-    .login-card .logo h1 {
-      font-size: 1.5rem;
-      color: var(--gray-900);
-    }
-    .login-card .logo p {
-      color: var(--gray-500);
-      margin-top: 0.25rem;
-    }
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      background: var(--gray-100);
-      padding: 0.25rem;
-      border-radius: var(--radius);
-    }
-    .tab-btn {
+
+    .login-tab {
       flex: 1;
-      padding: 0.625rem;
+      padding: 10px;
+      text-align: center;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
       border: none;
       background: transparent;
-      border-radius: var(--radius);
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: var(--gray-600);
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
     }
-    .tab-btn.active {
-      background: white;
-      color: var(--primary);
+
+    .login-tab.active {
+      background: var(--bg-surface);
+      color: var(--primary-600);
       box-shadow: var(--shadow-sm);
     }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .forgot-link {
-      text-align: left;
-      margin-top: -0.5rem;
-      margin-bottom: 1rem;
+
+    .login-form {
+      display: none;
     }
-    .forgot-link a {
-      color: var(--primary);
+
+    .login-form.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
       font-size: 0.875rem;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .remember-me input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary-600);
+    }
+
+    .forgot-link {
+      color: var(--primary-600);
+      font-weight: 600;
       text-decoration: none;
     }
-    .forgot-link a:hover { text-decoration: underline; }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      margin-bottom: 24px;
+    }
+
     .divider {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      color: var(--gray-400);
+      gap: 16px;
+      margin-bottom: 24px;
+      color: var(--text-muted);
       font-size: 0.875rem;
     }
+
     .divider::before,
     .divider::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: var(--gray-200);
+      background: var(--border-color);
+    }
+
+    .social-login {
+      display: flex;
+      gap: 12px;
+    }
+
+    .social-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .social-btn:hover {
+      background: var(--bg-body);
+      border-color: var(--primary-500);
+      color: var(--primary-600);
+    }
+
+    .register-link {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+    }
+
+    .register-link a {
+      color: var(--primary-600);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: var(--shadow-md);
+      z-index: 100;
+    }
+
+    @media (max-width: 1024px) {
+      .login-page {
+        grid-template-columns: 1fr;
+      }
+      .login-hero {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">🌓</button>
+
   <div class="login-page">
-    <div class="login-card">
-      <div class="logo">
-        <div class="logo-icon">📚</div>
-        <h1>منصة الاختبارات</h1>
-        <p>نظام إدارة الاختبارات الإلكترونية</p>
-      </div>
+    <!-- Hero Side -->
+    <div class="login-hero">
+      <div class="hero-content">
+        <div class="hero-logo">📚</div>
+        <h2 class="hero-title">منصة الاختبارات الذكية</h2>
+        <p class="hero-desc">
+          نظام متكامل لإدارة الاختبارات الإلكترونية مع أمان متقدم، 
+          تصحيح آلي، وتحليلات فورية للأداء.
+        </p>
+        
+        <div class="hero-features">
+          <div class="hero-feature">
+            <span class="hero-feature-icon">🔒</span>
+            <span class="hero-feature-text">وضع امتحان آمن مع منع الغش الإلكتروني</span>
+          </div>
+          <div class="hero-feature">
+            <span class="hero-feature-icon">⚡</span>
+            <span class="hero-feature-text">تصحيح فوري ونتائج لحظية</span>
+          </div>
+          <div class="hero-feature">
+            <span class="hero-feature-icon">📊</span>
+            <span class="hero-feature-text">تقارير تحليلية متقدمة للطلاب والمعلمين</span>
+          </div>
+        </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('login')">تسجيل الدخول</button>
-        <button class="tab-btn" onclick="switchTab('register')">حساب جديد</button>
+        <!-- Demo Access -->
+        <div class="demo-section">
+          <div class="demo-title">🚀 دخول سريع للمعاينة</div>
+          <div class="demo-buttons">
+            <button class="demo-btn" onclick="demoLogin('admin')">
+              <span>👨‍💼</span>
+              <span>دخول كمدير نظام</span>
+              <span class="role-badge">Admin</span>
+            </button>
+            <button class="demo-btn" onclick="demoLogin('teacher')">
+              <span>👨‍🏫</span>
+              <span>دخول كمعلم</span>
+              <span class="role-badge">Teacher</span>
+            </button>
+            <button class="demo-btn" onclick="demoLogin('student')">
+              <span>👨‍🎓</span>
+              <span>دخول كطالب</span>
+              <span class="role-badge">Student</span>
+            </button>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <!-- Login Form -->
-      <div class="tab-content active" id="login-tab">
-        <form id="login-form" onsubmit="handleLogin(event)">
+    <!-- Form Side -->
+    <div class="login-form-side">
+      <div class="login-container">
+        <div class="login-header">
+          <h1>مرحباً بعودتك! 👋</h1>
+          <p>سجل دخولك للوصول إلى لوحة التحكم</p>
+        </div>
+
+        <div class="login-tabs">
+          <button class="login-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
+          <button class="login-tab" onclick="switchTab('register')">حساب جديد</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="login-form active" onsubmit="handleLogin(event)">
           <div class="form-group">
             <label class="form-label">البريد الإلكتروني</label>
-            <input type="email" class="form-input" id="login-email" data-validate="required|email" placeholder="example@school.edu" required>
+            <input type="email" class="form-input" placeholder="name@school.edu" required>
           </div>
           <div class="form-group">
             <label class="form-label">كلمة المرور</label>
-            <input type="password" class="form-input" id="login-password" data-validate="required|min:6" placeholder="••••••••" required>
+            <input type="password" class="form-input" placeholder="••••••••" required>
           </div>
-          <div class="forgot-link">
-            <a href="#" onclick="showForgotPassword(event)">نسيت كلمة المرور؟</a>
+          
+          <div class="form-options">
+            <label class="remember-me">
+              <input type="checkbox" checked>
+              <span>تذكرني</span>
+            </label>
+            <a href="forgot-password.html" class="forgot-link">نسيت كلمة المرور؟</a>
           </div>
-          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="login-btn">
-            تسجيل الدخول
-          </button>
-        </form>
-      </div>
 
-      <!-- Register Form -->
-      <div class="tab-content" id="register-tab">
-        <form id="register-form" onsubmit="handleRegister(event)">
+          <button type="submit" class="btn btn-primary submit-btn">
+            <span>🔐</span>
+            <span>تسجيل الدخول</span>
+          </button>
+
+          <div class="divider">أو</div>
+
+          <div class="social-login">
+            <button type="button" class="social-btn" onclick="socialLogin('google')">
+              <span>🔍</span> Google
+            </button>
+            <button type="button" class="social-btn" onclick="socialLogin('microsoft')">
+              <span>🪟</span> Microsoft
+            </button>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="login-form" onsubmit="handleRegister(event)">
           <div class="form-group">
             <label class="form-label">الاسم الكامل</label>
-            <input type="text" class="form-input" id="reg-name" data-validate="required|min:3" placeholder="محمد أحمد" required>
+            <input type="text" class="form-input" placeholder="محمد أحمد" required>
           </div>
           <div class="form-group">
             <label class="form-label">البريد الإلكتروني</label>
-            <input type="email" class="form-input" id="reg-email" data-validate="required|email" placeholder="example@school.edu" required>
+            <input type="email" class="form-input" placeholder="name@school.edu" required>
           </div>
           <div class="form-group">
             <label class="form-label">نوع الحساب</label>
-            <select class="form-select" id="reg-role" required>
-              <option value="">اختر نوع الحساب</option>
+            <select class="form-input" required>
+              <option value="">اختر نوع الحساب...</option>
               <option value="student">طالب</option>
               <option value="teacher">معلم</option>
             </select>
           </div>
-          <div class="form-group" id="class-group" style="display: none;">
-            <label class="form-label">الصف الدراسي</label>
-            <select class="form-select" id="reg-class">
-              <option value="">اختر الصف</option>
-              <option value="1">الصف الأول الثانوي</option>
-              <option value="2">الصف الثاني الثانوي</option>
-              <option value="3">الصف الثالث الثانوي</option>
-            </select>
-          </div>
           <div class="form-group">
             <label class="form-label">كلمة المرور</label>
-            <input type="password" class="form-input" id="reg-password" data-validate="required|min:8" placeholder="••••••••" required>
+            <input type="password" class="form-input" placeholder="8+ أحرف" required>
           </div>
           <div class="form-group">
             <label class="form-label">تأكيد كلمة المرور</label>
-            <input type="password" class="form-input" id="reg-confirm" data-validate="required" placeholder="••••••••" required>
+            <input type="password" class="form-input" placeholder="••••••••" required>
           </div>
-          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;" id="register-btn">
-            إنشاء حساب
+
+          <button type="submit" class="btn btn-primary submit-btn">
+            <span>✨</span>
+            <span>إنشاء الحساب</span>
           </button>
+
+          <p class="register-link">
+            بالتسجيل، أنت توافق على <a href="#">شروط الاستخدام</a>
+          </p>
         </form>
       </div>
-
-      <div class="divider">أو</div>
-      <p style="text-align: center; color: var(--gray-500); font-size: 0.875rem;">
-        بالتسجيل، أنت توافق على <a href="#" style="color: var(--primary);">شروط الاستخدام</a>
-      </p>
     </div>
   </div>
 
-  <script src="shared/app.js"></script>
   <script src="shared/supabase-client.js"></script>
+  <script src="shared/app.js"></script>
   <script>
-    // Tab switching
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-      event.target.classList.add('active');
-      document.getElementById(tab + '-tab').classList.add('active');
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+      localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
     }
 
-    // Show class selector for students
-    document.getElementById('reg-role').addEventListener('change', function() {
-      document.getElementById('class-group').style.display = this.value === 'student' ? 'block' : 'none';
-    });
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Login handler
+    // Tab Switching
+    function switchTab(tab) {
+      document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Form').classList.add('active');
+    }
+
+    // Demo Login
+    async function demoLogin(role) {
+      App.Loading.show('جاري تسجيل الدخول...');
+      
+      // محاكاة بيانات دخول لكل دور
+      const demoCredentials = {
+        admin: { email: 'admin@demo.com', password: 'demo123', redirect: 'admin/dashboard.html' },
+        teacher: { email: 'teacher@demo.com', password: 'demo123', redirect: 'teacher/dashboard.html' },
+        student: { email: 'student@demo.com', password: 'demo123', redirect: 'student/dashboard.html' }
+      };
+
+      const creds = demoCredentials[role];
+      
+      // في البيئة الحقيقية، استخدم:
+      // const { data, error } = await examAuth.signIn(creds.email, creds.password);
+      
+      // محاكاة للـ Demo
+      setTimeout(() => {
+        App.Loading.hide();
+        App.Storage.set('demo_role', role);
+        App.Storage.set('demo_user', {
+          id: 'demo-' + role,
+          email: creds.email,
+          role: role,
+          full_name: role === 'admin' ? 'مدير النظام' : role === 'teacher' ? 'معلم تجريبي' : 'طالب تجريبي'
+        });
+        window.location.href = creds.redirect;
+      }, 1000);
+    }
+
+    // Real Login
     async function handleLogin(e) {
       e.preventDefault();
-      const btn = document.getElementById('login-btn');
-      const originalText = btn.textContent;
+      App.Loading.show('جاري التحقق...');
+      
+      const form = e.target;
+      const email = form.querySelector('input[type="email"]').value;
+      const password = form.querySelector('input[type="password"]').value;
 
-      if (!validateForm(e.target)) return;
-
-      btn.innerHTML = '<div class="spinner"></div>';
-      btn.disabled = true;
-
-      try {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-
-        // For demo: simulate login
-        // In production: const { user } = await Auth.signIn(email, password);
-
-        // Demo user data
-        const demoUser = {
-          id: 'demo-' + Date.now(),
-          email: email,
-          full_name: 'مستخدم تجريبي',
-          role: email.includes('admin') ? 'admin' : email.includes('teacher') ? 'teacher' : 'student',
-          class_id: '2',
-          avatar: null
-        };
-
-        // Simulate API delay
-        await new Promise(r => setTimeout(r, 1000));
-
-        localStorage.setItem('exam_platform_user', JSON.stringify(demoUser));
-        localStorage.setItem('exam_platform_session', 'demo-token-' + Date.now());
-
-        showToast('✅ تم تسجيل الدخول بنجاح', 'success');
-
-        // Redirect based on role
-        const redirectMap = {
-          admin: '/admin/dashboard.html',
-          teacher: '/teacher/dashboard.html',
-          student: '/student/dashboard.html'
-        };
-
-        setTimeout(() => {
-          window.location.href = redirectMap[demoUser.role] || '/student/dashboard.html';
-        }, 1000);
-
-      } catch (err) {
-        showToast('❌ ' + (err.message || 'خطأ في تسجيل الدخول'), 'error');
-        btn.textContent = originalText;
-        btn.disabled = false;
+      const { data, error } = await examAuth.signIn(email, password);
+      
+      App.Loading.hide();
+      
+      if (error) {
+        App.Toast.error(error.message || 'فشل تسجيل الدخول');
+        return;
       }
+
+      const user = await examAuth.getUser();
+      const role = user?.role || 'student';
+      
+      // Redirect based on role
+      const redirects = {
+        admin: 'admin/dashboard.html',
+        teacher: 'teacher/dashboard.html',
+        student: 'student/dashboard.html'
+      };
+      
+      window.location.href = redirects[role] || 'student/dashboard.html';
     }
 
-    // Register handler
+    // Register
     async function handleRegister(e) {
       e.preventDefault();
-      const btn = document.getElementById('register-btn');
+      App.Loading.show('جاري إنشاء الحساب...');
+      
+      const form = e.target;
+      const inputs = form.querySelectorAll('input, select');
+      
+      const fullName = inputs[0].value;
+      const email = inputs[1].value;
+      const role = inputs[2].value;
+      const password = inputs[3].value;
+      const confirmPassword = inputs[4].value;
 
-      if (!validateForm(e.target)) return;
-
-      const password = document.getElementById('reg-password').value;
-      const confirm = document.getElementById('reg-confirm').value;
-
-      if (password !== confirm) {
-        showToast('❌ كلمتا المرور غير متطابقتين', 'error');
+      if (password !== confirmPassword) {
+        App.Loading.hide();
+        App.Toast.error('كلمات المرور غير متطابقة');
         return;
       }
 
-      btn.innerHTML = '<div class="spinner"></div>';
-      btn.disabled = true;
+      const { data, error } = await examAuth.signUp(email, password, {
+        full_name: fullName,
+        role: role
+      });
 
-      try {
-        // Simulate registration
-        await new Promise(r => setTimeout(r, 1500));
-        showToast('✅ تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول', 'success');
+      App.Loading.hide();
 
-        setTimeout(() => {
-          switchTab('login');
-          btn.textContent = 'إنشاء حساب';
-          btn.disabled = false;
-        }, 1500);
-
-      } catch (err) {
-        showToast('❌ ' + (err.message || 'خطأ في إنشاء الحساب'), 'error');
-        btn.textContent = 'إنشاء حساب';
-        btn.disabled = false;
-      }
-    }
-
-    // Forgot password
-    function showForgotPassword(e) {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      if (!email) {
-        showToast('⚠️ أدخل بريدك الإلكتروني أولاً', 'warning');
+      if (error) {
+        App.Toast.error(error.message);
         return;
       }
-      showToast('📧 تم إرسال رابط إعادة تعيين كلمة المرور', 'info');
+
+      App.Toast.success('تم إنشاء الحساب! تحقق من بريدك الإلكتروني.');
+      switchTab('login');
     }
 
-    // Check if already logged in
-    (function checkAuth() {
-      const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-      if (user.id) {
-        const redirectMap = {
-          admin: '/admin/dashboard.html',
-          teacher: '/teacher/dashboard.html',
-          student: '/student/dashboard.html'
-        };
-        window.location.href = redirectMap[user.role] || '/student/dashboard.html';
-      }
-    })();
+    function socialLogin(provider) {
+      App.Toast.info('تسجيل الدخول بـ ' + provider + ' قريباً');
+    }
   </script>
 </body>
 </html>
