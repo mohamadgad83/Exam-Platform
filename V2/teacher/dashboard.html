@@ -1,180 +1,537 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم المعلم - منصة الاختبارات</title>
-  <link rel="stylesheet" href="../shared/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المعلم | منصة الاختبارات</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-
-        <!-- Stats -->
-        <div class="stats-grid" id="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon blue">📝</div>
-            <div class="stat-info">
-              <h3 id="stat-exams">-</h3>
-              <p>اختبارات منشأة</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">👨‍🎓</div>
-            <div class="stat-info">
-              <h3 id="stat-students">-</h3>
-              <p>طالب في مجموعاتي</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon orange">📊</div>
-            <div class="stat-info">
-              <h3 id="stat-pass-rate">-</h3>
-              <p>معدل النجاح</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple">📋</div>
-            <div class="stat-info">
-              <h3 id="stat-submissions">-</h3>
-              <p>تسليم هذا الأسبوع</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="card" style="margin-bottom:1.5rem;">
-          <div class="card-body" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
-            <span style="font-weight:600;color:var(--gray-700);">⚡ إجراءات سريعة:</span>
-            <a href="create-exam.html" class="btn btn-primary">➕ إنشاء اختبار جديد</a>
-            <a href="questions.html" class="btn btn-secondary">❓ بنك الأسئلة</a>
-            <a href="students.html" class="btn btn-secondary">👨‍🎓 إدارة الطلاب</a>
-            <a href="submissions.html" class="btn btn-success">📋 تصحيح التسليمات</a>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-
-          <!-- Recent Submissions -->
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">📈 آخر التسليمات</h2>
-              <a href="submissions.html" class="btn btn-outline btn-sm">عرض الكل</a>
-            </div>
-            <div class="card-body" style="padding:0;">
-              <div id="recent-submissions">
-                <div style="padding:1.5rem;">
-                  <div class="skeleton" style="height:18px;width:80%;margin-bottom:0.75rem;"></div>
-                  <div class="skeleton" style="height:18px;width:60%;margin-bottom:0.75rem;"></div>
-                  <div class="skeleton" style="height:18px;width:70%;"></div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>منصة الاختبارات</span>
                 </div>
-              </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-          </div>
-
-          <!-- My Exams -->
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">📝 اختباراتي</h2>
-              <a href="create-exam.html" class="btn btn-primary btn-sm">➕ جديد</a>
-            </div>
-            <div class="card-body" style="padding:0;">
-              <div id="my-exams">
-                <div style="padding:1.5rem;">
-                  <div class="skeleton" style="height:18px;width:80%;margin-bottom:0.75rem;"></div>
-                  <div class="skeleton" style="height:18px;width:60%;margin-bottom:0.75rem;"></div>
-                  <div class="skeleton" style="height:18px;width:70%;"></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>الرئيسية</span>
+                </a>
+                <a href="create-exam.html" class="nav-item">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>إنشاء اختبار</span>
+                </a>
+                <a href="questions.html" class="nav-item">
+                    <i class="fas fa-database"></i>
+                    <span>بنك الأسئلة</span>
+                </a>
+                <a href="submissions.html" class="nav-item">
+                    <i class="fas fa-check-double"></i>
+                    <span>التسليمات</span>
+                </a>
+                <a href="students.html" class="nav-item">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>الطلاب</span>
+                </a>
+                <a href="groups.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>المجموعات</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">جاري التحميل...</div>
+                        <div class="user-role">معلم</div>
+                    </div>
                 </div>
-              </div>
+                <button class="btn btn-outline btn-sm" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>تسجيل الخروج</span>
+                </button>
             </div>
-          </div>
+        </aside>
 
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <h1 class="page-title">لوحة تحكم المعلم</h1>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-icon" id="notifBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notifBadge">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalExams">0</div>
+                        <div class="stat-label">إجمالي الاختبارات</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-success">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalStudents">0</div>
+                        <div class="stat-label">الطلاب المسجلين</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="pendingSubmissions">0</div>
+                        <div class="stat-label">تسليمات بانتظار التصحيح</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-info">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="avgScore">0%</div>
+                        <div class="stat-label">متوسط الدرجات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Exams -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-history"></i>
+                        الاختبارات الحديثة
+                    </h2>
+                    <a href="create-exam.html" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i>
+                        اختبار جديد
+                    </a>
+                </div>
+                <div class="table-container" id="recentExamsContainer">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>العنوان</th>
+                                <th>المادة</th>
+                                <th>الصف/المرحلة</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>المشاركون</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentExamsTable">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        جاري التحميل...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pending Submissions -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        تسليمات بانتظار التصحيح
+                    </h2>
+                    <a href="submissions.html" class="btn btn-outline btn-sm">عرض الكل</a>
+                </div>
+                <div class="table-container" id="pendingSubmissionsContainer">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>الطالب</th>
+                                <th>الاختبار</th>
+                                <th>تاريخ التسليم</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingSubmissionsTable">
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        جاري التحميل...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-bolt"></i>
+                        إجراءات سريعة
+                    </h2>
+                </div>
+                <div class="quick-actions-grid">
+                    <a href="create-exam.html" class="quick-action-card">
+                        <div class="quick-action-icon bg-primary">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="quick-action-title">إنشاء اختبار</div>
+                        <div class="quick-action-desc">إنشاء اختبار جديد مع أسئلة متنوعة</div>
+                    </a>
+                    <a href="questions.html" class="quick-action-card">
+                        <div class="quick-action-icon bg-success">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="quick-action-title">إضافة سؤال</div>
+                        <div class="quick-action-desc">إضافة سؤال جديد إلى بنك الأسئلة</div>
+                    </a>
+                    <a href="students.html" class="quick-action-card">
+                        <div class="quick-action-icon bg-info">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="quick-action-title">إضافة طالب</div>
+                        <div class="quick-action-desc">إضافة طالب جديد أو تعديل بياناته</div>
+                    </a>
+                    <a href="groups.html" class="quick-action-card">
+                        <div class="quick-action-icon bg-warning">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="quick-action-title">إنشاء مجموعة</div>
+                        <div class="quick-action-desc">تنظيم الطلاب في مجموعات دراسية</div>
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div class="slide-panel" id="notifPanel">
+        <div class="slide-panel-header">
+            <h3>الإشعارات</h3>
+            <button class="btn btn-icon" id="closeNotifPanel">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
+        <div class="slide-panel-body" id="notifList">
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <p>لا توجد إشعارات جديدة</p>
+            </div>
+        </div>
+    </div>
 
-      </div>
-    </main>
-  </div>
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/security.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+    (function() {
+        'use strict';
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../shared/app.js"></script>
-  <script src="../shared/supabase-client.js"></script>
-  <script>
-    requireAuth('teacher');
-    renderLayout('teacher', 'dashboard');
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            await App.init();
 
-    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-    const sb = getSupabase();
+            // Check auth
+            const user = examAuth.getUser();
+            if (!user) {
+                window.location.href = '../login.html';
+                return;
+            }
 
-    async function loadDashboard() {
-      try {
-        const [examsRes, groupsRes, submissionsRes, weekSubmissionsRes] = await Promise.all([
-          sb.from('exams').select('id, title, is_active, created_at').eq('teacher_id', user.id),
-          sb.from('groups').select('id, group_members(count)').eq('teacher_id', user.id),
-          sb.from('exam_submissions').select('score, total_marks, passed').in('exam_id',
-            (await sb.from('exams').select('id').eq('teacher_id', user.id)).data?.map(e => e.id) || []
-          ),
-          sb.from('exam_submissions').select('id').gte('submitted_at', new Date(Date.now() - 7*24*60*60*1000).toISOString())
-        ]);
+            // Check role (teacher or admin)
+            const role = user.role || user.user_metadata?.role;
+            if (role !== 'teacher' && role !== 'admin') {
+                window.location.href = '../student/dashboard.html';
+                return;
+            }
 
-        const exams = examsRes.data || [];
-        const submissions = submissionsRes.data || [];
-        const passedCount = submissions.filter(s => s.passed).length;
-        const passRate = submissions.length > 0 ? Math.round((passedCount / submissions.length) * 100) : 0;
-        let totalStudents = 0;
-        (groupsRes.data || []).forEach(g => { totalStudents += g.group_members?.[0]?.count || 0; });
+            // Load user info
+            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
+            if (user.name) {
+                document.getElementById('userAvatar').innerHTML = '<span>' + user.name.charAt(0) + '</span>';
+            }
 
-        document.getElementById('stat-exams').textContent = exams.length;
-        document.getElementById('stat-students').textContent = totalStudents;
-        document.getElementById('stat-pass-rate').textContent = passRate + '%';
-        document.getElementById('stat-submissions').textContent = weekSubmissionsRes.data?.length || 0;
+            // Load dashboard data
+            await loadStats();
+            await loadRecentExams();
+            await loadPendingSubmissions();
+            await loadNotifications();
+        });
 
-        // Recent submissions
-        const recentRes = await sb.from('exam_submissions')
-          .select('*, users(full_name), exams(title)')
-          .in('exam_id', exams.map(e => e.id))
-          .order('submitted_at', { ascending: false }).limit(5);
+        async function loadStats() {
+            try {
+                const user = examAuth.getUser();
+                const teacherId = user.id;
 
-        const recentEl = document.getElementById('recent-submissions');
-        const recentData = recentRes.data || [];
-        if (recentData.length === 0) {
-          recentEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>لا توجد تسليمات بعد</p></div>';
-        } else {
-          recentEl.innerHTML = `<div class="table-container"><table class="data-table">
-            <thead><tr><th>الطالب</th><th>الاختبار</th><th>الدرجة</th><th>الحالة</th><th>الوقت</th></tr></thead>
-            <tbody>${recentData.map(s => `<tr>
-              <td><strong>${sanitizeHTML(s.users?.full_name || '-')}</strong></td>
-              <td>${sanitizeHTML(s.exams?.title || '-')}</td>
-              <td><strong style="color:${s.passed?'var(--success)':'var(--danger)'}">${s.score}/${s.total_marks}</strong></td>
-              <td><span class="badge ${s.passed?'badge-success':'badge-danger'}">${s.passed?'ناجح':'راسب'}</span></td>
-              <td style="color:var(--gray-500);font-size:0.875rem;">${timeAgo(s.submitted_at)}</td>
-            </tr>`).join('')}
-            </tbody></table></div>`;
+                // Total exams
+                const { data: exams } = await examDB.from('exam_exams')
+                    .select('id', { count: 'exact' })
+                    .eq('teacher_id', teacherId);
+                document.getElementById('totalExams').textContent = exams?.length || 0;
+
+                // Total students (unique)
+                const { data: enrollments } = await examDB.from('exam_enrollments')
+                    .select('student_id')
+                    .eq('teacher_id', teacherId);
+                const uniqueStudents = new Set(enrollments?.map(e => e.student_id) || []);
+                document.getElementById('totalStudents').textContent = uniqueStudents.size;
+
+                // Pending submissions
+                const { data: pending } = await examDB.from('exam_attempts')
+                    .select('id', { count: 'exact' })
+                    .eq('status', 'submitted')
+                    .eq('teacher_id', teacherId);
+                document.getElementById('pendingSubmissions').textContent = pending?.length || 0;
+
+                // Average score
+                const { data: attempts } = await examDB.from('exam_attempts')
+                    .select('score, total_score')
+                    .eq('teacher_id', teacherId)
+                    .eq('status', 'graded');
+
+                if (attempts && attempts.length > 0) {
+                    let totalPercent = 0;
+                    attempts.forEach(a => {
+                        if (a.total_score > 0) {
+                            totalPercent += (a.score / a.total_score) * 100;
+                        }
+                    });
+                    const avg = Math.round(totalPercent / attempts.length);
+                    document.getElementById('avgScore').textContent = avg + '%';
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
         }
 
-        // My exams list
-        const examsEl = document.getElementById('my-exams');
-        if (exams.length === 0) {
-          examsEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>لم تنشئ أي اختبار بعد</p><a href="create-exam.html" class="btn btn-primary" style="margin-top:1rem;">➕ إنشاء اختبار</a></div>';
-        } else {
-          examsEl.innerHTML = `<div class="table-container"><table class="data-table">
-            <thead><tr><th>عنوان الاختبار</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
-            <tbody>${exams.slice(0,5).map(e => `<tr>
-              <td><strong>${sanitizeHTML(e.title)}</strong></td>
-              <td><span class="badge ${e.is_active?'badge-success':'badge-secondary'}">${e.is_active?'نشط':'مخفي'}</span></td>
-              <td style="color:var(--gray-500);font-size:0.875rem;">${formatDate(e.created_at)}</td>
-              <td><a href="exam-preview.html?id=${e.id}" class="btn btn-outline btn-sm">معاينة</a></td>
-            </tr>`).join('')}
-            </tbody></table></div>`;
+        async function loadRecentExams() {
+            try {
+                const user = examAuth.getUser();
+                const { data: exams, error } = await examDB.from('exam_exams')
+                    .select(`
+                        *,
+                        exam_subjects(name),
+                        exam_attempts(count)
+                    `)
+                    .eq('teacher_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const tbody = document.getElementById('recentExamsTable');
+                if (!exams || exams.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>لا توجد اختبارات حديثة</p>
+                                    <a href="create-exam.html" class="btn btn-primary btn-sm">إنشاء اختبار جديد</a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = exams.map(exam => {
+                    const statusClass = exam.status === 'active' ? 'badge-success' : 
+                                       exam.status === 'draft' ? 'badge-warning' : 'badge-secondary';
+                    const statusText = exam.status === 'active' ? 'نشط' : 
+                                      exam.status === 'draft' ? 'مسودة' : 'منتهي';
+                    return `
+                        <tr>
+                            <td>
+                                <div class="exam-title">
+                                    <i class="fas fa-file-alt text-primary"></i>
+                                    ${exam.title}
+                                </div>
+                            </td>
+                            <td>${exam.exam_subjects?.name || '-'}</td>
+                            <td>${exam.grade_name || '-'}</td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
+                            <td>${App.formatDate(exam.created_at)}</td>
+                            <td>${exam.exam_attempts?.length || 0}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="exam-preview.html?id=${exam.id}" class="btn btn-icon btn-sm" title="معاينة">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="submissions.html?exam=${exam.id}" class="btn btn-icon btn-sm" title="التسليمات">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </a>
+                                    <button class="btn btn-icon btn-sm" onclick="App.confirm('هل أنت متأكد من حذف هذا الاختبار؟', () => deleteExam('${exam.id}'))" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading recent exams:', error);
+                document.getElementById('recentExamsTable').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-error">حدث خطأ أثناء التحميل</td>
+                    </tr>
+                `;
+            }
         }
 
-      } catch (err) {
-        console.error(err);
-        showToast('حدث خطأ في تحميل البيانات', 'error');
-      }
-    }
+        async function loadPendingSubmissions() {
+            try {
+                const user = examAuth.getUser();
+                const { data: submissions, error } = await examDB.from('exam_attempts')
+                    .select(`
+                        *,
+                        exam_students(name, email),
+                        exam_exams(title)
+                    `)
+                    .eq('teacher_id', user.id)
+                    .eq('status', 'submitted')
+                    .order('submitted_at', { ascending: false })
+                    .limit(5);
 
-    loadDashboard();
-  </script>
+                if (error) throw error;
+
+                const tbody = document.getElementById('pendingSubmissionsTable');
+                if (!submissions || submissions.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="empty-state">
+                                    <i class="fas fa-check-circle"></i>
+                                    <p>لا توجد تسليمات بانتظار التصحيح</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = submissions.map(sub => `
+                    <tr>
+                        <td>
+                            <div class="student-info">
+                                <div class="student-avatar">${sub.exam_students?.name?.charAt(0) || '?'}</div>
+                                <div>
+                                    <div class="student-name">${sub.exam_students?.name || 'Unknown'}</div>
+                                    <div class="student-email">${sub.exam_students?.email || ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${sub.exam_exams?.title || '-'}</td>
+                        <td>${App.formatDate(sub.submitted_at)}</td>
+                        <td><span class="badge badge-warning">بانتظار التصحيح</span></td>
+                        <td>
+                            <a href="submissions.html?attempt=${sub.id}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-pen"></i>
+                                تصحيح
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading pending submissions:', error);
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const user = examAuth.getUser();
+                const { data: notifs } = await examDB.from('exam_notifications')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('is_read', false)
+                    .order('created_at', { ascending: false });
+
+                const badge = document.getElementById('notifBadge');
+                badge.textContent = notifs?.length || 0;
+                badge.style.display = notifs?.length > 0 ? 'flex' : 'none';
+
+                if (notifs && notifs.length > 0) {
+                    document.getElementById('notifList').innerHTML = notifs.map(n => `
+                        <div class="notif-item" data-id="${n.id}">
+                            <div class="notif-icon"><i class="fas fa-bell"></i></div>
+                            <div class="notif-content">
+                                <div class="notif-title">${n.title}</div>
+                                <div class="notif-message">${n.message}</div>
+                                <div class="notif-time">${App.formatDate(n.created_at)}</div>
+                            </div>
+                            <button class="btn btn-icon btn-sm" onclick="markNotifRead('${n.id}')">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        window.markNotifRead = async function(id) {
+            try {
+                await examDB.from('exam_notifications')
+                    .update({ is_read: true })
+                    .eq('id', id);
+                await loadNotifications();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        };
+
+        window.deleteExam = async function(id) {
+            try {
+                const { error } = await examDB.from('exam_exams')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                App.toast('تم حذف الاختبار بنجاح');
+                await loadRecentExams();
+                await loadStats();
+            } catch (error) {
+                console.error('Error deleting exam:', error);
+                App.toast('حدث خطأ أثناء الحذف', 'error');
+            }
+        };
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await examAuth.logout();
+            window.location.href = '../login.html';
+        });
+    })();
+    </script>
 </body>
 </html>

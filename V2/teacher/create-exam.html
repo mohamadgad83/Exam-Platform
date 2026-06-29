@@ -1,419 +1,998 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إنشاء اختبار - منصة الاختبارات</title>
-  <link rel="stylesheet" href="../shared/styles.css">
-  <style>
-    .exam-builder { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; }
-    .builder-main { min-width: 0; }
-    .builder-sidebar { position: sticky; top: 80px; height: fit-content; }
-    .step-indicator { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .step { flex: 1; padding: 0.75rem; text-align: center; border-radius: var(--radius-lg); background: var(--gray-100); color: var(--gray-500); font-size: 0.875rem; font-weight: 500; transition: var(--transition); }
-    .step.active { background: var(--primary); color: white; }
-    .step.completed { background: var(--success-light); color: var(--success); }
-    .step-content { display: none; }
-    .step-content.active { display: block; }
-    .question-item { background: var(--white); border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1rem; box-shadow: var(--shadow); border: 2px solid var(--gray-200); position: relative; transition: var(--transition); }
-    .question-item:hover { border-color: var(--primary); }
-    .question-item .drag-handle { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); cursor: grab; padding: 0.5rem; }
-    .question-item .delete-btn { position: absolute; left: 0.75rem; top: 0.75rem; background: var(--danger-light); color: var(--danger); border: none; width: 32px; height: 32px; border-radius: var(--radius); cursor: pointer; font-size: 1rem; transition: var(--transition); }
-    .question-item .delete-btn:hover { background: var(--danger); color: white; }
-    .option-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-    .option-row input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary); }
-    .option-row input[type="text"] { flex: 1; }
-    .sidebar-card { background: var(--white); border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--gray-200); margin-bottom: 1rem; }
-    .sidebar-card h4 { font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--gray-100); }
-    .summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.875rem; border-bottom: 1px solid var(--gray-100); }
-    .summary-row:last-child { border-bottom: none; }
-    .summary-row .label { color: var(--gray-500); }
-    .summary-row .value { font-weight: 600; color: var(--gray-900); }
-    @media (max-width: 1024px) { .exam-builder { grid-template-columns: 1fr; } .builder-sidebar { position: static; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء اختبار | منصة الاختبارات</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-          <div class="step active" id="step-1" onclick="goToStep(1)">1. معلومات الاختبار</div>
-          <div class="step" id="step-2" onclick="goToStep(2)">2. إضافة الأسئلة</div>
-          <div class="step" id="step-3" onclick="goToStep(3)">3. الإعدادات</div>
-          <div class="step" id="step-4" onclick="goToStep(4)">4. المراجعة والنشر</div>
-        </div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>منصة الاختبارات</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>الرئيسية</span>
+                </a>
+                <a href="create-exam.html" class="nav-item active">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>إنشاء اختبار</span>
+                </a>
+                <a href="questions.html" class="nav-item">
+                    <i class="fas fa-database"></i>
+                    <span>بنك الأسئلة</span>
+                </a>
+                <a href="submissions.html" class="nav-item">
+                    <i class="fas fa-check-double"></i>
+                    <span>التسليمات</span>
+                </a>
+                <a href="students.html" class="nav-item">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>الطلاب</span>
+                </a>
+                <a href="groups.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>المجموعات</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">جاري التحميل...</div>
+                        <div class="user-role">معلم</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-sm" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>تسجيل الخروج</span>
+                </button>
+            </div>
+        </aside>
 
-        <div class="exam-builder">
-          <!-- Main Builder -->
-          <div class="builder-main">
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1 class="page-title">إنشاء اختبار جديد</h1>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="themeToggle"><i class="fas fa-moon"></i></button>
+                </div>
+            </header>
+
+            <!-- Progress Steps -->
+            <div class="steps-container">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-title">معلومات الاختبار</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-title">الأسئلة</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-title">الإعدادات</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-title">التعيين</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-title">المراجعة</div>
+                </div>
+            </div>
+
             <!-- Step 1: Exam Info -->
-            <div class="step-content active" id="step-content-1">
-              <div class="card">
-                <div class="card-header">
-                  <h2 class="card-title">📝 معلومات الاختبار</h2>
+            <div class="step-content active" id="step1">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info-circle"></i> معلومات الاختبار الأساسية</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required">عنوان الاختبار</label>
+                                <input type="text" class="form-input" id="examTitle" placeholder="مثال: اختبار نهاية الفصل الأول">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">وصف الاختبار</label>
+                                <textarea class="form-input" id="examDesc" rows="3" placeholder="وصف مختصر للاختبار..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">المادة</label>
+                                <select class="form-select" id="examSubject">
+                                    <option value="">اختر المادة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">الصف / المرحلة</label>
+                                <select class="form-select" id="examGrade">
+                                    <option value="">اختر الصف</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">الفصل الدراسي</label>
+                                <select class="form-select" id="examStage">
+                                    <option value="">اختر الفصل</option>
+                                    <option value="first">الفصل الأول</option>
+                                    <option value="second">الفصل الثاني</option>
+                                    <option value="summer">الفصل الصيفي</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">السنة الدراسية</label>
+                                <select class="form-select" id="examYear">
+                                    <option value="">اختر السنة</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                  <form id="exam-info-form">
-                    <div class="form-group">
-                      <label class="form-label required">عنوان الاختبار</label>
-                      <input type="text" class="form-input" id="exam-title" placeholder="مثال: اختبار الرياضيات - الوحدة الأولى" data-validate="required|min:5">
-                    </div>
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label class="form-label required">المادة</label>
-                        <select class="form-select" id="exam-subject" data-validate="required">
-                          <option value="">اختر المادة</option>
-                          <option value="math">الرياضيات</option>
-                          <option value="arabic">اللغة العربية</option>
-                          <option value="english">اللغة الإنجليزية</option>
-                          <option value="science">العلوم</option>
-                          <option value="history">التاريخ</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label required">الصف الدراسي</label>
-                        <select class="form-select" id="exam-class" data-validate="required">
-                          <option value="">اختر الصف</option>
-                          <option value="1">الأول الثانوي</option>
-                          <option value="2">الثاني الثانوي</option>
-                          <option value="3">الثالث الثانوي</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">وصف الاختبار</label>
-                      <textarea class="form-textarea" id="exam-desc" rows="3" placeholder="وصف مختصر للاختبار..."></textarea>
-                    </div>
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label class="form-label required">مدة الاختبار (دقيقة)</label>
-                        <input type="number" class="form-input" id="exam-duration" value="45" min="5" max="180" data-validate="required|number">
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label required">الدرجة الكلية</label>
-                        <input type="number" class="form-input" id="exam-marks" value="50" min="1" data-validate="required|number">
-                      </div>
-                    </div>
-                  </form>
+                <div class="step-actions">
+                    <button class="btn btn-primary" onclick="nextStep(2)">
+                        التالي <i class="fas fa-arrow-left"></i>
+                    </button>
                 </div>
-              </div>
             </div>
 
             <!-- Step 2: Questions -->
-            <div class="step-content" id="step-content-2">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 class="card-title">❓ الأسئلة (<span id="question-count">0</span>)</h2>
-                <div style="display: flex; gap: 0.75rem;">
-                  <button class="btn btn-secondary" onclick="importFromBank()">📥 من بنك الأسئلة</button>
-                  <button class="btn btn-primary" onclick="addQuestion()">➕ إضافة سؤال</button>
+            <div class="step-content" id="step2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-question-circle"></i> إدارة الأسئلة</h3>
+                        <div class="card-actions">
+                            <button class="btn btn-outline btn-sm" onclick="openQuestionBank()">
+                                <i class="fas fa-database"></i> من بنك الأسئلة
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="addNewQuestion()">
+                                <i class="fas fa-plus"></i> سؤال جديد
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="questionsList" class="questions-list">
+                            <div class="empty-state">
+                                <i class="fas fa-question-circle"></i>
+                                <p>لم تضف أي أسئلة بعد</p>
+                                <button class="btn btn-primary btn-sm" onclick="addNewQuestion()">إضافة سؤال</button>
+                            </div>
+                        </div>
+                        <div class="questions-summary">
+                            <div class="summary-item">
+                                <span>عدد الأسئلة:</span>
+                                <strong id="totalQuestionsCount">0</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>إجمالي الدرجات:</span>
+                                <strong id="totalMarks">0</strong>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div id="questions-container">
-                <!-- Questions added here -->
-              </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline" onclick="prevStep(1)">
+                        <i class="fas fa-arrow-right"></i> السابق
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep(3)">
+                        التالي <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Step 3: Settings -->
-            <div class="step-content" id="step-content-3">
-              <div class="card">
-                <div class="card-header">
-                  <h2 class="card-title">⚙️ إعدادات الاختبار</h2>
-                </div>
-                <div class="card-body">
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label class="form-label">درجة النجاح (%)</label>
-                      <input type="number" class="form-input" id="passing-score" value="50" min="0" max="100">
+            <div class="step-content" id="step3">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-cog"></i> إعدادات الاختبار</h3>
                     </div>
-                    <div class="form-group">
-                      <label class="form-label">عدد المحاولات</label>
-                      <input type="number" class="form-input" id="attempts" value="1" min="1" max="10">
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label required">مدة الاختبار (دقيقة)</label>
+                                <input type="number" class="form-input" id="examDuration" value="60" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">تاريخ البدء</label>
+                                <input type="datetime-local" class="form-input" id="examStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">تاريخ الانتهاء</label>
+                                <input type="datetime-local" class="form-input" id="examEndDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">عدد المحاولات المسموحة</label>
+                                <input type="number" class="form-input" id="examAttempts" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">درجة النجاح (%)</label>
+                                <input type="number" class="form-input" id="passingScore" value="60" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ترتيب الأسئلة</label>
+                                <select class="form-select" id="questionOrder">
+                                    <option value="sequential">تسلسلي</option>
+                                    <option value="random">عشوائي</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">خيارات إضافية</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="showResults" checked>
+                                    <span>عرض النتيجة بعد الانتهاء</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="showCorrectAnswers">
+                                    <span>عرض الإجابات الصحيحة</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allowNavigation" checked>
+                                    <span>السماح بالتنقل بين الأسئلة</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="preventCopy">
+                                    <span>منع النسخ واللصق</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="fullScreen">
+                                    <span>وضع ملء الشاشة الإجباري</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="cameraProctoring">
+                                    <span>مراقبة الكاميرا</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                      <input type="checkbox" id="shuffle-questions" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
-                      <span>🔀 عشوائية ترتيب الأسئلة</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                      <input type="checkbox" id="shuffle-options" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
-                      <span>🔀 عشوائية ترتيب الخيارات</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                      <input type="checkbox" id="show-results" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
-                      <span>📊 إظهار النتيجة فوراً بعد التسليم</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
-                      <input type="checkbox" id="fullscreen-required" checked style="width: 20px; height: 20px; accent-color: var(--primary);">
-                      <span>🔒 إجبار وضع الشاشة الكاملة</span>
-                    </label>
-                  </div>
-                  <div class="form-group" style="margin-top: 1.5rem;">
-                    <label class="form-label">تعليمات للطلاب</label>
-                    <textarea class="form-textarea" rows="4" placeholder="اكتب التعليمات التي ستظهر للطلاب قبل بدء الاختبار...">يرجى قراءة الأسئلة بعناية. لا يمكن العودة للسؤال السابق بعد الانتقال للسؤال التالي. تأكد من مراجعة إجاباتك قبل التسليم.</textarea>
-                  </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Step 4: Review & Publish -->
-            <div class="step-content" id="step-content-4">
-              <div class="card">
-                <div class="card-header">
-                  <h2 class="card-title">👁️ معاينة الاختبار</h2>
+                <div class="step-actions">
+                    <button class="btn btn-outline" onclick="prevStep(2)">
+                        <i class="fas fa-arrow-right"></i> السابق
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep(4)">
+                        التالي <i class="fas fa-arrow-left"></i>
+                    </button>
                 </div>
-                <div class="card-body" id="preview-content">
-                  <!-- Preview loaded here -->
+            </div>
+
+            <!-- Step 4: Assignment -->
+            <div class="step-content" id="step4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user-plus"></i> تعيين الاختبار</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="assignment-tabs">
+                            <button class="tab-btn active" data-tab="students">طلاب محددين</button>
+                            <button class="tab-btn" data-tab="groups">مجموعات</button>
+                            <button class="tab-btn" data-tab="classes">صفوف</button>
+                        </div>
+
+                        <div class="tab-content active" id="tab-students">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="form-input" id="studentSearch" placeholder="ابحث عن طالب...">
+                            </div>
+                            <div class="selectable-list" id="studentsList">
+                                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-groups">
+                            <div class="selectable-list" id="groupsList">
+                                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-classes">
+                            <div class="selectable-list" id="classesList">
+                                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
+                            </div>
+                        </div>
+
+                        <div class="selected-summary">
+                            <h4>المحدد: <span id="selectedCount">0</span></h4>
+                            <div id="selectedItems"></div>
+                        </div>
+                    </div>
                 </div>
-              </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline" onclick="prevStep(3)">
+                        <i class="fas fa-arrow-right"></i> السابق
+                    </button>
+                    <button class="btn btn-primary" onclick="nextStep(5)">
+                        التالي <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Navigation Buttons -->
-            <div style="display: flex; justify-content: space-between; margin-top: 2rem;">
-              <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()" disabled>← السابق</button>
-              <button class="btn btn-primary" id="next-btn" onclick="nextStep()">التالي →</button>
+            <!-- Step 5: Review -->
+            <div class="step-content" id="step5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-eye"></i> مراجعة الاختبار</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="review-section">
+                            <h4>معلومات الاختبار</h4>
+                            <div class="review-grid" id="reviewInfo"></div>
+                        </div>
+                        <div class="review-section">
+                            <h4>الأسئلة (<span id="reviewQuestionCount">0</span>)</h4>
+                            <div id="reviewQuestions"></div>
+                        </div>
+                        <div class="review-section">
+                            <h4>الإعدادات</h4>
+                            <div class="review-grid" id="reviewSettings"></div>
+                        </div>
+                        <div class="review-section">
+                            <h4>المعينون</h4>
+                            <div id="reviewAssignees"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline" onclick="prevStep(4)">
+                        <i class="fas fa-arrow-right"></i> السابق
+                    </button>
+                    <button class="btn btn-success" onclick="publishExam()">
+                        <i class="fas fa-check"></i> نشر الاختبار
+                    </button>
+                </div>
             </div>
-          </div>
+        </main>
+    </div>
 
-          <!-- Sidebar -->
-          <div class="builder-sidebar">
-            <div class="sidebar-card">
-              <h4>📊 ملخص الاختبار</h4>
-              <div class="summary-row">
-                <span class="label">العنوان</span>
-                <span class="value" id="summary-title">-</span>
-              </div>
-              <div class="summary-row">
-                <span class="label">المادة</span>
-                <span class="value" id="summary-subject">-</span>
-              </div>
-              <div class="summary-row">
-                <span class="label">المدة</span>
-                <span class="value" id="summary-duration">-</span>
-              </div>
-              <div class="summary-row">
-                <span class="label">الدرجة الكلية</span>
-                <span class="value" id="summary-marks">-</span>
-              </div>
-              <div class="summary-row">
-                <span class="label">عدد الأسئلة</span>
-                <span class="value" id="summary-questions">0</span>
-              </div>
-              <div class="summary-row">
-                <span class="label">درجة النجاح</span>
-                <span class="value" id="summary-passing">50%</span>
-              </div>
+    <!-- Add Question Modal -->
+    <div class="modal" id="questionModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>إضافة سؤال</h3>
+                <button class="btn btn-icon" onclick="closeQuestionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-
-            <div class="sidebar-card">
-              <h4>⚡ إجراءات سريعة</h4>
-              <button class="btn btn-primary btn-block" style="margin-bottom: 0.75rem;" onclick="saveDraft()">
-                💾 حفظ كمسودة
-              </button>
-              <button class="btn btn-success btn-block" onclick="publishExam()">
-                🚀 نشر الاختبار
-              </button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label required">نوع السؤال</label>
+                    <select class="form-select" id="questionType" onchange="updateQuestionForm()">
+                        <option value="mcq">اختيار من متعدد</option>
+                        <option value="true_false">صح / خطأ</option>
+                        <option value="essay">مقالي</option>
+                        <option value="fill_blank">اكمل الفراغ</option>
+                        <option value="matching">توصيل</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">نص السؤال</label>
+                    <textarea class="form-input" id="questionText" rows="3" placeholder="اكتب نص السؤال هنا..."></textarea>
+                </div>
+                <div id="questionOptionsContainer">
+                    <div class="form-group">
+                        <label class="form-label required">الخيارات</label>
+                        <div id="mcqOptions">
+                            <div class="option-row">
+                                <input type="radio" name="correctOption" value="0" checked>
+                                <input type="text" class="form-input option-input" placeholder="الخيار أ">
+                            </div>
+                            <div class="option-row">
+                                <input type="radio" name="correctOption" value="1">
+                                <input type="text" class="form-input option-input" placeholder="الخيار ب">
+                            </div>
+                            <div class="option-row">
+                                <input type="radio" name="correctOption" value="2">
+                                <input type="text" class="form-input option-input" placeholder="الخيار ج">
+                            </div>
+                                <div class="option-row">
+                                <input type="radio" name="correctOption" value="3">
+                                <input type="text" class="form-input option-input" placeholder="الخيار د">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="addOption()">
+                            <i class="fas fa-plus"></i> إضافة خيار
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label required">الدرجة</label>
+                    <input type="number" class="form-input" id="questionMarks" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">تلميح (اختياري)</label>
+                    <input type="text" class="form-input" id="questionHint" placeholder="تلميح للطالب...">
+                </div>
             </div>
-          </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeQuestionModal()">إلغاء</button>
+                <button class="btn btn-primary" onclick="saveQuestion()">حفظ السؤال</button>
+            </div>
         </div>
-      </div>
-    </main>
-  </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../shared/app.js"></script>
-  <script src="../shared/supabase-client.js"></script>
-  <script>
-    requireAuth('teacher');
-    renderLayout('teacher', 'create-exam');
-    document.title = 'إنشاء اختبار';
+    <!-- Question Bank Modal -->
+    <div class="modal" id="questionBankModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>بنك الأسئلة</h3>
+                <button class="btn btn-icon" onclick="closeQuestionBankModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-input" id="bankSearch" placeholder="ابحث في بنك الأسئلة...">
+                </div>
+                <div id="questionBankList" class="question-bank-list">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeQuestionBankModal()">إلغاء</button>
+                <button class="btn btn-primary" onclick="addSelectedFromBank()">إضافة المحدد</button>
+            </div>
+        </div>
+    </div>
 
-    let currentStep = 1;
-    let questions = [];
-    let questionCounter = 0;
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/security.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+    (function() {
+        'use strict';
 
-    function goToStep(step) {
-      if (step < 1 || step > 4) return;
+        let examData = {
+            questions: [],
+            selectedStudents: [],
+            selectedGroups: [],
+            selectedClasses: []
+        };
+        let currentStep = 1;
+        let editingQuestionIndex = -1;
+        let bankQuestions = [];
 
-      // Validate current step before moving
-      if (step > currentStep && !validateCurrentStep()) return;
+        document.addEventListener('DOMContentLoaded', async function() {
+            await App.init();
+            const user = examAuth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+            const role = user.role || user.user_metadata?.role;
+            if (role !== 'teacher' && role !== 'admin') {
+                window.location.href = '../student/dashboard.html'; return;
+            }
+            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
+            await loadDropdowns();
+            await loadAssignmentData();
+            setupTabs();
+            setupDates();
+        });
 
-      currentStep = step;
-
-      // Update indicators
-      for (let i = 1; i <= 4; i++) {
-        const el = document.getElementById(`step-${i}`);
-        el.classList.remove('active', 'completed');
-        if (i < step) el.classList.add('completed');
-        else if (i === step) el.classList.add('active');
-      }
-
-      // Update content
-      document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
-      document.getElementById(`step-content-${step}`).classList.add('active');
-
-      // Update buttons
-      document.getElementById('prev-btn').disabled = step === 1;
-      document.getElementById('next-btn').textContent = step === 4 ? 'نشر الاختبار 🚀' : 'التالي →';
-
-      // Update preview if on step 4
-      if (step === 4) updatePreview();
-    }
-
-    function nextStep() {
-      if (currentStep < 4) goToStep(currentStep + 1);
-      else publishExam();
-    }
-
-    function prevStep() {
-      if (currentStep > 1) goToStep(currentStep - 1);
-    }
-
-    function validateCurrentStep() {
-      if (currentStep === 1) {
-        return validateForm(document.getElementById('exam-info-form'));
-      }
-      if (currentStep === 2) {
-        if (questions.length === 0) {
-          showToast('❌ أضف سؤالاً واحداً على الأقل', 'error');
-          return false;
+        function setupDates() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('examStartDate').value = now.toISOString().slice(0, 16);
+            const end = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            document.getElementById('examEndDate').value = end.toISOString().slice(0, 16);
         }
-        return true;
-      }
-      return true;
-    }
 
-    function addQuestion() {
-      questionCounter++;
-      const qId = `q-${questionCounter}`;
+        async function loadDropdowns() {
+            try {
+                const { data: subjects } = await examDB.from('exam_subjects').select('id, name').order('name');
+                const subjectSelect = document.getElementById('examSubject');
+                subjects?.forEach(s => {
+                    subjectSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
 
-      const qHtml = `
-        <div class="question-item" id="${qId}">
-          <div class="drag-handle">⋮⋮</div>
-          <button class="delete-btn" onclick="deleteQuestion('${qId}')" title="حذف">🗑️</button>
-          <div class="form-group">
-            <label class="form-label required">نص السؤال ${questionCounter}</label>
-            <textarea class="form-textarea" rows="2" placeholder="اكتب نص السؤال هنا..." data-validate="required"></textarea>
-          </div>
-          <div style="margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--gray-700);">الخيارات (اختر الإجابة الصحيحة):</div>
-          <div class="options-container" id="${qId}-options">
-            ${[0,1,2,3].map(i => `
-              <div class="option-row">
-                <input type="radio" name="${qId}-correct" value="${i}" ${i === 0 ? 'checked' : ''}>
-                <input type="text" class="form-input" placeholder="الخيار ${String.fromCharCode(1612 + i)}" data-validate="required">
-              </div>
-            `).join('')}
-          </div>
-          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-            <div class="form-group" style="flex: 1; margin-bottom: 0;">
-              <input type="number" class="form-input" placeholder="الدرجة" value="1" min="0.5" step="0.5">
-            </div>
-            <button class="btn btn-secondary btn-sm" onclick="addOption('${qId}')">➕ خيار</button>
-          </div>
-        </div>
-      `;
+                const { data: grades } = await examDB.from('exam_grades').select('id, name').order('name');
+                const gradeSelect = document.getElementById('examGrade');
+                grades?.forEach(g => {
+                    gradeSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+                });
 
-      document.getElementById('questions-container').insertAdjacentHTML('beforeend', qHtml);
-      questions.push(qId);
-      updateSummary();
-    }
+                const yearSelect = document.getElementById('examYear');
+                const currentYear = new Date().getFullYear();
+                for (let y = currentYear; y >= currentYear - 5; y--) {
+                    yearSelect.innerHTML += `<option value="${y}-${y+1}">${y}-${y+1}</option>`;
+                }
+            } catch (e) { console.error('Error loading dropdowns:', e); }
+        }
 
-    function deleteQuestion(qId) {
-      confirmDialog('هل أنت متأكد من حذف هذا السؤال؟', () => {
-        document.getElementById(qId).remove();
-        questions = questions.filter(id => id !== qId);
-        updateSummary();
-      });
-    }
+        async function loadAssignmentData() {
+            try {
+                const user = examAuth.getUser();
+                const { data: students } = await examDB.from('exam_students')
+                    .select('id, name, email, grade_id')
+                    .eq('teacher_id', user.id);
+                renderSelectableList('studentsList', students || [], 'student');
 
-    function addOption(qId) {
-      const container = document.getElementById(`${qId}-options`);
-      const count = container.querySelectorAll('.option-row').length;
-      const optionHtml = `
-        <div class="option-row">
-          <input type="radio" name="${qId}-correct" value="${count}">
-          <input type="text" class="form-input" placeholder="الخيار ${String.fromCharCode(1612 + count)}" data-validate="required">
-          <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()" style="padding: 0.25rem 0.5rem;">✕</button>
-        </div>
-      `;
-      container.insertAdjacentHTML('beforeend', optionHtml);
-    }
+                const { data: groups } = await examDB.from('exam_groups')
+                    .select('id, name, description')
+                    .eq('teacher_id', user.id);
+                renderSelectableList('groupsList', groups || [], 'group');
 
-    function importFromBank() {
-      showToast('📥 بنك الأسئلة قريباً', 'info');
-    }
+                const { data: classes } = await examDB.from('exam_classes')
+                    .select('id, name, grade_id')
+                    .eq('teacher_id', user.id);
+                renderSelectableList('classesList', classes || [], 'class');
+            } catch (e) { console.error('Error loading assignment data:', e); }
+        }
 
-    function updateSummary() {
-      const title = document.getElementById('exam-title').value || '-';
-      const subject = document.getElementById('exam-subject');
-      const subjectText = subject.options[subject.selectedIndex]?.text || '-';
-      const duration = document.getElementById('exam-duration').value || '-';
-      const marks = document.getElementById('exam-marks').value || '-';
-      const passing = document.getElementById('passing-score').value || '50';
-
-      document.getElementById('summary-title').textContent = title;
-      document.getElementById('summary-subject').textContent = subjectText;
-      document.getElementById('summary-duration').textContent = duration + (duration !== '-' ? ' دقيقة' : '');
-      document.getElementById('summary-marks').textContent = marks;
-      document.getElementById('summary-questions').textContent = questions.length;
-      document.getElementById('summary-passing').textContent = passing + '%';
-      document.getElementById('question-count').textContent = questions.length;
-    }
-
-    function updatePreview() {
-      const title = document.getElementById('exam-title').value || 'عنوان الاختبار';
-      const preview = document.getElementById('preview-content');
-
-      preview.innerHTML = `
-        <div style="text-align: center; margin-bottom: 2rem;">
-          <h3 style="font-size: 1.5rem; color: var(--gray-900); margin-bottom: 0.5rem;">${title}</h3>
-          <p style="color: var(--gray-500);">مدة الاختبار: ${document.getElementById('exam-duration').value || '45'} دقيقة | الدرجة الكلية: ${document.getElementById('exam-marks').value || '50'}</p>
-        </div>
-        ${questions.map((qId, i) => `
-          <div class="question-card" style="margin-bottom: 1rem;">
-            <div class="question-number">${i + 1}</div>
-            <div class="question-text">سؤال ${i + 1}</div>
-            <div class="answer-options">
-              ${[0,1,2,3].map(j => `
-                <label class="answer-option">
-                  <input type="radio" disabled>
-                  <span>الخيار ${String.fromCharCode(1612 + j)}</span>
+        function renderSelectableList(containerId, items, type) {
+            const container = document.getElementById(containerId);
+            if (!items.length) {
+                container.innerHTML = '<div class="empty-state"><p>لا توجد بيانات</p></div>';
+                return;
+            }
+            container.innerHTML = items.map(item => `
+                <label class="selectable-item">
+                    <input type="checkbox" value="${item.id}" data-type="${type}" data-name="${item.name}" onchange="updateSelection(this)">
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-meta">${item.email || item.description || ''}</div>
+                    </div>
                 </label>
-              `).join('')}
-            </div>
-          </div>
-        `).join('')}
-      `;
-    }
-
-    function saveDraft() {
-      showLoading(document.querySelector('.btn-primary'), 'جاري الحفظ...');
-      setTimeout(() => {
-        hideLoading(document.querySelector('.btn-primary'));
-        showToast('✅ تم حفظ المسودة', 'success');
-      }, 1500);
-    }
-
-    function publishExam() {
-      if (!validateCurrentStep()) return;
-
-      confirmDialog(
-        'هل أنت متأكد من نشر الاختبار؟ لن تتمكن من تعديل الأسئلة بعد النشر.',
-        () => {
-          showToast('🚀 جاري نشر الاختبار...', 'info');
-          setTimeout(() => {
-            showToast('✅ تم نشر الاختبار بنجاح!', 'success');
-            setTimeout(() => {
-              window.location.href = 'exams.html';
-            }, 1500);
-          }, 2000);
+            `).join('');
         }
-      );
-    }
 
-    // Update summary on input
-    document.addEventListener('input', debounce(updateSummary, 300));
-  </script>
+        window.updateSelection = function(checkbox) {
+            const type = checkbox.dataset.type;
+            const id = checkbox.value;
+            const name = checkbox.dataset.name;
+            const list = type === 'student' ? examData.selectedStudents :
+                        type === 'group' ? examData.selectedGroups : examData.selectedClasses;
+            if (checkbox.checked) {
+                if (!list.find(i => i.id === id)) list.push({ id, name });
+            } else {
+                const idx = list.findIndex(i => i.id === id);
+                if (idx > -1) list.splice(idx, 1);
+            }
+            updateSelectedSummary();
+        };
+
+        function updateSelectedSummary() {
+            const total = examData.selectedStudents.length + examData.selectedGroups.length + examData.selectedClasses.length;
+            document.getElementById('selectedCount').textContent = total;
+            const container = document.getElementById('selectedItems');
+            const all = [...examData.selectedStudents, ...examData.selectedGroups, ...examData.selectedClasses];
+            container.innerHTML = all.map(i => `
+                <span class="selected-tag">${i.name} <i class="fas fa-times" onclick="removeSelected('${i.id}')"></i></span>
+            `).join('');
+        }
+
+        window.removeSelected = function(id) {
+            ['selectedStudents', 'selectedGroups', 'selectedClasses'].forEach(key => {
+                const idx = examData[key].findIndex(i => i.id === id);
+                if (idx > -1) examData[key].splice(idx, 1);
+            });
+            document.querySelectorAll('.selectable-item input:checked').forEach(cb => {
+                if (cb.value === id) cb.checked = false;
+            });
+            updateSelectedSummary();
+        };
+
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                });
+            });
+        }
+
+        window.nextStep = function(step) {
+            if (!validateStep(currentStep)) return;
+            currentStep = step;
+            updateSteps();
+        };
+
+        window.prevStep = function(step) {
+            currentStep = step;
+            updateSteps();
+        };
+
+        function updateSteps() {
+            document.querySelectorAll('.step').forEach(s => {
+                const sNum = parseInt(s.dataset.step);
+                s.classList.remove('active', 'completed');
+                if (sNum === currentStep) s.classList.add('active');
+                else if (sNum < currentStep) s.classList.add('completed');
+            });
+            document.querySelectorAll('.step-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('step' + currentStep).classList.add('active');
+            if (currentStep === 5) renderReview();
+        }
+
+        function validateStep(step) {
+            if (step === 1) {
+                if (!document.getElementById('examTitle').value.trim()) {
+                    App.toast('يرجى إدخال عنوان الاختبار', 'error'); return false;
+                }
+                if (!document.getElementById('examSubject').value) {
+                    App.toast('يرجى اختيار المادة', 'error'); return false;
+                }
+                if (!document.getElementById('examGrade').value) {
+                    App.toast('يرجى اختيار الصف', 'error'); return false;
+                }
+            }
+            if (step === 2) {
+                if (examData.questions.length === 0) {
+                    App.toast('يرجى إضافة سؤال واحد على الأقل', 'error'); return false;
+                }
+            }
+            if (step === 3) {
+                if (!document.getElementById('examDuration').value) {
+                    App.toast('يرجى تحديد مدة الاختبار', 'error'); return false;
+                }
+            }
+            if (step === 4) {
+                const total = examData.selectedStudents.length + examData.selectedGroups.length + examData.selectedClasses.length;
+                if (total === 0) {
+                    App.toast('يرجى تحديد طلاب أو مجموعات أو صفوف', 'error'); return false;
+                }
+            }
+            return true;
+        }
+
+        // Question Management
+        window.addNewQuestion = function() {
+            editingQuestionIndex = -1;
+            document.getElementById('questionType').value = 'mcq';
+            document.getElementById('questionText').value = '';
+            document.getElementById('questionMarks').value = '1';
+            document.getElementById('questionHint').value = '';
+            updateQuestionForm();
+            document.getElementById('questionModal').classList.add('active');
+        };
+
+        window.closeQuestionModal = function() {
+            document.getElementById('questionModal').classList.remove('active');
+        };
+
+        window.updateQuestionForm = function() {
+            const type = document.getElementById('questionType').value;
+            const container = document.getElementById('questionOptionsContainer');
+            if (type === 'mcq') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label required">الخيارات</label>
+                        <div id="mcqOptions">
+                            <div class="option-row"><input type="radio" name="correctOption" value="0" checked><input type="text" class="form-input option-input" placeholder="الخيار أ"></div>
+                            <div class="option-row"><input type="radio" name="correctOption" value="1"><input type="text" class="form-input option-input" placeholder="الخيار ب"></div>
+                            <div class="option-row"><input type="radio" name="correctOption" value="2"><input type="text" class="form-input option-input" placeholder="الخيار ج"></div>
+                            <div class="option-row"><input type="radio" name="correctOption" value="3"><input type="text" class="form-input option-input" placeholder="الخيار د"></div>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="addOption()"><i class="fas fa-plus"></i> إضافة خيار</button>
+                    </div>`;
+            } else if (type === 'true_false') {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label required">الإجابة الصحيحة</label>
+                        <select class="form-select" id="tfAnswer">
+                            <option value="true">صح</option>
+                            <option value="false">خطأ</option>
+                        </select>
+                    </div>`;
+            } else {
+                container.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label required">الإجابة النموذجية</label>
+                        <textarea class="form-input" id="modelAnswer" rows="3" placeholder="الإجابة النموذجية..."></textarea>
+                    </div>`;
+            }
+        };
+
+        window.addOption = function() {
+            const container = document.getElementById('mcqOptions');
+            const count = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.innerHTML = `<input type="radio" name="correctOption" value="${count}"><input type="text" class="form-input option-input" placeholder="خيار ${String.fromCharCode(65 + count)}"><button class="btn btn-icon btn-sm text-error" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+            container.appendChild(row);
+        };
+
+        window.saveQuestion = function() {
+            const type = document.getElementById('questionType').value;
+            const text = document.getElementById('questionText').value.trim();
+            const marks = parseInt(document.getElementById('questionMarks').value) || 1;
+            const hint = document.getElementById('questionHint').value.trim();
+            if (!text) { App.toast('يرجى إدخال نص السؤال', 'error'); return; }
+
+            let question = { type, text, marks, hint, options: [], correctAnswer: null };
+            if (type === 'mcq') {
+                const options = [];
+                document.querySelectorAll('#mcqOptions .option-row').forEach(row => {
+                    const input = row.querySelector('.option-input');
+                    if (input.value.trim()) options.push(input.value.trim());
+                });
+                if (options.length < 2) { App.toast('يرجى إضافة خيارين على الأقل', 'error'); return; }
+                const correctIdx = document.querySelector('input[name="correctOption"]:checked')?.value || 0;
+                question.options = options;
+                question.correctAnswer = parseInt(correctIdx);
+            } else if (type === 'true_false') {
+                question.correctAnswer = document.getElementById('tfAnswer').value === 'true';
+            } else {
+                question.correctAnswer = document.getElementById('modelAnswer')?.value.trim() || '';
+            }
+
+            if (editingQuestionIndex >= 0) {
+                examData.questions[editingQuestionIndex] = question;
+            } else {
+                examData.questions.push(question);
+            }
+            renderQuestionsList();
+            closeQuestionModal();
+            App.toast('تم حفظ السؤال');
+        };
+
+        function renderQuestionsList() {
+            const container = document.getElementById('questionsList');
+            if (examData.questions.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-question-circle"></i><p>لم تضف أي أسئلة بعد</p><button class="btn btn-primary btn-sm" onclick="addNewQuestion()">إضافة سؤال</button></div>`;
+            } else {
+                container.innerHTML = examData.questions.map((q, i) => `
+                    <div class="question-card">
+                        <div class="question-header">
+                            <span class="question-number">س ${i + 1}</span>
+                            <span class="question-type badge">${getQuestionTypeLabel(q.type)}</span>
+                            <span class="question-marks">${q.marks} درجة</span>
+                        </div>
+                        <div class="question-text">${q.text}</div>
+                        ${q.options?.length ? `<div class="question-options">${q.options.map((o, j) => `<div class="option ${j === q.correctAnswer ? 'correct' : ''}">${String.fromCharCode(65 + j)}. ${o}</div>`).join('')}</div>` : ''}
+                        <div class="question-actions">
+                            <button class="btn btn-icon btn-sm" onclick="editQuestion(${i})" title="تعديل"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-icon btn-sm text-error" onclick="deleteQuestion(${i})" title="حذف"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('totalQuestionsCount').textContent = examData.questions.length;
+            document.getElementById('totalMarks').textContent = examData.questions.reduce((s, q) => s + q.marks, 0);
+        }
+
+        window.editQuestion = function(index) {
+            editingQuestionIndex = index;
+            const q = examData.questions[index];
+            document.getElementById('questionType').value = q.type;
+            document.getElementById('questionText').value = q.text;
+            document.getElementById('questionMarks').value = q.marks;
+            document.getElementById('questionHint').value = q.hint || '';
+            updateQuestionForm();
+            if (q.type === 'mcq' && q.options) {
+                const container = document.getElementById('mcqOptions');
+                container.innerHTML = q.options.map((o, j) => `
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="${j}" ${j === q.correctAnswer ? 'checked' : ''}>
+                        <input type="text" class="form-input option-input" value="${o}">
+                        ${j > 1 ? '<button class="btn btn-icon btn-sm text-error" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>' : ''}
+                    </div>
+                `).join('');
+            }
+            document.getElementById('questionModal').classList.add('active');
+        };
+
+        window.deleteQuestion = function(index) {
+            App.confirm('هل أنت متأكد من حذف هذا السؤال؟', () => {
+                examData.questions.splice(index, 1);
+                renderQuestionsList();
+                App.toast('تم حذف السؤال');
+            });
+        };
+
+        function getQuestionTypeLabel(type) {
+            const labels = { mcq: 'اختيار متعدد', true_false: 'صح/خطأ', essay: 'مقالي', fill_blank: 'اكمل الفراغ', matching: 'توصيل' };
+            return labels[type] || type;
+        }
+
+        // Question Bank
+        window.openQuestionBank = async function() {
+            document.getElementById('questionBankModal').classList.add('active');
+            try {
+                const user = examAuth.getUser();
+                const { data } = await examDB.from('exam_question_bank')
+                    .select('*')
+                    .eq('teacher_id', user.id)
+                    .order('created_at', { ascending: false });
+                bankQuestions = data || [];
+                renderQuestionBank();
+            } catch (e) { console.error('Error loading question bank:', e); }
+        };
+
+        window.closeQuestionBankModal = function() {
+            document.getElementById('questionBankModal').classList.remove('active');
+        };
+
+        function renderQuestionBank() {
+            const container = document.getElementById('questionBankList');
+            if (!bankQuestions.length) {
+                container.innerHTML = '<div class="empty-state"><p>لا توجد أسئلة في البنك</p></div>';
+                return;
+            }
+            container.innerHTML = bankQuestions.map(q => `
+                <label class="question-bank-item">
+                    <input type="checkbox" value="${q.id}" data-question='${JSON.stringify(q).replace(/'/g, "&#39;")}'>
+                    <div class="bank-question-content">
+                        <div class="bank-question-text">${q.question_text}</div>
+                        <div class="bank-question-meta">
+                            <span class="badge">${getQuestionTypeLabel(q.question_type)}</span>
+                            <span>${q.marks || 1} درجة</span>
+                        </div>
+                    </div>
+                </label>
+            `).join('');
+        }
+
+        window.addSelectedFromBank = function() {
+            const selected = document.querySelectorAll('#questionBankList input:checked');
+            selected.forEach(cb => {
+                const q = JSON.parse(cb.dataset.question);
+                examData.questions.push({
+                    type: q.question_type,
+                    text: q.question_text,
+                    marks: q.marks || 1,
+                    hint: q.hint || '',
+                    options: q.options || [],
+                    correctAnswer: q.correct_answer,
+                    bankId: q.id
+                });
+            });
+            renderQuestionsList();
+            closeQuestionBankModal();
+            App.toast(`تم إضافة ${selected.length} سؤال`);
+        };
+
+        // Review
+        function renderReview() {
+            const info = {
+                'العنوان': document.getElementById('examTitle').value,
+                'المادة': document.getElementById('examSubject').options[document.getElementById('examSubject').selectedIndex]?.text || '',
+                'الصف': document.getElementById('examGrade').options[document.getElementById('examGrade').selectedIndex]?.text || '',
+                'الفصل': document.getElementById('examStage').options[document.getElementById('examStage').selectedIndex]?.text || '',
+                'السنة': document.getElementById('examYear').value
+            };
+            document.getElementById('reviewInfo').innerHTML = Object.entries(info).map(([k, v]) => `
+                <div class="review-item"><span>${k}:</span><strong>${v}</strong></div>
+            `).join('');
+
+            document.getElementById('reviewQuestionCount').textContent = examData.questions.length;
+            document.getElementById('reviewQuestions').innerHTML = examData.questions.map((q, i) => `
+                <div class="review-question-item">
+                    <span class="review-q-num">${i + 1}</span>
+                    <span class="review-q-text">${q.text.substring(0, 80)}${q.text.length > 80 ? '...' : ''}</span>
+                    <span class="review-q-marks">${q.marks} درجة</span>
+                </div>
+            `).join('');
+
+            const settings = {
+                'المدة': document.getElementById('examDuration').value + ' دقيقة',
+                'تاريخ البدء': new Date(document.getElementById('examStartDate').value).toLocaleString('ar-SA'),
+                'تاريخ الانتهاء': new Date(document.getElementById('examEndDate').value).toLocaleString('ar-SA'),
+                'المحاولات': document.getElementById('examAttempts').value,
+                'درجة النجاح': document.getElementById('passingScore').value + '%',
+                'ترتيب الأسئلة': document.getElementById('questionOrder').value === 'random' ? 'عشوائي' : 'تسلسلي'
+            };
+            document.getElementById('reviewSettings').innerHTML = Object.entries(settings).map(([k, v]) => `
+                <div class="review-item"><span>${k}:</span><strong>${v}</strong></div>
+            `).join('');
+
+            const allAssignees = [...examData.selectedStudents, ...examData.selectedGroups, ...examData.selectedClasses];
+            document.getElementById('reviewAssignees').innerHTML = allAssignees.length ? 
+                allAssignees.map(a => `<span class="selected-tag">${a.name}</span>`).join('') :
+                '<p class="text-muted">لم يتم تحديد معينين</p>';
+        }
+
+        window.publishExam = async function() {
+            try {
+                const user = examAuth.getUser();
+                const examPayload = {
+                    teacher_id: user.id,
+                    title: document.getElementById('examTitle').value,
+                    description: document.getElementById('examDesc').value,
+                    subject_id: document.getElementById('examSubject').value,
+                    grade_id: document.getElementById('examGrade').value,
+                    stage: document.getElementById('examStage').value,
+                    academic_year: document.getElementById('examYear').value,
+                    duration: parseInt(document.getElementById('examDuration').value),
+                    start_date: document.getElementById('examStartDate').value,
+                    end_date: document.getElementById('examEndDate').value,
+                    attempts_allowed: parseInt(document.getElementById('examAttempts').value),
+                    passing_score: parseInt(document.getElementById('passingScore').value),
+                    question_order: document.getElementById('questionOrder').value,
+                    show_results: document.getElementById('showResults').checked,
+                    show_correct_answers: document.getElementById('showCorrectAnswers').checked,
+                    allow_navigation: document.getElementById('allowNavigation').checked,
+                    prevent_copy: document.getElementById('preventCopy').checked,
+                    full_screen: document.getElementById('fullScreen').checked,
+                    camera_proctoring: document.getElementById('cameraProctoring').checked,
+                    status: 'active',
+                    total_marks: examData.questions.reduce((s, q) => s + q.marks, 0),
+                    created_at: new Date().toISOString()
+                };
+
+                const { data: exam, error: examError } = await examDB.from('exam_exams')
+                    .insert(examPayload)
+                    .select()
+                    .single();
+                if (examError) throw examError;
+
+                // Insert questions
+                for (let i = 0; i < examData.questions.length; i++) {
+                    const q = examData.questions[i];
+                    await examDB.from('exam_exam_questions').insert({
+                        exam_id: exam.id,
+                        question_text: q.text,
+                        question_type: q.type,
+                        options: q.options,
+                        correct_answer: q.correctAnswer,
+                        marks: q.marks,
+                        hint: q.hint,
+                        order_index: i,
+                        bank_question_id: q.bankId || null
+                    });
+                }
+
+                // Create enrollments
+                const allStudents = [...examData.selectedStudents];
+                for (const g of examData.selectedGroups) {
+                    const { data: members } = await examDB.from('exam_group_members')
+                        .select('student_id').eq('group_id', g.id);
+                    members?.forEach(m => {
+                        if (!allStudents.find(s => s.id === m.student_id)) {
+                            allStudents.push({ id: m.student_id, name: '' });
+                        }
+                    });
+                }
+                for (const c of examData.selectedClasses) {
+                    const { data: members } = await examDB.from('exam_student_classes')
+                        .select('student_id').eq('class_id', c.id);
+                    members?.forEach(m => {
+                        if (!allStudents.find(s => s.id === m.student_id)) {
+                            allStudents.push({ id: m.student_id, name: '' });
+                        }
+                    });
+                }
+
+                for (const s of allStudents) {
+                    await examDB.from('exam_enrollments').insert({
+                        exam_id: exam.id,
+                        student_id: s.id,
+                        teacher_id: user.id,
+                        status: 'active'
+                    });
+                }
+
+                App.toast('تم نشر الاختبار بنجاح!', 'success');
+                setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+            } catch (error) {
+                console.error('Error publishing exam:', error);
+                App.toast('حدث خطأ أثناء نشر الاختبار', 'error');
+            }
+        };
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await examAuth.logout();
+            window.location.href = '../login.html';
+        });
+    })();
+    </script>
 </body>
 </html>
