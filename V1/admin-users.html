@@ -5,216 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة المستخدمين - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
     <style>
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: flex-end;
-            margin-bottom: 20px;
-        }
-        .filter-group {
-            flex: 1;
-            min-width: 160px;
-        }
-        .filter-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748b;
-            margin-bottom: 5px;
-        }
-        .filter-group select, .filter-group input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 14px;
-            background: white;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-        }
-        th, td {
-            padding: 14px 16px;
-            text-align: right;
-            border-bottom: 1px solid #e2e8f0;
-            color: #1e293b;
-        }
-        th {
-            background: #f8fafc;
-            font-weight: 700;
-        }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: inherit;
-            font-size: 12px;
-        }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-info { background: #3b82f6; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #6366f1; color: #6366f1; }
-        .btn-sm { padding: 5px 10px; font-size: 11px; }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 28px;
-            padding: 30px;
-            width: 650px;
-            max-width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .form-group {
-            margin-bottom: 18px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        .row-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        .assignment-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 25px;
-            flex-wrap: wrap;
-        }
-        .page-btn {
-            padding: 8px 16px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .page-btn.active {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
-            border-color: transparent;
-        }
-        .stats-summary {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .stat-card-sm {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 16px;
-            padding: 12px 20px;
-            text-align: center;
-            flex: 1;
-            min-width: 100px;
-        }
-        .stat-number-sm {
-            font-size: 24px;
-            font-weight: 800;
-            color: #6366f1;
-        }
-        .loading-skeleton {
-            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 12px;
-            height: 60px;
-            margin-bottom: 10px;
-        }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        @media (max-width: 768px) {
-            .filter-row { flex-direction: column; }
-            .row-2 { grid-template-columns: 1fr; }
-            .action-buttons { flex-direction: column; }
-            .btn { width: 100%; justify-content: center; }
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#f5f7fa 0%,#e4e8f0 100%);padding:20px}
+        .container{max-width:1400px;margin:0 auto}
+        .admin-bar{background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;padding:12px 24px;border-radius:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+        .card{background:#fff;border-radius:28px;padding:25px;margin-bottom:20px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);border:1px solid #e2e8f0}
+        .header h1{background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:28px}
+        .filter-row{display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;margin-bottom:20px}
+        .filter-group{flex:1;min-width:160px}
+        .filter-group label{display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px}
+        .filter-group select,.filter-group input{width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:14px;background:#fff}
+        .table-wrapper{overflow-x:auto;border-radius:20px}
+        table{width:100%;border-collapse:collapse;min-width:900px}
+        th,td{padding:14px 16px;text-align:right;border-bottom:1px solid #e2e8f0;color:#1e293b}
+        th{background:#f8fafc;font-weight:700}
+        .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:40px;font-size:12px;font-weight:600}
+        .badge-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+        .badge-success{background:#d1fae5;color:#065f46}
+        .badge-warning{background:#fef3c7;color:#d97706}
+        .badge-danger{background:#fee2e2;color:#991b1b}
+        .badge-info{background:#dbeafe;color:#1e40af}
+        .action-buttons{display:flex;gap:8px;flex-wrap:wrap}
+        .btn{padding:8px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:600;transition:0.2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12px}
+        .btn-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff}
+        .btn-success{background:#10b981;color:#fff}
+        .btn-danger{background:#ef4444;color:#fff}
+        .btn-warning{background:#f59e0b;color:#fff}
+        .btn-info{background:#3b82f6;color:#fff}
+        .btn-outline{background:transparent;border:1px solid #6366f1;color:#6366f1}
+        .btn-sm{padding:5px 10px;font-size:11px}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(5px);justify-content:center;align-items:center;z-index:1000}
+        .modal-content{background:#fff;border-radius:28px;padding:30px;width:650px;max-width:90%;max-height:85vh;overflow-y:auto}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #e2e8f0}
+        .form-group{margin-bottom:18px}
+        .form-group label{display:block;font-weight:600;color:#334155;margin-bottom:6px;font-size:14px}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:14px}
+        .row-2{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}
+        .assignment-item{background:#f8fafc;border-radius:12px;padding:10px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+        .pagination{display:flex;justify-content:center;gap:10px;margin-top:25px;flex-wrap:wrap}
+        .page-btn{padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:10px;cursor:pointer;transition:0.2s}
+        .page-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:transparent}
+        .stats-summary{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:20px}
+        .stat-card-sm{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-radius:16px;padding:12px 20px;text-align:center;flex:1;min-width:100px}
+        .stat-number-sm{font-size:24px;font-weight:800;color:#6366f1}
+        .loading-skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:loading 1.5s infinite;border-radius:12px;height:60px;margin-bottom:10px}
+        @keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @media(max-width:768px){.filter-row{flex-direction:column}.row-2{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%;justify-content:center}}
     </style>
 </head>
 <body>
@@ -239,7 +79,7 @@
             <div class="filter-row">
                 <div class="filter-group">
                     <label>🔍 بحث</label>
-                    <input type="text" id="searchInput" class="search-input" placeholder="بالاسم أو الهاتف أو البريد...">
+                    <input type="text" id="searchInput" placeholder="بالاسم أو الهاتف أو البريد...">
                 </div>
                 <div class="filter-group">
                     <label>🎭 الدور</label>
@@ -328,7 +168,7 @@
                 </div>
             </div>
             
-            <!-- قسم تعيينات المعلم (صفوف ومواد) -->
+            <!-- قسم تعيينات المعلم -->
             <div id="teacherAssignmentsSection" style="display: none;">
                 <h4>📚 تعيين الصفوف والمواد للمعلم</h4>
                 <div id="teacherAssignmentsList"></div>
@@ -347,16 +187,15 @@
                     </div>
                 </div>
                 <button type="button" class="btn btn-outline btn-sm" onclick="addTeacherAssignment()">➕ إضافة تعيين</button>
-                <p style="font-size: 12px; color: #64748b; margin-top: 8px;">* يمكن للمعلم إدارة الامتحانات فقط في الصفوف والمواد المحددة</p>
             </div>
             
             <div class="form-group">
                 <label>🔒 كلمة السر</label>
                 <input type="password" id="userPassword" placeholder="أدخل كلمة السر (6 أحرف على الأقل)">
-                <small style="color: #64748b;">اتركها فارغة إذا كنت لا تريد تغييرها (في حالة التعديل)</small>
+                <small style="color:#64748b;">اتركها فارغة إذا كنت لا تريد تغييرها (في حالة التعديل)</small>
             </div>
             
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <div style="display:flex;gap:12px;margin-top:20px;">
                 <button class="btn btn-primary" onclick="saveUser()">💾 حفظ</button>
                 <button class="btn btn-outline" onclick="closeModal('userModal')">إلغاء</button>
             </div>
@@ -378,14 +217,13 @@
                 <label>✓ تأكيد كلمة المرور</label>
                 <input type="password" id="confirmNewPassword" placeholder="أعد كتابة كلمة المرور">
             </div>
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
+            <div style="display:flex;gap:12px;margin-top:20px;">
                 <button class="btn btn-primary" onclick="confirmResetPassword()">تأكيد</button>
                 <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">إلغاء</button>
             </div>
         </div>
     </div>
 
-    <script src="js/supabase-config.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         (function() {
@@ -407,8 +245,7 @@
         // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
             try {
-                const { data: users } = await sb.from('users').select('role, status');
-                
+                const users = await fetchUsers({});
                 const total = users?.length || 0;
                 const admins = (users || []).filter(u => u.role === 'admin').length;
                 const teachers = (users || []).filter(u => u.role === 'teacher').length;
@@ -447,7 +284,7 @@
             }
         }
         
-        // ==================== تحميل المستخدمين مع Pagination ====================
+        // ==================== تحميل المستخدمين ====================
         async function loadUsers() {
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.style.display = 'block';
@@ -457,25 +294,14 @@
                 const role = document.getElementById('roleFilter').value;
                 const status = document.getElementById('statusFilter').value;
                 
-                let query = sb.from('users').select('*');
+                let filters = {};
+                if (role !== 'all') filters.role = role;
+                if (status !== 'all') filters.status = status;
+                if (search) filters.search = search;
                 
-                if (role !== 'all') {
-                    query = query.eq('role', role);
-                }
-                if (status !== 'all') {
-                    query = query.eq('status', status);
-                }
-                if (search) {
-                    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%,username.ilike.%${search}%`);
-                }
-                
-                const { data: users, error } = await query.order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                
+                const users = await fetchUsers(filters);
                 allUsers = users || [];
                 
-                // Pagination
                 const totalPages = Math.ceil(allUsers.length / itemsPerPage);
                 const startIndex = (currentPage - 1) * itemsPerPage;
                 const paginatedUsers = allUsers.slice(startIndex, startIndex + itemsPerPage);
@@ -495,7 +321,7 @@
             const tbody = document.getElementById('usersTableBody');
             
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<td><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">لا يوجد مستخدمون</td></tr>';
                 return;
             }
             
@@ -515,7 +341,6 @@
                 else if (u.status === 'pending') { statusClass = 'badge-warning'; statusText = 'قيد الانتظار'; }
                 else { statusClass = 'badge-danger'; statusText = 'موقوف'; }
                 
-                // عرض الصف للطالب أو عدد التعيينات للمعلم
                 let extraInfo = '';
                 if (u.role === 'student') {
                     const classes = await fetchClasses();
@@ -669,7 +494,7 @@
         function renderTeacherAssignmentsList() {
             const container = document.getElementById('teacherAssignmentsList');
             if (!currentTeacherAssignments || currentTeacherAssignments.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="padding: 20px;">لا توجد تعيينات</div>';
+                container.innerHTML = '<div class="empty-state" style="padding:20px;">لا توجد تعيينات</div>';
                 return;
             }
             
@@ -699,41 +524,18 @@
                 return;
             }
             
-            const newAssignment = {
-                teacher_id: currentUserId,
-                class_id: parseInt(classId),
-                subject_id: parseInt(subjectId)
-            };
-            
-            const { data, error } = await sb
-                .from('teacher_assignments')
-                .insert(newAssignment)
-                .select('*, classes(id, name), subjects(id, name)')
-                .single();
-            
-            if (error) {
-                showToast('حدث خطأ', 'error');
-                return;
+            const success = await addTeacherAssignment(currentUserId, parseInt(classId), parseInt(subjectId));
+            if (success) {
+                // إعادة تحميل التعيينات
+                currentTeacherAssignments = await fetchTeacherAssignments(currentUserId);
+                renderTeacherAssignmentsList();
             }
-            
-            currentTeacherAssignments.push(data);
-            renderTeacherAssignmentsList();
-            showToast('تم إضافة التعيين', 'success');
         }
         
         async function removeAssignment(assignmentId) {
             showConfirm('هل أنت متأكد من إزالة هذا التعيين؟', async () => {
-                const { error } = await sb
-                    .from('teacher_assignments')
-                    .delete()
-                    .eq('id', assignmentId);
-                
-                if (error) {
-                    showToast('حدث خطأ', 'error');
-                    return;
-                }
-                
-                currentTeacherAssignments = currentTeacherAssignments.filter(a => a.id !== assignmentId);
+                await removeTeacherAssignment(assignmentId);
+                currentTeacherAssignments = await fetchTeacherAssignments(currentUserId);
                 renderTeacherAssignmentsList();
                 showToast('تم إزالة التعيين', 'success');
             });
@@ -828,8 +630,9 @@
             
             let result;
             if (currentUserId) {
+                // استخدام الدالة من supabase-config.js
                 const { error } = await sb
-                    .from('users')
+                    .from(TABLES.users)
                     .update(updateData)
                     .eq('id', currentUserId);
                 
@@ -847,7 +650,7 @@
                 updateData.status = 'active';
                 
                 const { error } = await sb
-                    .from('users')
+                    .from(TABLES.users)
                     .insert(updateData);
                 
                 if (error) {
@@ -930,16 +733,6 @@
             document.getElementById(id).style.display = 'none';
         }
         
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-        
         // ==================== أحداث البحث والفلاتر ====================
         document.getElementById('searchInput').addEventListener('input', () => {
             currentPage = 1;
@@ -954,6 +747,7 @@
             loadUsers();
         });
         
+        // ==================== تصدير الدوال ====================
         window.goToPage = goToPage;
         window.approveUser = approveUser;
         window.suspendUser = suspendUser;
@@ -968,6 +762,8 @@
         window.onRoleChange = onRoleChange;
         window.addTeacherAssignment = addTeacherAssignment;
         window.removeAssignment = removeAssignment;
+        window.loadUsers = loadUsers;
+        window.loadStats = loadStats;
         
         // ==================== تحميل أولي ====================
         async function init() {
