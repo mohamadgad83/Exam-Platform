@@ -1,79 +1,298 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir="rtl" lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إعدادات النظام - لوحة التحكم</title>
-  <link rel="stylesheet" href="../shared/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات المنصة - Admin | Exam Platform</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .settings-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); }
+        .settings-tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .settings-tab.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .settings-card { background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .settings-card h3 { margin: 0 0 1.5rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .toggle-switch { display: flex; align-items: center; gap: 1rem; }
+        .toggle-switch input { width: 50px; height: 26px; appearance: none; background: #ccc; border-radius: 26px; position: relative; cursor: pointer; }
+        .toggle-switch input::after { content: ''; position: absolute; width: 22px; height: 22px; background: #fff; border-radius: 50%; top: 2px; right: 2px; transition: 0.3s; }
+        .toggle-switch input:checked { background: #3b82f6; }
+        .toggle-switch input:checked::after { right: 26px; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #10b981; color: #fff; }
+        .section-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; }
+    </style>
 </head>
 <body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-        <div class="card" style="max-width: 800px;">
-          <div class="card-header">
-            <h2 class="card-title">⚙️ إعدادات المنصة</h2>
-          </div>
-          <div class="card-body">
-            <form id="settings-form" onsubmit="event.preventDefault(); saveSettings();">
-              <h3 style="margin-bottom: 1rem; color: var(--gray-700);">🔖 معلومات أساسية</h3>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label required">اسم المنصة</label>
-                  <input type="text" class="form-input" value="منصة الاختبارات" data-validate="required">
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
+                <span class="badge">Admin</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
+                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
+                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
+                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
+                <a href="settings.html" class="active"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
+                <div class="super-access">
+                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
+                    <select onchange="switchDashboard(this.value)">
+                        <option value="admin" selected>Admin</option>
+                        <option value="../teacher/dashboard.html">Teacher</option>
+                        <option value="../student/dashboard.html">Student</option>
+                    </select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">البريد الافتراضي</label>
-                  <input type="email" class="form-input" value="support@exam-platform.com">
+                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="page-header">
+                <h1>إعدادات المنصة</h1>
+                <div class="user-info">
+                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
                 </div>
-              </div>
-              
-              <h3 style="margin: 1.5rem 0 1rem; color: var(--gray-700);">🔒 أمان الاختبارات</h3>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">مدة الجلسة (دقيقة)</label>
-                  <input type="number" class="form-input" value="15" min="5" max="120">
+            </header>
+            
+            <div class="content-wrapper">
+                <div class="settings-tabs">
+                    <div class="settings-tab active" onclick="switchTab('general')"><i class="fas fa-sliders-h"></i> عام</div>
+                    <div class="settings-tab" onclick="switchTab('payment')"><i class="fas fa-credit-card"></i> الدفع</div>
+                    <div class="settings-tab" onclick="switchTab('registration')"><i class="fas fa-user-plus"></i> التسجيل</div>
+                    <div class="settings-tab" onclick="switchTab('notifications')"><i class="fas fa-bell"></i> الإشعارات</div>
+                    <div class="settings-tab" onclick="switchTab('security')"><i class="fas fa-shield-alt"></i> الأمان</div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">عدد المحاولات المسموحة</label>
-                  <input type="number" class="form-input" value="1" min="1" max="10">
+                
+                <div id="generalTab" class="tab-content active">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-info-circle"></i> معلومات المنصة</h3>
+                        <p class="section-desc">إعدادات العرض الأساسية للمنصة</p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>اسم المنصة</label>
+                                <input type="text" id="platformName" value="Exam Platform">
+                            </div>
+                            <div class="form-group">
+                                <label>البريد الإلكتروني للدعم</label>
+                                <input type="email" id="supportEmail" value="support@example.com">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>وصف المنصة</label>
+                            <textarea id="platformDesc">منصة إلكترونية للاختبارات والتقييم</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>اللغة الافتراضية</label>
+                                <select id="defaultLang">
+                                    <option value="ar" selected>العربية</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>المنطقة الزمنية</label>
+                                <select id="timezone">
+                                    <option value="Africa/Cairo" selected>القاهرة (GMT+2)</option>
+                                    <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3><i class="fas fa-paint-brush"></i> المظهر</h3>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل الوضع الليلي الافتراضي</label>
+                            <input type="checkbox" id="defaultDarkMode">
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>إظهار الشعار المخصص</label>
+                            <input type="checkbox" id="customLogo" checked>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
-                  <input type="checkbox" checked style="width: 18px; height: 18px;">
-                  تفعيل وضع الامتحان الآمن (منع النسخ والتبديل)
-                </label>
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
-                  <input type="checkbox" checked style="width: 18px; height: 18px;">
-                  إرسال إشعارات البريد الإلكتروني تلقائياً
-                </label>
-              </div>
-
-              <div class="card-footer" style="margin-top: 2rem; padding: 1.5rem 0 0; border-top: 1px solid var(--gray-200);">
-                <button type="submit" class="btn btn-primary">💾 حفظ الإعدادات</button>
-                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script src="../shared/app.js"></script>
-  <script>
-    if (!requireAuth('admin')) throw new Error('Unauthorized');
-    renderLayout('admin', 'settings');
-
-    function saveSettings() {
-      if (!validateForm(document.getElementById('settings-form'))) return;
-      showToast('تم حفظ الإعدادات بنجاح', 'success');
-    }
-  </script>
+                
+                <div id="paymentTab" class="tab-content">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-money-bill-wave"></i> إعدادات الدفع</h3>
+                        <p class="section-desc">تكوين بوابات الدفع والأسعار</p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>العملة الافتراضية</label>
+                                <select id="currency">
+                                    <option value="EGP" selected>جنيه مصري (EGP)</option>
+                                    <option value="SAR">ريال سعودي (SAR)</option>
+                                    <option value="USD">دولار أمريكي (USD)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>السعر الافتراضي للاختبار</label>
+                                <input type="number" id="defaultPrice" value="50">
+                            </div>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل الدفع الإلكتروني</label>
+                            <input type="checkbox" id="enableOnlinePayment" checked>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل الكوبونات</label>
+                            <input type="checkbox" id="enableCoupons" checked>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="registrationTab" class="tab-content">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-user-cog"></i> إعدادات التسجيل</h3>
+                        <div class="form-group toggle-switch">
+                            <label>التسجيل مفتوح</label>
+                            <input type="checkbox" id="registrationOpen" checked>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل التحقق بالبريد الإلكتروني</label>
+                            <input type="checkbox" id="emailVerification" checked>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل التسجيل عبر الجوال</label>
+                            <input type="checkbox" id="phoneRegistration">
+                        </div>
+                        <div class="form-group">
+                            <label>حقول التسجيل الإضافية (مفصولة بفاصلة)</label>
+                            <input type="text" id="extraFields" value="المرحلة,الصف,الفرع">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="notificationsTab" class="tab-content">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-bell"></i> إعدادات الإشعارات</h3>
+                        <div class="form-group toggle-switch">
+                            <label>إشعارات البريد الإلكتروني</label>
+                            <input type="checkbox" id="emailNotifications" checked>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>إشعارات داخل المنصة</label>
+                            <input type="checkbox" id="inAppNotifications" checked>
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>إشعارات WhatsApp</label>
+                            <input type="checkbox" id="whatsappNotifications">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="securityTab" class="tab-content">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-lock"></i> إعدادات الأمان</h3>
+                        <div class="form-group">
+                            <label>مدة صلاحية الجلسة (دقيقة)</label>
+                            <input type="number" id="sessionTimeout" value="60">
+                        </div>
+                        <div class="form-group">
+                            <label>عدد محاولات تسجيل الدخول الفاشلة المسموحة</label>
+                            <input type="number" id="maxLoginAttempts" value="5">
+                        </div>
+                        <div class="form-group toggle-switch">
+                            <label>تفعيل المصادقة الثنائية (2FA)</label>
+                            <input type="checkbox" id="enable2FA">
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: left; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+                    <button class="btn btn-success" onclick="resetSettings()" style="margin-right: 1rem;"><i class="fas fa-undo"></i> استعادة الافتراضي</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        async function initSettings() {
+            const user = await examAuth.getUser();
+            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
+            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
+            loadSettings();
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+        
+        async function loadSettings() {
+            const { data } = await examDB.from('exam_settings').select('*').maybeSingle();
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const el = document.getElementById(key);
+                    if (el) {
+                        if (el.type === 'checkbox') el.checked = data[key];
+                        else el.value = data[key] || '';
+                    }
+                });
+            }
+        }
+        
+        async function saveSettings() {
+            const fields = ['platformName', 'supportEmail', 'platformDesc', 'defaultLang', 'timezone', 'defaultDarkMode', 'customLogo', 'currency', 'defaultPrice', 'enableOnlinePayment', 'enableCoupons', 'registrationOpen', 'emailVerification', 'phoneRegistration', 'extraFields', 'emailNotifications', 'inAppNotifications', 'whatsappNotifications', 'sessionTimeout', 'maxLoginAttempts', 'enable2FA'];
+            const payload = {};
+            fields.forEach(f => {
+                const el = document.getElementById(f);
+                if (el) payload[f] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            payload.updated_at = new Date().toISOString();
+            
+            const { error } = await examDB.from('exam_settings').upsert(payload, { onConflict: 'id' });
+            if (error) App.showToast('خطأ في الحفظ', 'error');
+            else App.showToast('تم حفظ الإعدادات بنجاح', 'success');
+        }
+        
+        function resetSettings() {
+            if (!confirm('هل أنت متأكد من استعادة الإعدادات الافتراضية؟')) return;
+            document.getElementById('platformName').value = 'Exam Platform';
+            document.getElementById('supportEmail').value = 'support@example.com';
+            document.getElementById('platformDesc').value = 'منصة إلكترونية للاختبارات والتقييم';
+            document.getElementById('defaultLang').value = 'ar';
+            document.getElementById('timezone').value = 'Africa/Cairo';
+            document.getElementById('defaultDarkMode').checked = false;
+            document.getElementById('customLogo').checked = true;
+            document.getElementById('currency').value = 'EGP';
+            document.getElementById('defaultPrice').value = '50';
+            document.getElementById('enableOnlinePayment').checked = true;
+            document.getElementById('enableCoupons').checked = true;
+            document.getElementById('registrationOpen').checked = true;
+            document.getElementById('emailVerification').checked = true;
+            document.getElementById('phoneRegistration').checked = false;
+            document.getElementById('extraFields').value = 'المرحلة,الصف,الفرع';
+            document.getElementById('emailNotifications').checked = true;
+            document.getElementById('inAppNotifications').checked = true;
+            document.getElementById('whatsappNotifications').checked = false;
+            document.getElementById('sessionTimeout').value = '60';
+            document.getElementById('maxLoginAttempts').value = '5';
+            document.getElementById('enable2FA').checked = false;
+            App.showToast('تمت الاستعادة - اضغط حفظ للتطبيق', 'success');
+        }
+        
+        function switchDashboard(url) { if(url !== 'admin') window.location.href = url; }
+        document.addEventListener('DOMContentLoaded', initSettings);
+    </script>
 </body>
 </html>

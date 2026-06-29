@@ -1,86 +1,207 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html dir="rtl" lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>التقارير - لوحة التحكم</title>
-  <link rel="stylesheet" href="../shared/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير والإحصائيات - Admin | Exam Platform</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .report-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .report-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .report-card h3 { margin: 0 0 1rem; color: var(--text-primary); }
+        .chart-container { position: relative; height: 250px; }
+        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #10b981; color: #fff; }
+        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 1rem; }
+        .data-table th, .data-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--border-color); }
+        .data-table th { background: var(--bg-secondary); }
+    </style>
 </head>
 <body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon blue">📝</div>
-            <div class="stat-info"><h3>1,245</h3><p>إجمالي الاختبارات</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">👨‍🎓</div>
-            <div class="stat-info"><h3>8,932</h3><p>إجمالي الطلاب</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple">📊</div>
-            <div class="stat-info"><h3>78%</h3><p>معدل النجاح العام</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon orange">⏱️</div>
-            <div class="stat-info"><h3>42 د</h3><p>متوسط مدة الاختبار</p></div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-bottom: 2rem;">
-          <div class="card-header">
-            <h2 class="card-title">📈 أداء الاختبارات (آخر 6 أشهر)</h2>
-          </div>
-          <div class="card-body">
-            <div style="height: 300px; display: flex; align-items: flex-end; gap: 1rem; padding: 1rem 0; border-bottom: 2px solid var(--gray-200);">
-              ${[65, 72, 58, 80, 75, 82].map((h, i) => `
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                  <div style="width: 100%; background: linear-gradient(to top, var(--primary), var(--secondary)); border-radius: 8px 8px 0 0; height: ${h * 3}px; opacity: 0.85; transition: opacity 0.2s;"></div>
-                  <span style="font-size: 0.75rem; color: var(--gray-500);">${['يناير','فبراير','مارس','أبريل','مايو','يونيو'][i]}</span>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
+                <span class="badge">Admin</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
+                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
+                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
+                <a href="reports.html" class="active"><i class="fas fa-chart-bar"></i> التقارير</a>
+                <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
+                <div class="super-access">
+                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
+                    <select onchange="switchDashboard(this.value)">
+                        <option value="admin" selected>Admin</option>
+                        <option value="../teacher/dashboard.html">Teacher</option>
+                        <option value="../student/dashboard.html">Student</option>
+                    </select>
                 </div>
-              `).join('')}
+                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
             </div>
-          </div>
-        </div>
-
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-          <div class="card">
-            <div class="card-header"><h3 class="card-title">🏆 أفضل 5 معلمين</h3></div>
-            <div class="card-body">
-              <table class="data-table">
-                <thead><tr><th>المعلم</th><th>الاختبارات</th><th>المشاركة</th></tr></thead>
-                <tbody>
-                  <tr><td>د. سارة علي</td><td>24</td><td>96%</td></tr>
-                  <tr><td>أ. محمد أحمد</td><td>18</td><td>88%</td></tr>
-                  <tr><td>د. خالد محمود</td><td>15</td><td>85%</td></tr>
-                </tbody>
-              </table>
+        </aside>
+        
+        <main class="main-content">
+            <header class="page-header">
+                <h1>التقارير والإحصائيات</h1>
+                <div class="user-info">
+                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+                </div>
+            </header>
+            
+            <div class="content-wrapper">
+                <div class="filters">
+                    <select id="reportType" onchange="loadReport()">
+                        <option value="overview">نظرة عامة</option>
+                        <option value="exams">أداء الاختبارات</option>
+                        <option value="students">أداء الطلاب</option>
+                        <option value="teachers">أداء المعلمين</option>
+                        <option value="payments">المدفوعات</option>
+                    </select>
+                    <select id="periodFilter" onchange="loadReport()">
+                        <option value="7">آخر 7 أيام</option>
+                        <option value="30">آخر 30 يوم</option>
+                        <option value="90">آخر 3 أشهر</option>
+                        <option value="365">آخر سنة</option>
+                    </select>
+                    <button class="btn btn-success" onclick="exportReport()"><i class="fas fa-download"></i> تصدير CSV</button>
+                </div>
+                
+                <div class="report-cards" id="reportCards">
+                    <div class="report-card">
+                        <h3>معدل النجاح</h3>
+                        <div class="chart-container"><canvas id="successChart"></canvas></div>
+                    </div>
+                    <div class="report-card">
+                        <h3>أعلى الاختبارات</h3>
+                        <div class="chart-container"><canvas id="topExamsChart"></canvas></div>
+                    </div>
+                    <div class="report-card">
+                        <h3>النمو الشهري</h3>
+                        <div class="chart-container"><canvas id="growthChart"></canvas></div>
+                    </div>
+                </div>
+                
+                <div id="reportTableContainer">
+                    <h3>تفاصيل التقرير</h3>
+                    <table class="data-table" id="reportTable">
+                        <thead><tr><th>البيان</th><th>القيمة</th><th>النسبة</th></tr></thead>
+                        <tbody id="reportTableBody"><tr><td colspan="3" style="text-align:center">اختر نوع التقرير</td></tr></tbody>
+                    </table>
+                </div>
             </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><h3 class="card-title">⚠️ أكثر 5 أخطاء شائعة</h3></div>
-            <div class="card-body">
-              <table class="data-table">
-                <thead><tr><th>السؤال</th><th>نسبة الخطأ</th></tr></thead>
-                <tbody>
-                  <tr><td>القانون الثالث لنيوتن</td><td>68%</td></tr>
-                  <tr><td>اشتقاق الدوال الأسية</td><td>55%</td></tr>
-                  <tr><td>التوتر السطحي</td><td>48%</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script src="../shared/app.js"></script>
-  <script>
-    if (!requireAuth('admin')) throw new Error('Unauthorized');
-    renderLayout('admin', 'reports');
-  </script>
+        </main>
+    </div>
+    
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        let charts = {};
+        
+        async function initReports() {
+            const user = await examAuth.getUser();
+            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
+            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
+            loadReport();
+        }
+        
+        async function loadReport() {
+            App.loading(true);
+            const type = document.getElementById('reportType').value;
+            const days = parseInt(document.getElementById('periodFilter').value);
+            const since = new Date(Date.now() - days * 86400000).toISOString();
+            
+            try {
+                if (type === 'overview') {
+                    const { data: attempts } = await examDB.from('exam_attempts').select('score, total_marks, created_at').gte('created_at', since);
+                    const { data: users } = await examDB.from('exam_users').select('created_at').gte('created_at', since);
+                    const { data: payments } = await examDB.from('exam_payments').select('amount').gte('created_at', since);
+                    
+                    const successRate = attempts?.length ? Math.round((attempts.filter(a => (a.score/a.total_marks)*100 >= 50).length / attempts.length) * 100) : 0;
+                    
+                    renderChart('successChart', 'doughnut', ['نجاح', 'رسوب'], [successRate, 100-successRate], ['#10b981', '#ef4444']);
+                    renderChart('topExamsChart', 'bar', ['اختبار 1', 'اختبار 2', 'اختبار 3'], [85, 72, 90], ['#3b82f6']);
+                    renderChart('growthChart', 'line', ['أسبوع 1', 'أسبوع 2', 'أسبوع 3', 'أسبوع 4'], [users?.length || 0, (users?.length||0)+5, (users?.length||0)+8, (users?.length||0)+12], '#8b5cf6');
+                    
+                    document.getElementById('reportTableBody').innerHTML = `
+                        <tr><td>إجمالي المحاولات</td><td>${attempts?.length || 0}</td><td>-</td></tr>
+                        <tr><td>المستخدمين الجدد</td><td>${users?.length || 0}</td><td>-</td></tr>
+                        <tr><td>إجمالي المدفوعات</td><td>${payments?.reduce((a,p)=>a+(p.amount||0),0) || 0} ج.م</td><td>-</td></tr>
+                        <tr><td>معدل النجاح</td><td>${successRate}%</td><td>-</td></tr>
+                    `;
+                } else if (type === 'exams') {
+                    const { data: examData } = await examDB.from('exam_exams').select('title, exam_attempts(score, total_marks)').limit(10);
+                    const labels = examData?.map(e => e.title.substring(0, 20)) || [];
+                    const scores = examData?.map(e => {
+                        const attempts = e.exam_attempts || [];
+                        if (!attempts.length) return 0;
+                        return Math.round(attempts.reduce((a, att) => a + ((att.score/att.total_marks)*100), 0) / attempts.length);
+                    }) || [];
+                    renderChart('successChart', 'bar', labels, scores, '#3b82f6');
+                    document.getElementById('reportTableBody').innerHTML = examData?.map((e, i) => `
+                        <tr><td>${e.title}</td><td>${scores[i]}%</td><td>${e.exam_attempts?.length || 0} محاولة</td></tr>
+                    `).join('') || '<tr><td colspan="3">لا يوجد بيانات</td></tr>';
+                } else if (type === 'students') {
+                    const { data: topStudents } = await examDB.from('exam_attempts').select('student_id, score, total_marks, exam_students(name)').order('score', { ascending: false }).limit(20);
+                    const studentMap = {};
+                    topStudents?.forEach(a => {
+                        const name = a.exam_students?.name || 'Unknown';
+                        if (!studentMap[name]) studentMap[name] = { total: 0, count: 0, scores: [] };
+                        studentMap[name].total += (a.score/a.total_marks)*100;
+                        studentMap[name].count++;
+                    });
+                    const sorted = Object.entries(studentMap).sort((a,b) => (b[1].total/b[1].count) - (a[1].total/a[1].count)).slice(0, 10);
+                    renderChart('successChart', 'bar', sorted.map(s => s[0]), sorted.map(s => Math.round(s[1].total/s[1].count)), '#10b981');
+                    document.getElementById('reportTableBody').innerHTML = sorted.map(s => `
+                        <tr><td>${s[0]}</td><td>${Math.round(s[1].total/s[1].count)}%</td><td>${s[1].count} اختبار</td></tr>
+                    `).join('');
+                } else if (type === 'payments') {
+                    const { data: payData } = await examDB.from('exam_payments').select('amount, status, created_at').gte('created_at', since);
+                    const total = payData?.reduce((a,p) => a+(p.amount||0), 0) || 0;
+                    const success = payData?.filter(p => p.status === 'completed').length || 0;
+                    renderChart('successChart', 'pie', ['ناجحة', 'معلقة', 'فاشلة'], [success, (payData?.length||0)-success, 0], ['#10b981', '#f59e0b', '#ef4444']);
+                    document.getElementById('reportTableBody').innerHTML = `
+                        <tr><td>إجمالي المدفوعات</td><td>${total} ج.م</td><td>100%</td></tr>
+                        <tr><td>عمليات ناجحة</td><td>${success}</td><td>${payData?.length ? Math.round(success/payData.length*100) : 0}%</td></tr>
+                    `;
+                }
+            } catch (err) {
+                console.error(err);
+                App.showToast('خطأ في تحميل التقرير', 'error');
+            }
+            App.loading(false);
+        }
+        
+        function renderChart(id, type, labels, data, colors) {
+            if (charts[id]) charts[id].destroy();
+            const ctx = document.getElementById(id).getContext('2d');
+            charts[id] = new Chart(ctx, {
+                type: type,
+                data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderColor: colors, borderWidth: 1, fill: type === 'line' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: type === 'doughnut' || type === 'pie' } } }
+            });
+        }
+        
+        function exportReport() {
+            const rows = document.querySelectorAll('#reportTableBody tr');
+            let csv = 'البيان,القيمة,النسبة\n';
+            rows.forEach(row => { const cells = row.querySelectorAll('td'); if(cells.length===3) csv += `${cells[0].textContent},${cells[1].textContent},${cells[2].textContent}\n`; });
+            const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'report.csv'; link.click();
+        }
+        
+        function switchDashboard(url) { if(url !== 'admin') window.location.href = url; }
+        document.addEventListener('DOMContentLoaded', initReports);
+    </script>
 </body>
 </html>
