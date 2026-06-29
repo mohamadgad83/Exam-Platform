@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النتائج والتصحيح | مدرس</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .grading-tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        .grading-tab { padding: 10px 20px; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0; color: var(--text-secondary); transition: all var(--transition-fast); }
+        .grading-tab.active { background: rgba(99,102,241,0.1); color: var(--primary-light); border-bottom: 2px solid var(--primary-color); }
+        .results-table { width: 100%; }
+        .results-table th, .results-table td { padding: 14px 16px; text-align: right; border-bottom: 1px solid var(--border-color); }
+        .results-table th { color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; }
+        .essay-grading { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+        .essay-grading .student-answer { background: var(--bg-primary); padding: 16px; border-radius: var(--radius-md); margin: 12px 0; line-height: 1.8; }
+        .grade-input { width: 80px; text-align: center; }
+        .bulk-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header"><h2>🎓 منصة الاختبارات</h2><button class="sidebar-toggle" id="sidebarToggle">☰</button></div>
+            <nav class="sidebar-nav">
+                <a href="./dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">لوحة التحكم</span></a>
+                <a href="./exams.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-text">الاختبارات</span></a>
+                <a href="./questions.html" class="nav-item"><span class="nav-icon">❓</span><span class="nav-text">بنك الأسئلة</span></a>
+                <a href="./monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span class="nav-text">المراقبة</span></a>
+                <a href="./results.html" class="nav-item active"><span class="nav-icon">📈</span><span class="nav-text">النتائج</span></a>
+            </nav>
+            <div class="sidebar-footer"><button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button></div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>النتائج والتصحيح</h1>
+                <div class="filters">
+                    <select class="form-select" id="examFilter" style="width:auto;min-width:200px;"><option value="">اختر الاختبار</option></select>
+                    <button class="btn btn-secondary" onclick="exportResults()">📥 تصدير CSV</button>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="grading-tabs">
+                    <div class="grading-tab active" onclick="switchTab('results', this)">📋 النتائج</div>
+                    <div class="grading-tab" onclick="switchTab('grading', this)">✏️ تصحيح يدوي</div>
+                </div>
+
+                <div id="resultsTab">
+                    <div class="table-responsive">
+                        <table class="results-table">
+                            <thead><tr><th>الطالب</th><th>الاختبار</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th><th>التاريخ</th><th></th></tr></thead>
+                            <tbody id="resultsBody"><tr><td colspan="7" class="text-center">اختر اختباراً لعرض النتائج</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="gradingTab" style="display:none;">
+                    <div id="gradingList"><div class="text-center" style="padding:60px;color:var(--text-muted)">اختر اختباراً لعرض الأسئلة المقالية</div></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        let currentExamId = null, currentResults = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await examAuth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+            if (!await examAuth.isTeacher() && !await examAuth.isAdmin()) { window.location.href = '../unauthorized.html'; return; }
+
+            document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+            document.getElementById('logoutBtn').addEventListener('click', async () => { await examAuth.signOut(); window.location.href = '../login.html'; });
+
+            await loadTeacherExams();
+            document.getElementById('examFilter').addEventListener('change', (e) => { currentExamId = e.target.value; if (currentExamId) loadResults(); });
+        });
+
+        async function loadTeacherExams() {
+            const user = await examAuth.getUser();
+            const { data } = await examDB.exams().select('id, title').eq('created_by', user.id).order('created_at', { ascending: false });
+            const select = document.getElementById('examFilter');
+            if (data) data.forEach(e => select.innerHTML += `<option value="${e.id}">${e.title}</option>`);
+        }
+
+        async function loadResults() {
+            if (!currentExamId) return;
+            App.Loading.show();
+            try {
+                const { data: attempts } = await examDB.attempts()
+                    .select('*, exam_students(full_name), exam_exams(title, total_score)')
+                    .eq('exam_id', currentExamId)
+                    .order('ended_at', { ascending: false });
+
+                currentResults = attempts || [];
+                renderResults(currentResults);
+                await loadGrading();
+
+            } catch (e) { console.error(e); }
+            finally { App.Loading.hide(); }
+        }
+
+        function renderResults(attempts) {
+            const tbody = document.getElementById('resultsBody');
+            if (!attempts.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center">لا توجد نتائج</td></tr>'; return; }
+
+            tbody.innerHTML = attempts.map(a => {
+                const total = a.exam_exams?.total_score || 1;
+                const score = a.score || 0;
+                const pct = Math.round((score / total) * 100);
+                const statusMap = { completed: '✅ مكتمل', time_expired: '⏰ انتهى الوقت', suspended: '🚫 موقوف', auto_submitted: '🤖 تلقائي' };
+                const pctColor = pct >= 80 ? 'var(--success-color)' : pct >= 60 ? 'var(--warning-color)' : 'var(--danger-color)';
+                
+                return `
+                    <tr>
+                        <td>${a.exam_students?.full_name || '—'}</td>
+                        <td>${a.exam_exams?.title || '—'}</td>
+                        <td><strong>${score} / ${total}</strong></td>
+                        <td style="color:${pctColor};font-weight:700;">${pct}%</td>
+                        <td><span class="badge ${a.status === 'completed' ? 'badge-success' : a.status === 'suspended' ? 'badge-danger' : 'badge-warning'}">${statusMap[a.status] || a.status}</span></td>
+                        <td>${App.DateTime.format(a.ended_at || a.created_at)}</td>
+                        <td><a href="../student/exam-review.html?attempt=${a.id}" class="btn btn-sm" target="_blank">مراجعة</a></td>
+                    </tr>`;
+            }).join('');
+        }
+
+        async function loadGrading() {
+            if (!currentExamId) return;
+            const { data: answers } = await examDB.answers()
+                .select('*, exam_exam_questions(points, exam_questions_bank(question_text, question_type)), exam_attempts(student_id, exam_students(full_name))')
+                .eq('exam_attempts.exam_id', currentExamId)
+                .in('exam_questions_bank.question_type', ['short_answer', 'essay'])
+                .eq('is_correct', null);
+
+            const list = document.getElementById('gradingList');
+            if (!answers?.length) { list.innerHTML = '<div class="text-center" style="padding:60px;color:var(--text-muted)">لا توجد أسئلة تنتظر التصحيح</div>'; return; }
+
+            list.innerHTML = answers.map((ans, idx) => {
+                const qb = ans.exam_exam_questions?.exam_questions_bank;
+                const student = ans.exam_attempts?.exam_students;
+                const maxPoints = ans.exam_exam_questions?.points || 0;
+                return `
+                    <div class="essay-grading" id="grade-${ans.id}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div><strong>${student?.full_name || 'طالب'}</strong> — <span style="color:var(--text-muted);font-size:0.9rem;">${qb?.question_text?.substring(0, 60)}...</span></div>
+                            <span class="badge badge-primary">/${maxPoints}</span>
+                        </div>
+                        <div class="student-answer">${ans.answer_text || '— لم يتم الإجابة —'}</div>
+                        <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+                            <label style="color:var(--text-secondary);font-size:0.9rem;">الدرجة:</label>
+                            <input type="number" class="form-input grade-input" id="score-${ans.id}" min="0" max="${maxPoints}" placeholder="0">
+                            <button class="btn btn-sm btn-primary" onclick="submitGrade('${ans.id}', ${maxPoints})">حفظ</button>
+                            <button class="btn btn-sm btn-secondary" onclick="markCorrect('${ans.id}', ${maxPoints})">✓ صحيح كامل</button>
+                            <button class="btn btn-sm btn-danger" onclick="markWrong('${ans.id}')">✗ خاطئ</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        async function submitGrade(answerId, maxPoints) {
+            const score = parseFloat(document.getElementById(`score-${answerId}`).value);
+            if (isNaN(score) || score < 0 || score > maxPoints) { App.Toast.error('درجة غير صالحة'); return; }
+            await saveGrade(answerId, score, score > 0);
+        }
+
+        async function markCorrect(answerId, maxPoints) { await saveGrade(answerId, maxPoints, true); }
+        async function markWrong(answerId) { await saveGrade(answerId, 0, false); }
+
+        async function saveGrade(answerId, score, isCorrect) {
+            App.Loading.show();
+            try {
+                await examDB.answers().update({ score_earned: score, is_correct: isCorrect, updated_at: new Date().toISOString() }).eq('id', answerId);
+                
+                // Recalculate attempt score
+                const { data: ans } = await examDB.answers().select('attempt_id').eq('id', answerId).single();
+                if (ans) {
+                    await fetch('../supabase/functions/calculate-score', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ attempt_id: ans.attempt_id })
+                    });
+                }
+
+                App.Toast.success('تم حفظ التصحيح');
+                document.getElementById(`grade-${answerId}`)?.remove();
+                await loadResults();
+            } catch (e) { App.Toast.error('حدث خطأ'); }
+            finally { App.Loading.hide(); }
+        }
+
+        function switchTab(tab, el) {
+            document.querySelectorAll('.grading-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('resultsTab').style.display = tab === 'results' ? '' : 'none';
+            document.getElementById('gradingTab').style.display = tab === 'grading' ? '' : 'none';
+        }
+
+        function exportResults() {
+            if (!currentResults.length) { App.Toast.warning('لا توجد نتائج للتصدير'); return; }
+            const data = currentResults.map(r => ({
+                'الطالب': r.exam_students?.full_name || '',
+                'الاختبار': r.exam_exams?.title || '',
+                'الدرجة': r.score || 0,
+                'الدرجة الكلية': r.exam_exams?.total_score || 0,
+                'النسبة': Math.round(((r.score || 0) / (r.exam_exams?.total_score || 1)) * 100) + '%',
+                'الحالة': r.status,
+                'تاريخ التسليم': r.ended_at || r.created_at
+            }));
+            App.exportCSV(data, `results_${currentExamId}_${new Date().toISOString().slice(0, 10)}`);
+        }
+    </script>
+</body>
+</html>

@@ -6,26 +6,317 @@
     <title>مراجعة الاختبار | منصة الاختبارات</title>
     <link rel="stylesheet" href="../shared/styles.css">
     <style>
-        .review-container { max-width: 800px; margin: 0 auto; }
-        .question-card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .question-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .question-number { font-weight: bold; color: var(--primary-color); }
-        .question-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; }
-        .status-correct { background: #4caf5022; color: #4caf50; }
-        .status-wrong { background: #f4433622; color: #f44336; }
-        .options-list { display: flex; flex-direction: column; gap: 10px; }
-        .option-item { padding: 12px 15px; border-radius: 8px; border: 2px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
-        .option-correct { border-color: #4caf50; background: #4caf5011; }
-        .option-wrong { border-color: #f44336; background: #f4433611; }
-        .option-selected::before { content: '✓'; font-weight: bold; }
-        .option-correct::before { content: '✓'; color: #4caf50; font-weight: bold; }
-        .option-wrong.option-selected::before { content: '✗'; color: #f44336; }
-        .explanation { background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 14px; }
-        .score-banner { text-align: center; padding: 30px; background: var(--card-bg); border-radius: 16px; margin-bottom: 30px; }
-        .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; font-weight: bold; border: 4px solid; }
-        .score-high { border-color: #4caf50; color: #4caf50; }
-        .score-mid { border-color: #ff9800; color: #ff9800; }
-        .score-low { border-color: #f44336; color: #f44336; }
+        .review-header {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .review-score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            border: 4px solid var(--primary-color);
+            position: relative;
+        }
+
+        .review-score-circle .score-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary-light);
+        }
+
+        .review-score-circle .score-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .review-meta {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .review-meta-item {
+            text-align: center;
+        }
+
+        .review-meta-item .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .review-meta-item .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .review-summary {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .summary-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .chip-correct {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success-color);
+        }
+
+        .chip-wrong {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger-color);
+        }
+
+        .chip-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning-color);
+        }
+
+        .question-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all var(--transition-fast);
+        }
+
+        .question-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .question-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .q-number {
+            font-weight: 700;
+            color: var(--primary-light);
+            font-size: 1.1rem;
+        }
+
+        .q-points {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .q-status {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .q-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .q-image {
+            max-width: 100%;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .options-review {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-review {
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .option-review .opt-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .opt-correct {
+            border-color: var(--success-color) !important;
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .opt-correct .opt-indicator {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .opt-wrong {
+            border-color: var(--danger-color) !important;
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .opt-wrong .opt-indicator {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .opt-neutral {
+            opacity: 0.6;
+        }
+
+        .opt-student-selected::after {
+            content: 'إجابتك';
+            position: absolute;
+            left: 12px;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .opt-correct.opt-student-selected::after {
+            content: 'إجابتك ✓';
+            background: var(--success-color);
+        }
+
+        .opt-wrong.opt-student-selected::after {
+            content: 'إجابتك ✗';
+            background: var(--danger-color);
+        }
+
+        .essay-answer-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .essay-answer-box h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .essay-answer-box p {
+            color: var(--text-primary);
+            line-height: 1.8;
+        }
+
+        .teacher-feedback-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid var(--primary-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .teacher-feedback-box h4 {
+            font-size: 0.9rem;
+            color: var(--primary-light);
+            margin-bottom: 8px;
+        }
+
+        .teacher-feedback-box .score-tag {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 12px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .explanation-box {
+            background: var(--bg-primary);
+            border-right: 3px solid var(--info-color);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .explanation-box h4 {
+            color: var(--info-color);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .explanation-box p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .review-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        .empty-review {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-review-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .review-meta {
+                gap: 16px;
+            }
+            .review-score-circle {
+                width: 120px;
+                height: 120px;
+            }
+            .review-score-circle .score-number {
+                font-size: 2rem;
+            }
+        }
     </style>
 </head>
 <body class="dark-mode">
@@ -61,12 +352,18 @@
         <main class="main-content">
             <header class="top-bar">
                 <h1>مراجعة الاختبار</h1>
-                <a href="./results.html" class="btn btn-sm">← العودة للنتائج</a>
+                <div class="user-info">
+                    <span id="userName">...</span>
+                    <span class="badge badge-primary" id="userRole">طالب</span>
+                </div>
             </header>
 
             <div class="content-wrapper">
-                <div class="review-container" id="reviewContainer">
-                    <div class="loading-spinner">جاري التحميل...</div>
+                <div id="reviewContainer">
+                    <div class="loading-overlay active" style="position: relative; background: transparent; backdrop-filter: none;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">جاري تحميل المراجعة...</div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -74,127 +371,270 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
+        let attemptId = null;
+
         document.addEventListener('DOMContentLoaded', async function() {
+            // Auth check
             const user = await examAuth.getUser();
             if (!user) { window.location.href = '../login.html'; return; }
+
+            const params = new URLSearchParams(window.location.search);
+            attemptId = params.get('attempt');
+            if (!attemptId) {
+                App.Toast.error('معرف المحاولة غير صالح');
+                window.location.href = './results.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = user.user_metadata?.full_name || user.email || 'طالب';
             
-            const isAdmin = await examAuth.isAdmin();
-            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
-            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
 
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await examAuth.signOut();
                 window.location.href = '../login.html';
             });
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
 
-            const params = new URLSearchParams(window.location.search);
-            const attemptId = params.get('attempt');
-            if (!attemptId) {
-                App.Toast.error('معرف المحاولة غير موجود');
-                return;
-            }
-
-            await loadReview(attemptId, user.id, isAdmin);
+            await loadReview();
         });
 
-        async function loadReview(attemptId, userId, isAdmin) {
-            App.Loading.show();
+        async function loadReview() {
             try {
-                // Get attempt with exam details
-                let query = examDB.attempts()
-                    .select('*, exam_exams(*, exam_subjects(name)), exam_students(user_id)')
+                // Get attempt with exam info
+                const { data: attempt, error: attemptError } = await examDB.attempts()
+                    .select('*, exam_exams(*, exam_subjects(name))')
                     .eq('id', attemptId)
                     .single();
-                
-                const { data: attempt, error } = await query;
-                if (error || !attempt) throw new Error('المحاولة غير موجودة');
 
-                // Security: only owner or admin can view
-                if (!isAdmin && attempt.exam_students?.user_id !== userId) {
+                if (attemptError || !attempt) {
+                    App.Toast.error('لم يتم العثور على المحاولة');
+                    return;
+                }
+
+                // Verify ownership
+                const { data: student } = await examDB.students()
+                    .select('id')
+                    .eq('user_id', (await examAuth.getUser()).id)
+                    .single();
+
+                if (attempt.student_id !== student?.id) {
+                    App.Toast.error('غير مصرح بالوصول');
                     window.location.href = '../unauthorized.html';
                     return;
                 }
 
-                // Get questions and answers
-                const { data: questions } = await examDB.examQuestions()
-                    .select('*, exam_questions_bank(*, exam_exam_answers(*))')
-                    .eq('exam_id', attempt.exam_id)
-                    .order('order_index', { ascending: true });
+                // Get all answers with questions
+                const { data: answers, error: answersError } = await examDB.answers()
+                    .select('*, exam_exam_questions(*, exam_questions_bank(*))')
+                    .eq('attempt_id', attemptId)
+                    .order('question_id');
 
-                // Get student answers
-                const { data: answers } = await examDB.from('exam_student_answers')
-                    .select('*')
-                    .eq('attempt_id', attemptId);
+                if (answersError) throw answersError;
 
-                const totalScore = attempt.exam_exams?.total_score || 1;
-                const score = attempt.score || 0;
-                const pct = Math.round((score / totalScore) * 100);
-                const scoreClass = pct >= 80 ? 'score-high' : pct >= 60 ? 'score-mid' : 'score-low';
-
-                const container = document.getElementById('reviewContainer');
-                container.innerHTML = `
-                    <div class="score-banner">
-                        <div class="score-circle ${scoreClass}">${pct}%</div>
-                        <h2>${attempt.exam_exams?.title || 'اختبار'}</h2>
-                        <p>الدرجة: ${score} / ${totalScore} | ${attempt.exam_exams?.exam_subjects?.name || ''}</p>
-                        <p>تاريخ الاختبار: ${App.DateTime.format(attempt.created_at)}</p>
-                        <p>المدة: ${Math.round((new Date(attempt.ended_at || Date.now()) - new Date(attempt.started_at)) / 60000} دقيقة</p>
-                    </div>
-                    <div id="questionsList"></div>
-                `;
-
-                const list = document.getElementById('questionsList');
-                if (questions) {
-                    list.innerHTML = questions.map((q, idx) => {
-                        const qb = q.exam_questions_bank;
-                        const studentAnswer = answers?.find(a => a.question_id === q.id);
-                        const isCorrect = studentAnswer?.is_correct;
-                        const correctAnswer = qb?.exam_exam_answers?.find(a => a.is_correct);
-
-                        const options = qb?.options || [];
-                        return `
-                            <div class="question-card">
-                                <div class="question-header">
-                                    <span class="question-number">سؤال ${idx + 1}</span>
-                                    <span class="question-status ${isCorrect ? 'status-correct' : 'status-wrong'}">
-                                        ${isCorrect ? '✓ صحيح' : '✗ خطأ'} (${studentAnswer?.score_earned || 0}/${q.points})
-                                    </span>
-                                </div>
-                                <p class="question-text">${qb?.question_text || ''}</p>
-                                <div class="options-list">
-                                    ${options.map((opt, oIdx) => {
-                                        const isSelected = studentAnswer?.answer_text === opt || studentAnswer?.selected_option_index === oIdx;
-                                        const isCorrectOpt = correctAnswer?.answer_text === opt || correctAnswer?.option_index === oIdx;
-                                        let cls = 'option-item';
-                                        if (isCorrectOpt) cls += ' option-correct';
-                                        else if (isSelected && !isCorrectOpt) cls += ' option-wrong option-selected';
-                                        else if (isSelected) cls += ' option-selected';
-                                        
-                                        return `<div class="${cls}">${opt}</div>`;
-                                    }).join('')}
-                                </div>
-                                ${qb?.explanation ? `
-                                    <div class="explanation">
-                                        <strong>💡 التوضيح:</strong> ${qb.explanation}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    }).join('');
-                }
+                renderReview(attempt, answers || []);
 
             } catch (err) {
-                console.error(err);
+                console.error('Review error:', err);
                 App.Toast.error('حدث خطأ في تحميل المراجعة');
-            } finally {
-                App.Loading.hide();
+                document.getElementById('reviewContainer').innerHTML = `
+                    <div class="empty-review">
+                        <div class="empty-review-icon">⚠️</div>
+                        <h3>تعذر تحميل المراجعة</h3>
+                        <p>يرجى المحاولة مرة أخرى</p>
+                        <a href="./results.html" class="btn btn-primary" style="margin-top: 16px;">العودة للنتائج</a>
+                    </div>
+                `;
             }
+        }
+
+        function renderReview(attempt, answers) {
+            const exam = attempt.exam_exams;
+            const totalScore = exam?.total_score || 1;
+            const earnedScore = attempt.score || 0;
+            const percentage = Math.round((earnedScore / totalScore) * 100);
+
+            // Count stats
+            let correctCount = 0, wrongCount = 0, pendingCount = 0;
+            answers.forEach(ans => {
+                if (ans.is_correct === true) correctCount++;
+                else if (ans.is_correct === false) wrongCount++;
+                else pendingCount++;
+            });
+
+            const scoreColor = percentage >= 80 ? 'var(--success-color)' : percentage >= 60 ? 'var(--warning-color)' : 'var(--danger-color)';
+
+            let html = `
+                <div class="review-header">
+                    <h2 style="margin-bottom: 8px;">${exam?.title || 'اختبار'}</h2>
+                    <p style="color: var(--text-secondary);">${exam?.exam_subjects?.name || ''}</p>
+                    
+                    <div class="review-score-circle" style="border-color: ${scoreColor};">
+                        <div class="score-number" style="color: ${scoreColor};">${percentage}%</div>
+                        <div class="score-label">النسبة المئوية</div>
+                    </div>
+                    
+                    <div class="review-meta">
+                        <div class="review-meta-item">
+                            <div class="value">${earnedScore}</div>
+                            <div class="label">الدرجة المكتسبة</div>
+                        </div>
+                        <div class="review-meta-item">
+                            <div class="value">${totalScore}</div>
+                            <div class="label">الدرجة الكلية</div>
+                        </div>
+                        <div class="review-meta-item">
+                            <div class="value">${answers.length}</div>
+                            <div class="label">عدد الأسئلة</div>
+                        </div>
+                        <div class="review-meta-item">
+                            <div class="value">${App.DateTime.format(attempt.ended_at || attempt.created_at)}</div>
+                            <div class="label">تاريخ التسليم</div>
+                        </div>
+                    </div>
+                    
+                    <div class="review-summary">
+                        <div class="summary-chip chip-correct">✓ ${correctCount} صحيحة</div>
+                        <div class="summary-chip chip-wrong">✗ ${wrongCount} خاطئة</div>
+                        ${pendingCount > 0 ? `<div class="summary-chip chip-pending">⏳ ${pendingCount} قيد التصحيح</div>` : ''}
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 20px; font-size: 1.3rem;">📋 الأسئلة والإجابات</h2>
+            `;
+
+            if (answers.length === 0) {
+                html += `
+                    <div class="empty-review">
+                        <div class="empty-review-icon">📝</div>
+                        <h3>لا توجد إجابات مسجلة</h3>
+                    </div>
+                `;
+            } else {
+                answers.forEach((ans, index) => {
+                    const qData = ans.exam_exam_questions;
+                    const qb = qData?.exam_questions_bank;
+                    const qType = qb?.question_type || 'multiple_choice';
+                    const points = qData?.points || 0;
+                    const isCorrect = ans.is_correct;
+                    const earned = ans.score_earned || 0;
+
+                    let statusClass = 'status-pending';
+                    let statusText = 'قيد التصحيح';
+                    if (isCorrect === true) { statusClass = 'status-correct'; statusText = `صحيح (+${earned})`; }
+                    else if (isCorrect === false) { statusClass = 'status-wrong'; statusText = `خاطئ (0/${points})`; }
+
+                    html += `
+                        <div class="question-card" id="q-card-${index}">
+                            <div class="question-card-header">
+                                <div>
+                                    <span class="q-number">سؤال ${index + 1}</span>
+                                    <span class="q-points">(${points} نقطة)</span>
+                                </div>
+                                <span class="q-status ${statusClass}">${statusText}</span>
+                            </div>
+                            
+                            <div class="q-text">${qb?.question_text || '—'}</div>
+                            ${qb?.image_url ? `<img src="${qb.image_url}" class="q-image" alt="صورة السؤال" loading="lazy">` : ''}
+                    `;
+
+                    if (qType === 'multiple_choice' || qType === 'true_false') {
+                        const options = qb?.options || [];
+                        const correctIdx = qb?.correct_answer;
+                        const studentIdx = ans.selected_option_index;
+
+                        html += `<div class="options-review">`;
+                        options.forEach((opt, oIdx) => {
+                            let cls = 'option-review';
+                            let indicator = String.fromCharCode(65 + oIdx); // A, B, C...
+
+                            if (oIdx === correctIdx) {
+                                cls += ' opt-correct';
+                            } else if (oIdx === studentIdx && oIdx !== correctIdx) {
+                                cls += ' opt-wrong';
+                            } else {
+                                cls += ' opt-neutral';
+                            }
+
+                            if (oIdx === studentIdx) {
+                                cls += ' opt-student-selected';
+                            }
+
+                            html += `
+                                <div class="${cls}">
+                                    <div class="opt-indicator">${indicator}</div>
+                                    <span>${opt}</span>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+
+                    } else if (qType === 'short_answer' || qType === 'essay') {
+                        html += `
+                            <div class="essay-answer-box">
+                                <h4>📝 إجابتك:</h4>
+                                <p>${ans.answer_text || '— لم يتم الإجابة —'}</p>
+                            </div>
+                        `;
+
+                        if (qb?.correct_answer) {
+                            html += `
+                                <div class="explanation-box">
+                                    <h4>✓ الإجابة النموذجية:</h4>
+                                    <p>${qb.correct_answer}</p>
+                                </div>
+                            `;
+                        }
+
+                        if (ans.teacher_feedback) {
+                            html += `
+                                <div class="teacher-feedback-box">
+                                    <h4>💬 تعليق المدرس:</h4>
+                                    <p>${ans.teacher_feedback}</p>
+                                    <span class="score-tag">${earned}/${points}</span>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // Fill in the blank / matching
+                        html += `
+                            <div class="essay-answer-box">
+                                <h4>إجابتك:</h4>
+                                <p>${ans.answer_text || '—'}</p>
+                            </div>
+                            <div class="explanation-box">
+                                <h4>الإجابة الصحيحة:</h4>
+                                <p>${qb?.correct_answer || '—'}</p>
+                            </div>
+                        `;
+                    }
+
+                    if (qb?.explanation) {
+                        html += `
+                            <div class="explanation-box">
+                                <h4>💡 التعليل:</h4>
+                                <p>${qb.explanation}</p>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div>`; // end question-card
+                });
+            }
+
+            html += `
+                <div class="review-actions">
+                    <a href="./results.html" class="btn btn-secondary">← العودة للنتائج</a>
+                    <a href="./exams.html" class="btn btn-primary">الاختبارات المتاحة</a>
+                </div>
+            `;
+
+            document.getElementById('reviewContainer').innerHTML = html;
         }
     </script>
 </body>

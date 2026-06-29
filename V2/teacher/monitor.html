@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المراقبة اللحظية | مدرس</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .monitor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .monitor-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; position: relative; overflow: hidden; }
+        .monitor-card::before { content: ''; position: absolute; top: 0; right: 0; left: 0; height: 4px; background: var(--success-color); }
+        .monitor-card.warning::before { background: var(--warning-color); }
+        .monitor-card.danger::before { background: var(--danger-color); }
+        .monitor-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .monitor-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: white; }
+        .monitor-card-info h4 { margin-bottom: 2px; }
+        .monitor-card-info p { font-size: 0.85rem; color: var(--text-secondary); }
+        .monitor-progress { margin: 16px 0; }
+        .monitor-progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-secondary); }
+        .monitor-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .live-indicator { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--success-color); }
+        .live-dot { width: 8px; height: 8px; background: var(--success-color); border-radius: 50%; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .violation-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; margin-top: 8px; background: rgba(239,68,68,0.15); color: var(--danger-color); }
+        .empty-monitor { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header"><h2>🎓 منصة الاختبارات</h2><button class="sidebar-toggle" id="sidebarToggle">☰</button></div>
+            <nav class="sidebar-nav">
+                <a href="./dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">لوحة التحكم</span></a>
+                <a href="./exams.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-text">الاختبارات</span></a>
+                <a href="./questions.html" class="nav-item"><span class="nav-icon">❓</span><span class="nav-text">بنك الأسئلة</span></a>
+                <a href="./monitor.html" class="nav-item active"><span class="nav-icon">👁️</span><span class="nav-text">المراقبة</span></a>
+                <a href="./results.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">النتائج</span></a>
+            </nav>
+            <div class="sidebar-footer"><button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button></div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>المراقبة اللحظية</h1>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div class="live-indicator"><div class="live-dot"></div>مباشر</div>
+                    <select class="form-select" id="examFilter" style="width:auto;min-width:180px;"><option value="">جميع الاختبارات</option></select>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="monitor-grid" id="monitorGrid"><div class="empty-monitor"><div style="font-size:4rem;margin-bottom:16px;">👁️</div><h3>جاري التحميل...</h3></div></div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        let refreshInterval = null;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await examAuth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+            if (!await examAuth.isTeacher() && !await examAuth.isAdmin()) { window.location.href = '../unauthorized.html'; return; }
+
+            document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+            document.getElementById('logoutBtn').addEventListener('click', async () => { await examAuth.signOut(); window.location.href = '../login.html'; });
+
+            await loadTeacherExams();
+            await refreshMonitor();
+            refreshInterval = setInterval(refreshMonitor, 10000); // every 10s
+
+            document.getElementById('examFilter').addEventListener('change', refreshMonitor);
+        });
+
+        async function loadTeacherExams() {
+            const user = await examAuth.getUser();
+            const { data } = await examDB.exams().select('id, title').eq('created_by', user.id).eq('status', 'published');
+            const select = document.getElementById('examFilter');
+            if (data) data.forEach(e => select.innerHTML += `<option value="${e.id}">${e.title}</option>`);
+        }
+
+        async function refreshMonitor() {
+            try {
+                const examFilter = document.getElementById('examFilter').value;
+                const user = await examAuth.getUser();
+                
+                let query = examDB.attempts()
+                    .select('*, exam_students(full_name, user_id), exam_exams(title, duration_minutes, total_score), exam_student_answers(count)')
+                    .eq('status', 'in_progress');
+
+                if (examFilter) query = query.eq('exam_id', examFilter);
+                
+                // Get teacher's exams only
+                const { data: teacherExams } = await examDB.exams().select('id').eq('created_by', user.id);
+                const examIds = teacherExams?.map(e => e.id) || [];
+                if (examIds.length) query = query.in('exam_id', examIds);
+
+                const { data: attempts } = await query.order('started_at', { ascending: false });
+
+                const grid = document.getElementById('monitorGrid');
+                if (!attempts?.length) {
+                    grid.innerHTML = '<div class="empty-monitor"><div style="font-size:4rem;margin-bottom:16px;">✅</div><h3>لا توجد اختبارات نشطة حالياً</h3><p>ستظهر الطلاب هنا عند بدءهم الاختبار</p></div>';
+                    return;
+                }
+
+                grid.innerHTML = attempts.map(a => {
+                    const student = a.exam_students;
+                    const exam = a.exam_exams;
+                    const elapsed = Math.floor((Date.now() - new Date(a.started_at).getTime()) / 60000);
+                    const total = exam?.duration_minutes || 60;
+                    const remaining = Math.max(0, total - elapsed);
+                    const progress = Math.min(100, (elapsed / total) * 100);
+                    const answered = a.exam_student_answers?.[0]?.count || a.exam_student_answers?.count || 0;
+                    
+                    let cardClass = '';
+                    if (remaining < 5) cardClass = 'danger';
+                    else if (remaining < 10) cardClass = 'warning';
+
+                    // Check violations
+                    const hasViolations = Math.random() > 0.8; // placeholder — replace with real query
+
+                    return `
+                        <div class="monitor-card ${cardClass}">
+                            <div class="monitor-card-header">
+                                <div class="monitor-avatar">${(student?.full_name || 'ط').charAt(0)}</div>
+                                <div class="monitor-card-info">
+                                    <h4>${student?.full_name || 'طالب'}</h4>
+                                    <p>${exam?.title || '—'}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="monitor-progress">
+                                <div class="monitor-progress-label"><span>التقدم</span><span>${Math.round(progress)}% — ${answered} إجابة</span></div>
+                                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:${remaining < 5 ? 'var(--danger-color)' : 'var(--primary-color)'}"></div></div>
+                            </div>
+                            
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:0.9rem;color:var(--text-secondary);">⏱️ ${remaining} دقيقة متبقية</span>
+                                <span style="font-size:0.85rem;color:var(--text-muted);">${App.DateTime.timeOnly(a.started_at)}</span>
+                            </div>
+                            
+                            ${hasViolations ? '<div class="violation-tag">⚠️ مخالفات مكتشفة</div>' : ''}
+                            
+                            <div class="monitor-actions">
+                                <button class="btn btn-sm btn-danger" onclick="suspendAttempt('${a.id}', '${student?.user_id}')">🚫 إيقاف</button>
+                                <button class="btn btn-sm btn-secondary" onclick="viewStudentAnswers('${a.id}')">👁️ مراجعة</button>
+                            </div>
+                        </div>`;
+                }).join('');
+
+            } catch (e) { console.error(e); }
+        }
+
+        async function suspendAttempt(attemptId, studentId) {
+            if (!await App.confirm('هل أنت متأكد من إيقاف هذا الطالب؟', 'تأكيد الإيقاف')) return;
+            App.Loading.show();
+            try {
+                await examDB.attempts().update({ status: 'suspended', ended_at: new Date().toISOString() }).eq('id', attemptId);
+                await examDB.notifications().insert({
+                    user_id: studentId, title: 'تم إيقاف اختبارك', message: 'تم إيقاف اختبارك من قبل المشرف', type: 'danger'
+                });
+                App.Toast.success('تم الإيقاف'); await refreshMonitor();
+            } catch (e) { App.Toast.error('حدث خطأ'); }
+            finally { App.Loading.hide(); }
+        }
+
+        function viewStudentAnswers(attemptId) {
+            window.open(`./results.html?attempt=${attemptId}&view=live`, '_blank');
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>

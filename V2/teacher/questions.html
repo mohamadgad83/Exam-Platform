@@ -3,611 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بنك الأسئلة | منصة الاختبارات</title>
+    <title>بنك الأسئلة | مدرس</title>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .question-form .options-area { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+        .option-input-row { display: flex; gap: 10px; align-items: center; }
+        .option-input-row input[type="radio"] { width: 20px; height: 20px; accent-color: var(--primary-color); }
+        .option-input-row .form-input { flex: 1; }
+        .questions-list { display: flex; flex-direction: column; gap: 16px; }
+        .question-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; }
+        .question-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .question-item-text { font-size: 1.05rem; line-height: 1.7; margin-bottom: 12px; }
+        .question-item-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .question-item-options span { padding: 4px 12px; background: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; }
+        .question-item-options span.correct { background: rgba(34,197,94,0.15); color: var(--success-color); border: 1px solid var(--success-color); }
+        .q-type-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; background: var(--bg-tertiary); color: var(--text-secondary); }
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Sidebar -->
+<body class="dark-mode">
+    <div class="app-layout">
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>منصة الاختبارات</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
+            <div class="sidebar-header"><h2>🎓 منصة الاختبارات</h2><button class="sidebar-toggle" id="sidebarToggle">☰</button></div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>الرئيسية</span>
-                </a>
-                <a href="create-exam.html" class="nav-item">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>إنشاء اختبار</span>
-                </a>
-                <a href="questions.html" class="nav-item active">
-                    <i class="fas fa-database"></i>
-                    <span>بنك الأسئلة</span>
-                </a>
-                <a href="submissions.html" class="nav-item">
-                    <i class="fas fa-check-double"></i>
-                    <span>التسليمات</span>
-                </a>
-                <a href="students.html" class="nav-item">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>الطلاب</span>
-                </a>
-                <a href="groups.html" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>المجموعات</span>
-                </a>
+                <a href="./dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">لوحة التحكم</span></a>
+                <a href="./exams.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-text">الاختبارات</span></a>
+                <a href="./questions.html" class="nav-item active"><span class="nav-icon">❓</span><span class="nav-text">بنك الأسئلة</span></a>
+                <a href="./monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span class="nav-text">المراقبة</span></a>
+                <a href="./results.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">النتائج</span></a>
             </nav>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
-                    <div class="user-details">
-                        <div class="user-name" id="userName">جاري التحميل...</div>
-                        <div class="user-role">معلم</div>
-                    </div>
-                </div>
-                <button class="btn btn-outline btn-sm" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>تسجيل الخروج</span>
-                </button>
-            </div>
+            <div class="sidebar-footer"><button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button></div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <header class="main-header">
-                <h1 class="page-title">بنك الأسئلة</h1>
-                <div class="header-actions">
-                    <button class="btn btn-icon" id="themeToggle"><i class="fas fa-moon"></i></button>
-                    <button class="btn btn-primary btn-sm" onclick="openQuestionModal()">
-                        <i class="fas fa-plus"></i> سؤال جديد
-                    </button>
-                </div>
+            <header class="top-bar">
+                <h1>بنك الأسئلة</h1>
+                <button class="btn btn-primary" onclick="openQuestionModal()">➕ سؤال جديد</button>
             </header>
 
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="fas fa-database"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="totalQuestions">0</div>
-                        <div class="stat-label">إجمالي الأسئلة</div>
-                    </div>
+            <div class="content-wrapper">
+                <div class="filter-bar">
+                    <select class="form-select" id="typeFilter" style="width: auto; min-width: 160px;">
+                        <option value="">جميع الأنواع</option>
+                        <option value="multiple_choice">اختيار من متعدد</option>
+                        <option value="true_false">صح / خطأ</option>
+                        <option value="short_answer">إجابة قصيرة</option>
+                        <option value="essay">مقالي</option>
+                    </select>
+                    <input type="text" class="form-input" id="searchInput" placeholder="بحث في الأسئلة..." style="width: auto; min-width: 250px;">
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="mcqCount">0</div>
-                        <div class="stat-label">اختيار متعدد</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-info"><i class="fas fa-align-left"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="essayCount">0</div>
-                        <div class="stat-label">مقالي</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fas fa-exchange-alt"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="sharedCount">0</div>
-                        <div class="stat-label">مشاركة</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="card filter-card">
-                <div class="card-body">
-                    <div class="filter-row">
-                        <div class="form-group">
-                            <label class="form-label">البحث</label>
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" class="form-input" id="searchInput" placeholder="ابحث في الأسئلة..." oninput="debounceLoad()">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">نوع السؤال</label>
-                            <select class="form-select" id="filterType" onchange="loadQuestions()">
-                                <option value="">الكل</option>
-                                <option value="mcq">اختيار متعدد</option>
-                                <option value="true_false">صح/خطأ</option>
-                                <option value="essay">مقالي</option>
-                                <option value="fill_blank">اكمل الفراغ</option>
-                                <option value="matching">توصيل</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">المادة</label>
-                            <select class="form-select" id="filterSubject" onchange="loadQuestions()">
-                                <option value="">كل المواد</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">الصف</label>
-                            <select class="form-select" id="filterGrade" onchange="loadQuestions()">
-                                <option value="">كل الصفوف</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Questions List -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-list"></i> قائمة الأسئلة</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-outline btn-sm" onclick="bulkDelete()">
-                            <i class="fas fa-trash"></i> حذف المحدد
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="exportQuestions()">
-                            <i class="fas fa-file-export"></i> تصدير
-                        </button>
-                    </div>
-                </div>
-                <div id="questionsList" class="questions-bank-list">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
-                </div>
-                <div class="pagination" id="pagination"></div>
+                <div class="questions-list" id="questionsList"><div class="text-center" style="padding:60px;color:var(--text-muted)">جاري التحميل...</div></div>
             </div>
         </main>
     </div>
 
     <!-- Question Modal -->
-    <div class="modal" id="questionModal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3 id="modalTitle">إضافة سؤال</h3>
-                <button class="btn btn-icon" onclick="closeQuestionModal()"><i class="fas fa-times"></i></button>
-            </div>
+    <div class="modal-overlay" id="qModal" style="display:none;">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header"><h3 id="qModalTitle">سؤال جديد</h3><button class="modal-close" onclick="App.Modal.close('qModal')">×</button></div>
             <div class="modal-body">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label required">نوع السؤال</label>
-                        <select class="form-select" id="qType" onchange="updateQuestionForm()">
-                            <option value="mcq">اختيار من متعدد</option>
+                <form id="questionForm" class="question-form">
+                    <div class="form-group"><label>نوع السؤال</label>
+                        <select class="form-select" id="qType" onchange="onTypeChange()">
+                            <option value="multiple_choice">اختيار من متعدد</option>
                             <option value="true_false">صح / خطأ</option>
+                            <option value="short_answer">إجابة قصيرة</option>
                             <option value="essay">مقالي</option>
-                            <option value="fill_blank">اكمل الفراغ</option>
-                            <option value="matching">توصيل</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label required">المادة</label>
-                        <select class="form-select" id="qSubject">
-                            <option value="">اختر المادة</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label required">الصف</label>
-                        <select class="form-select" id="qGrade">
-                            <option value="">اختر الصف</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label required">الدرجة</label>
-                        <input type="number" class="form-input" id="qMarks" value="1" min="1">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label required">نص السؤال</label>
-                    <textarea class="form-input" id="qText" rows="3" placeholder="اكتب نص السؤال هنا..."></textarea>
-                </div>
-                <div id="optionsContainer">
-                    <div class="form-group">
-                        <label class="form-label required">الخيارات</label>
-                        <div id="mcqOptions">
-                            <div class="option-row">
-                                <input type="radio" name="correctOption" value="0" checked>
-                                <input type="text" class="form-input option-input" placeholder="الخيار أ">
-                            </div>
-                            <div class="option-row">
-                                <input type="radio" name="correctOption" value="1">
-                                <input type="text" class="form-input option-input" placeholder="الخيار ب">
-                            </div>
-                            <div class="option-row">
-                                <input type="radio" name="correctOption" value="2">
-                                <input type="text" class="form-input option-input" placeholder="الخيار ج">
-                            </div>
-                            <div class="option-row">
-                                <input type="radio" name="correctOption" value="3">
-                                <input type="text" class="form-input option-input" placeholder="الخيار د">
-                            </div>
+                    <div class="form-group"><label>نص السؤال</label><textarea class="form-input" id="qText" rows="3" required></textarea></div>
+                    <div class="form-group"><label>الدرجة</label><input type="number" class="form-input" id="qPoints" value="1" min="1" required></div>
+                    <div class="form-group" id="optionsGroup">
+                        <label>الخيارات <small style="color:var(--text-muted)">(حدد الإجابة الصحيحة)</small></label>
+                        <div class="options-area" id="optionsArea">
+                            <div class="option-input-row"><input type="radio" name="correctOpt" value="0" checked><input type="text" class="form-input" placeholder="الخيار أ" required></div>
+                            <div class="option-input-row"><input type="radio" name="correctOpt" value="1"><input type="text" class="form-input" placeholder="الخيار ب" required></div>
+                            <div class="option-input-row"><input type="radio" name="correctOpt" value="2"><input type="text" class="form-input" placeholder="الخيار ج"></div>
+                            <div class="option-input-row"><input type="radio" name="correctOpt" value="3"><input type="text" class="form-input" placeholder="الخيار د"></div>
                         </div>
-                        <button class="btn btn-outline btn-sm" onclick="addOption()">
-                            <i class="fas fa-plus"></i> إضافة خيار
-                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addOption()" style="margin-top:10px;">➕ إضافة خيار</button>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">تلميح (اختياري)</label>
-                    <input type="text" class="form-input" id="qHint" placeholder="تلميح للطالب...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">ملاحظات</label>
-                    <textarea class="form-input" id="qNotes" rows="2" placeholder="ملاحظات داخلية..."></textarea>
-                </div>
+                    <div class="form-group" id="correctAnswerGroup" style="display:none;"><label>الإجابة الصحيحة</label><input type="text" class="form-input" id="qCorrectText"></div>
+                    <div class="form-group"><label>التعليل <small style="color:var(--text-muted)">(اختياري)</small></label><textarea class="form-input" id="qExplanation" rows="2"></textarea></div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeQuestionModal()">إلغاء</button>
-                <button class="btn btn-primary" onclick="saveQuestion()">حفظ</button>
+                <button class="btn btn-secondary" onclick="App.Modal.close('qModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="saveQuestion()">حفظ السؤال</button>
             </div>
         </div>
     </div>
 
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase-client.js"></script>
-    <script src="../shared/security.js"></script>
     <script src="../shared/app.js"></script>
     <script>
-    (function() {
-        'use strict';
-
-        let editingQuestionId = null;
-        let allQuestions = [];
-        let selectedQuestions = new Set();
-        let debounceTimer = null;
+        let allQuestions = [], editingQId = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            await App.init();
-            const user = examAuth.getUser();
+            const user = await examAuth.getUser();
             if (!user) { window.location.href = '../login.html'; return; }
-            const role = user.role || user.user_metadata?.role;
-            if (role !== 'teacher' && role !== 'admin') {
-                window.location.href = '../student/dashboard.html'; return;
-            }
-            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
-            await loadDropdowns();
+            if (!await examAuth.isTeacher() && !await examAuth.isAdmin()) { window.location.href = '../unauthorized.html'; return; }
+
+            document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+            document.getElementById('logoutBtn').addEventListener('click', async () => { await examAuth.signOut(); window.location.href = '../login.html'; });
+
             await loadQuestions();
+
+            document.getElementById('typeFilter').addEventListener('change', filterQuestions);
+            document.getElementById('searchInput').addEventListener('input', debounce(filterQuestions, 300));
         });
 
-        async function loadDropdowns() {
+        async function loadQuestions() {
+            App.Loading.show();
             try {
-                const { data: subjects } = await examDB.from('exam_subjects').select('id, name').order('name');
-                const subjectSelects = document.querySelectorAll('#filterSubject, #qSubject');
-                subjectSelects.forEach(select => {
-                    const base = select.id === 'qSubject' ? '<option value="">اختر المادة</option>' : '<option value="">كل المواد</option>';
-                    select.innerHTML = base + (subjects || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                });
-
-                const { data: grades } = await examDB.from('exam_grades').select('id, name').order('name');
-                const gradeSelects = document.querySelectorAll('#filterGrade, #qGrade');
-                gradeSelects.forEach(select => {
-                    const base = select.id === 'qGrade' ? '<option value="">اختر الصف</option>' : '<option value="">كل الصفوف</option>';
-                    select.innerHTML = base + (grades || []).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-                });
-            } catch (e) { console.error('Error loading dropdowns:', e); }
+                const user = await examAuth.getUser();
+                const { data } = await examDB.questionsBank().select('*').eq('created_by', user.id).order('created_at', { ascending: false });
+                allQuestions = data || [];
+                renderQuestions(allQuestions);
+            } catch (e) { App.Toast.error('خطأ في التحميل'); }
+            finally { App.Loading.hide(); }
         }
 
-        window.debounceLoad = function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(loadQuestions, 500);
-        };
+        function renderQuestions(questions) {
+            const list = document.getElementById('questionsList');
+            if (!questions.length) { list.innerHTML = '<div class="text-center" style="padding:60px;color:var(--text-muted)">لا توجد أسئلة</div>'; return; }
 
-        window.loadQuestions = async function() {
-            try {
-                const user = examAuth.getUser();
-                let query = examDB.from('exam_question_bank')
-                    .select(`*, exam_subjects(name), exam_grades(name)`)
-                    .eq('teacher_id', user.id)
-                    .order('created_at', { ascending: false });
-
-                const typeFilter = document.getElementById('filterType').value;
-                const subjectFilter = document.getElementById('filterSubject').value;
-                const gradeFilter = document.getElementById('filterGrade').value;
-                const searchFilter = document.getElementById('searchInput').value.trim();
-
-                if (typeFilter) query = query.eq('question_type', typeFilter);
-                if (subjectFilter) query = query.eq('subject_id', subjectFilter);
-                if (gradeFilter) query = query.eq('grade_id', gradeFilter);
-
-                const { data: questions, error } = await query;
-                if (error) throw error;
-                allQuestions = questions || [];
-
-                if (searchFilter) {
-                    allQuestions = allQuestions.filter(q => 
-                        q.question_text?.toLowerCase().includes(searchFilter.toLowerCase())
-                    );
+            list.innerHTML = questions.map(q => {
+                const typeLabels = { multiple_choice: 'اختيار من متعدد', true_false: 'صح/خطأ', short_answer: 'إجابة قصيرة', essay: 'مقالي' };
+                let optionsHtml = '';
+                if (q.question_type === 'multiple_choice' || q.question_type === 'true_false') {
+                    const opts = q.options || [];
+                    optionsHtml = '<div class="question-item-options">' + opts.map((opt, i) => {
+                        const isCorrect = i === q.correct_answer;
+                        return `<span class="${isCorrect ? 'correct' : ''}">${String.fromCharCode(65 + i)}. ${opt}</span>`;
+                    }).join('') + '</div>';
+                } else {
+                    optionsHtml = `<div style="color:var(--text-secondary);font-size:0.9rem;">✓ الإجابة: ${q.correct_answer || '—'}</div>`;
                 }
 
-                // Stats
-                document.getElementById('totalQuestions').textContent = questions?.length || 0;
-                document.getElementById('mcqCount').textContent = questions?.filter(q => q.question_type === 'mcq').length || 0;
-                document.getElementById('essayCount').textContent = questions?.filter(q => q.question_type === 'essay').length || 0;
-                document.getElementById('sharedCount').textContent = questions?.filter(q => q.is_shared).length || 0;
-
-                renderQuestionsList(allQuestions);
-            } catch (error) {
-                console.error('Error loading questions:', error);
-                document.getElementById('questionsList').innerHTML = '<div class="empty-state text-error"><p>حدث خطأ أثناء التحميل</p></div>';
-            }
-        };
-
-        function renderQuestionsList(questions) {
-            const container = document.getElementById('questionsList');
-            if (!questions.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد أسئلة</p><button class="btn btn-primary btn-sm" onclick="openQuestionModal()">إضافة سؤال</button></div>';
-                return;
-            }
-
-            const typeLabels = { mcq: 'اختيار متعدد', true_false: 'صح/خطأ', essay: 'مقالي', fill_blank: 'اكمل الفراغ', matching: 'توصيل' };
-
-            container.innerHTML = questions.map(q => {
-                const isSelected = selectedQuestions.has(q.id);
-                let optionsPreview = '';
-                if (q.question_type === 'mcq' && q.options) {
-                    optionsPreview = `<div class="bank-options-preview">${q.options.map((o, i) => `<span class="opt-preview ${i === q.correct_answer ? 'correct' : ''}">${String.fromCharCode(65 + i)}. ${o}</span>`).join('')}</div>`;
-                }
                 return `
-                    <div class="bank-question-card ${isSelected ? 'selected' : ''}">
-                        <div class="bank-q-checkbox">
-                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${q.id}')">
-                        </div>
-                        <div class="bank-q-content">
-                            <div class="bank-q-header">
-                                <span class="badge">${typeLabels[q.question_type]}</span>
-                                <span class="badge badge-outline">${q.exam_subjects?.name || '-'}</span>
-                                <span class="badge badge-outline">${q.exam_grades?.name || '-'}</span>
-                                <span class="q-marks">${q.marks || 1} درجة</span>
-                                ${q.is_shared ? '<span class="badge badge-info"><i class="fas fa-share-alt"></i> مشترك</span>' : ''}
-                            </div>
-                            <div class="bank-q-text">${q.question_text}</div>
-                            ${optionsPreview}
-                            ${q.hint ? `<div class="question-hint"><i class="fas fa-lightbulb"></i> ${q.hint}</div>` : ''}
-                            <div class="bank-q-footer">
-                                <span class="text-muted">${App.formatDate(q.created_at)}</span>
-                                <div class="action-buttons">
-                                    <button class="btn btn-icon btn-sm" onclick="editQuestion('${q.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
-                                    <button class="btn btn-icon btn-sm" onclick="shareQuestion('${q.id}')" title="مشاركة"><i class="fas fa-share-alt"></i></button>
-                                    <button class="btn btn-icon btn-sm text-error" onclick="deleteQuestion('${q.id}')" title="حذف"><i class="fas fa-trash"></i></button>
-                                </div>
+                    <div class="question-item">
+                        <div class="question-item-header">
+                            <span class="q-type-badge">${typeLabels[q.question_type] || q.question_type}</span>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn btn-sm btn-secondary" onclick="editQuestion('${q.id}')">تعديل</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteQuestion('${q.id}')">حذف</button>
                             </div>
                         </div>
-                    </div>
-                `;
+                        <div class="question-item-text">${q.question_text}</div>
+                        ${optionsHtml}
+                        <div style="margin-top:10px;font-size:0.85rem;color:var(--text-muted);">📊 ${q.points || 1} نقطة</div>
+                    </div>`;
             }).join('');
         }
 
-        window.toggleSelect = function(id) {
-            if (selectedQuestions.has(id)) selectedQuestions.delete(id);
-            else selectedQuestions.add(id);
-            renderQuestionsList(allQuestions);
-        };
-
-        window.openQuestionModal = function() {
-            editingQuestionId = null;
-            document.getElementById('modalTitle').textContent = 'إضافة سؤال';
-            document.getElementById('qType').value = 'mcq';
-            document.getElementById('qSubject').value = '';
-            document.getElementById('qGrade').value = '';
-            document.getElementById('qMarks').value = '1';
-            document.getElementById('qText').value = '';
-            document.getElementById('qHint').value = '';
-            document.getElementById('qNotes').value = '';
-            updateQuestionForm();
-            document.getElementById('questionModal').classList.add('active');
-        };
-
-        window.closeQuestionModal = function() {
-            document.getElementById('questionModal').classList.remove('active');
-        };
-
-        window.updateQuestionForm = function() {
+        function onTypeChange() {
             const type = document.getElementById('qType').value;
-            const container = document.getElementById('optionsContainer');
-            if (type === 'mcq') {
-                container.innerHTML = `
-                    <div class="form-group">
-                        <label class="form-label required">الخيارات</label>
-                        <div id="mcqOptions">
-                            <div class="option-row"><input type="radio" name="correctOption" value="0" checked><input type="text" class="form-input option-input" placeholder="الخيار أ"></div>
-                            <div class="option-row"><input type="radio" name="correctOption" value="1"><input type="text" class="form-input option-input" placeholder="الخيار ب"></div>
-                            <div class="option-row"><input type="radio" name="correctOption" value="2"><input type="text" class="form-input option-input" placeholder="الخيار ج"></div>
-                            <div class="option-row"><input type="radio" name="correctOption" value="3"><input type="text" class="form-input option-input" placeholder="الخيار د"></div>
-                        </div>
-                        <button class="btn btn-outline btn-sm" onclick="addOption()"><i class="fas fa-plus"></i> إضافة خيار</button>
-                    </div>`;
-            } else if (type === 'true_false') {
-                container.innerHTML = `
-                    <div class="form-group">
-                        <label class="form-label required">الإجابة الصحيحة</label>
-                        <select class="form-select" id="tfAnswer"><option value="true">صح</option><option value="false">خطأ</option></select>
-                    </div>`;
-            } else {
-                container.innerHTML = `
-                    <div class="form-group">
-                        <label class="form-label required">الإجابة النموذجية</label>
-                        <textarea class="form-input" id="modelAnswer" rows="3" placeholder="الإجابة النموذجية..."></textarea>
-                    </div>`;
+            const showOptions = type === 'multiple_choice' || type === 'true_false';
+            document.getElementById('optionsGroup').style.display = showOptions ? '' : 'none';
+            document.getElementById('correctAnswerGroup').style.display = showOptions ? 'none' : '';
+            if (type === 'true_false') {
+                document.getElementById('optionsArea').innerHTML = `
+                    <div class="option-input-row"><input type="radio" name="correctOpt" value="0" checked><input type="text" class="form-input" value="صح" readonly></div>
+                    <div class="option-input-row"><input type="radio" name="correctOpt" value="1"><input type="text" class="form-input" value="خطأ" readonly></div>`;
             }
-        };
+        }
 
-        window.addOption = function() {
-            const container = document.getElementById('mcqOptions');
-            const count = container.children.length;
-            const row = document.createElement('div');
-            row.className = 'option-row';
-            row.innerHTML = `<input type="radio" name="correctOption" value="${count}"><input type="text" class="form-input option-input" placeholder="خيار ${String.fromCharCode(65 + count)}"><button class="btn btn-icon btn-sm text-error" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
-            container.appendChild(row);
-        };
+        function addOption() {
+            const area = document.getElementById('optionsArea');
+            const count = area.children.length;
+            const div = document.createElement('div');
+            div.className = 'option-input-row';
+            div.innerHTML = `<input type="radio" name="correctOpt" value="${count}"><input type="text" class="form-input" placeholder="الخيار ${String.fromCharCode(65 + count)}" required>
+                <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">🗑️</button>`;
+            area.appendChild(div);
+        }
 
-        window.saveQuestion = async function() {
+        function openQuestionModal() {
+            editingQId = null;
+            document.getElementById('qModalTitle').textContent = 'سؤال جديد';
+            document.getElementById('questionForm').reset();
+            document.getElementById('optionsArea').innerHTML = `
+                <div class="option-input-row"><input type="radio" name="correctOpt" value="0" checked><input type="text" class="form-input" placeholder="الخيار أ" required></div>
+                <div class="option-input-row"><input type="radio" name="correctOpt" value="1"><input type="text" class="form-input" placeholder="الخيار ب" required></div>`;
+            onTypeChange();
+            App.Modal.open('qModal');
+        }
+
+        async function saveQuestion() {
+            const type = document.getElementById('qType').value;
+            const text = document.getElementById('qText').value.trim();
+            const points = parseInt(document.getElementById('qPoints').value) || 1;
+            const explanation = document.getElementById('qExplanation').value.trim();
+
+            if (!text) { App.Toast.error('أدخل نص السؤال'); return; }
+
+            let options = [], correctAnswer = null;
+
+            if (type === 'multiple_choice') {
+                const rows = document.querySelectorAll('#optionsArea .option-input-row');
+                rows.forEach(row => {
+                    const input = row.querySelector('input[type="text"]');
+                    if (input && input.value.trim()) options.push(input.value.trim());
+                });
+                if (options.length < 2) { App.Toast.error('أدخل خيارين على الأقل'); return; }
+                const checked = document.querySelector('input[name="correctOpt"]:checked');
+                correctAnswer = checked ? parseInt(checked.value) : 0;
+            } else if (type === 'true_false') {
+                options = ['صح', 'خطأ'];
+                const checked = document.querySelector('input[name="correctOpt"]:checked');
+                correctAnswer = checked ? parseInt(checked.value) : 0;
+            } else {
+                correctAnswer = document.getElementById('qCorrectText').value.trim();
+                if (!correctAnswer) { App.Toast.error('أدخل الإجابة الصحيحة'); return; }
+            }
+
+            App.Loading.show();
             try {
-                const type = document.getElementById('qType').value;
-                const subjectId = document.getElementById('qSubject').value;
-                const gradeId = document.getElementById('qGrade').value;
-                const marks = parseInt(document.getElementById('qMarks').value) || 1;
-                const text = document.getElementById('qText').value.trim();
-                const hint = document.getElementById('qHint').value.trim();
-                const notes = document.getElementById('qNotes').value.trim();
-
-                if (!text || !subjectId || !gradeId) {
-                    App.toast('يرجى ملء الحقول المطلوبة', 'error');
-                    return;
-                }
-
-                let options = [], correctAnswer = null;
-                if (type === 'mcq') {
-                    document.querySelectorAll('#mcqOptions .option-row').forEach(row => {
-                        const input = row.querySelector('.option-input');
-                        if (input.value.trim()) options.push(input.value.trim());
-                    });
-                    if (options.length < 2) { App.toast('يرجى إضافة خيارين على الأقل', 'error'); return; }
-                    correctAnswer = parseInt(document.querySelector('input[name="correctOption"]:checked')?.value || 0);
-                } else if (type === 'true_false') {
-                    correctAnswer = document.getElementById('tfAnswer').value === 'true';
-                } else {
-                    correctAnswer = document.getElementById('modelAnswer')?.value.trim() || '';
-                }
-
-                const user = examAuth.getUser();
-                const payload = {
-                    teacher_id: user.id,
-                    question_type: type,
-                    question_text: text,
-                    subject_id: subjectId,
-                    grade_id: gradeId,
-                    marks,
-                    options,
-                    correct_answer: correctAnswer,
-                    hint: hint || null,
-                    notes: notes || null,
-                    is_shared: false
+                const user = await examAuth.getUser();
+                const data = {
+                    question_type: type, question_text: text, options, correct_answer: correctAnswer,
+                    points, explanation, created_by: user.id, updated_at: new Date().toISOString()
                 };
 
-                if (editingQuestionId) {
-                    const { error } = await examDB.from('exam_question_bank')
-                        .update(payload)
-                        .eq('id', editingQuestionId);
-                    if (error) throw error;
-                    App.toast('تم تحديث السؤال');
+                if (editingQId) {
+                    await examDB.questionsBank().update(data).eq('id', editingQId);
                 } else {
-                    payload.created_at = new Date().toISOString();
-                    const { error } = await examDB.from('exam_question_bank').insert(payload);
-                    if (error) throw error;
-                    App.toast('تم إضافة السؤال');
+                    await examDB.questionsBank().insert({ ...data, created_at: new Date().toISOString() });
                 }
 
-                closeQuestionModal();
+                App.Toast.success('تم الحفظ');
+                App.Modal.close('qModal');
                 await loadQuestions();
-            } catch (error) {
-                console.error('Error saving question:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
+            } catch (e) { console.error(e); App.Toast.error('حدث خطأ'); }
+            finally { App.Loading.hide(); }
+        }
 
-        window.editQuestion = async function(id) {
+        async function editQuestion(id) {
+            const q = allQuestions.find(x => x.id === id);
+            if (!q) return;
+            editingQId = id;
+            document.getElementById('qModalTitle').textContent = 'تعديل سؤال';
+            document.getElementById('qType').value = q.question_type;
+            document.getElementById('qText').value = q.question_text;
+            document.getElementById('qPoints').value = q.points || 1;
+            document.getElementById('qExplanation').value = q.explanation || '';
+
+            onTypeChange();
+
+            if (q.question_type === 'multiple_choice') {
+                const area = document.getElementById('optionsArea');
+                area.innerHTML = '';
+                (q.options || []).forEach((opt, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'option-input-row';
+                    const isCorrect = i === q.correct_answer;
+                    div.innerHTML = `<input type="radio" name="correctOpt" value="${i}" ${isCorrect ? 'checked' : ''}><input type="text" class="form-input" value="${opt}" required>
+                        ${i > 1 ? '<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.remove()">🗑️</button>' : ''}`;
+                    area.appendChild(div);
+                });
+            } else if (q.question_type !== 'true_false') {
+                document.getElementById('qCorrectText').value = q.correct_answer || '';
+            }
+
+            App.Modal.open('qModal');
+        }
+
+        async function deleteQuestion(id) {
+            if (!await App.confirm('هل أنت متأكد من حذف هذا السؤال؟ قد يكون مستخدماً في اختبارات.', 'تأكيد الحذف')) return;
+            App.Loading.show();
             try {
-                const { data: q, error } = await examDB.from('exam_question_bank')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-                if (error) throw error;
+                await examDB.examQuestions().delete().eq('question_id', id);
+                await examDB.questionsBank().delete().eq('id', id);
+                App.Toast.success('تم الحذف'); await loadQuestions();
+            } catch (e) { App.Toast.error('لا يمكن الحذف — السؤال مستخدم في اختبارات'); }
+            finally { App.Loading.hide(); }
+        }
 
-                editingQuestionId = id;
-                document.getElementById('modalTitle').textContent = 'تعديل سؤال';
-                document.getElementById('qType').value = q.question_type;
-                document.getElementById('qSubject').value = q.subject_id || '';
-                document.getElementById('qGrade').value = q.grade_id || '';
-                document.getElementById('qMarks').value = q.marks || 1;
-                document.getElementById('qText').value = q.question_text || '';
-                document.getElementById('qHint').value = q.hint || '';
-                document.getElementById('qNotes').value = q.notes || '';
-                updateQuestionForm();
-
-                if (q.question_type === 'mcq' && q.options) {
-                    const container = document.getElementById('mcqOptions');
-                    container.innerHTML = q.options.map((o, j) => `
-                        <div class="option-row">
-                            <input type="radio" name="correctOption" value="${j}" ${j === q.correct_answer ? 'checked' : ''}>
-                            <input type="text" class="form-input option-input" value="${o}">
-                            ${j > 1 ? '<button class="btn btn-icon btn-sm text-error" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>' : ''}
-                        </div>
-                    `).join('');
-                } else if (q.question_type === 'true_false') {
-                    document.getElementById('tfAnswer').value = q.correct_answer === true ? 'true' : 'false';
-                } else {
-                    const ma = document.getElementById('modelAnswer');
-                    if (ma) ma.value = q.correct_answer || '';
-                }
-
-                document.getElementById('questionModal').classList.add('active');
-            } catch (error) {
-                console.error('Error loading question:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
-
-        window.shareQuestion = async function(id) {
-            try {
-                const { data: q } = await examDB.from('exam_question_bank')
-                    .select('is_shared')
-                    .eq('id', id)
-                    .single();
-                const newShared = !q.is_shared;
-                await examDB.from('exam_question_bank')
-                    .update({ is_shared: newShared })
-                    .eq('id', id);
-                App.toast(newShared ? 'تم مشاركة السؤال' : 'تم إلغاء المشاركة');
-                await loadQuestions();
-            } catch (error) {
-                console.error('Error sharing question:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
-
-        window.deleteQuestion = function(id) {
-            App.confirm('هل أنت متأكد من حذف هذا السؤال؟', async () => {
-                try {
-                    await examDB.from('exam_question_bank').delete().eq('id', id);
-                    App.toast('تم حذف السؤال');
-                    await loadQuestions();
-                } catch (error) {
-                    console.error('Error deleting question:', error);
-                    App.toast('حدث خطأ', 'error');
-                }
+        function filterQuestions() {
+            const type = document.getElementById('typeFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allQuestions.filter(q => {
+                if (type && q.question_type !== type) return false;
+                if (search && !q.question_text.toLowerCase().includes(search)) return false;
+                return true;
             });
-        };
-
-        window.bulkDelete = function() {
-            if (selectedQuestions.size === 0) { App.toast('يرجى تحديد أسئلة أولاً', 'error'); return; }
-            App.confirm(`هل أنت متأكد من حذف ${selectedQuestions.size} سؤال؟`, async () => {
-                try {
-                    for (const id of selectedQuestions) {
-                        await examDB.from('exam_question_bank').delete().eq('id', id);
-                    }
-                    selectedQuestions.clear();
-                    App.toast('تم الحذف');
-                    await loadQuestions();
-                } catch (error) {
-                    console.error('Error bulk deleting:', error);
-                    App.toast('حدث خطأ', 'error');
-                }
-            });
-        };
-
-        window.exportQuestions = function() {
-            App.toast('جاري التصدير...');
-            setTimeout(() => App.toast('تم التصدير'), 1000);
-        };
-
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await examAuth.logout();
-            window.location.href = '../login.html';
-        });
-    })();
+            renderQuestions(filtered);
+        }
     </script>
 </body>
 </html>

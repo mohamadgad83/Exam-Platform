@@ -5,6 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>النتائج | منصة الاختبارات</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .results-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .results-filters .form-select,
+        .results-filters .form-input {
+            width: auto;
+            min-width: 180px;
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+            transition: all var(--transition-fast);
+        }
+
+        .result-card:hover {
+            border-color: var(--primary-color);
+            transform: translateX(-4px);
+        }
+
+        .result-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .result-info .meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .result-score {
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .result-score .score-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+        }
+
+        .result-score .score-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .score-excellent { color: var(--success-color); }
+        .score-good { color: var(--warning-color); }
+        .score-fail { color: var(--danger-color); }
+
+        .results-empty {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .results-empty-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-mini {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-mini .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .stat-mini .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .result-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .result-actions {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body class="dark-mode">
     <div class="app-layout">
@@ -30,10 +160,6 @@
                     <span class="nav-icon">👤</span>
                     <span class="nav-text">الملف الشخصي</span>
                 </a>
-                <a href="../admin/dashboard.html" class="nav-item admin-only" style="display:none;">
-                    <span class="nav-icon">🔧</span>
-                    <span class="nav-text">لوحة الأدمن</span>
-                </a>
             </nav>
             <div class="sidebar-footer">
                 <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
@@ -42,41 +168,45 @@
 
         <main class="main-content">
             <header class="top-bar">
-                <h1>سجل النتائج</h1>
-                <div class="filters">
-                    <select id="subjectFilter" class="form-select">
-                        <option value="">جميع المواد</option>
-                    </select>
-                    <select id="periodFilter" class="form-select">
-                        <option value="">كل الفترات</option>
-                        <option value="week">آخر أسبوع</option>
-                        <option value="month">آخر شهر</option>
-                        <option value="year">آخر سنة</option>
-                    </select>
+                <h1>نتائج الاختبارات</h1>
+                <div class="user-info">
+                    <span id="userName">...</span>
+                    <span class="badge badge-primary" id="userRole">طالب</span>
                 </div>
             </header>
 
             <div class="content-wrapper">
-                <div class="section-card">
-                    <div class="table-responsive">
-                        <table class="data-table" id="resultsTable">
-                            <thead>
-                                <tr>
-                                    <th>الاختبار</th>
-                                    <th>المادة</th>
-                                    <th>الدرجة</th>
-                                    <th>النسبة</th>
-                                    <th>الحالة</th>
-                                    <th>التاريخ</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultsBody">
-                                <tr><td colspan="7" class="text-center">جاري التحميل...</td></tr>
-                            </tbody>
-                        </table>
+                <!-- Stats -->
+                <div class="stats-row" id="statsRow">
+                    <div class="stat-mini"><div class="value" id="statTotal">0</div><div class="label">إجمالي الاختبارات</div></div>
+                    <div class="stat-mini"><div class="value" id="statAvg">0%</div><div class="label">المتوسط العام</div></div>
+                    <div class="stat-mini"><div class="value" id="statBest">0%</div><div class="label">أفضل نتيجة</div></div>
+                    <div class="stat-mini"><div class="value" id="statPassed">0</div><div class="label">اختبارات ناجح</div></div>
+                </div>
+
+                <!-- Filters -->
+                <div class="results-header">
+                    <h2 style="font-size: 1.2rem;">📋 سجل النتائج</h2>
+                    <div class="results-filters">
+                        <select class="form-select" id="subjectFilter">
+                            <option value="">جميع المواد</option>
+                        </select>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">جميع الحالات</option>
+                            <option value="completed">مكتمل</option>
+                            <option value="time_expired">انتهى الوقت</option>
+                            <option value="suspended">موقوف</option>
+                        </select>
+                        <input type="text" class="form-input" id="searchInput" placeholder="بحث في الاختبارات...">
                     </div>
-                    <div class="pagination" id="pagination"></div>
+                </div>
+
+                <!-- Results List -->
+                <div class="results-grid" id="resultsGrid">
+                    <div class="results-empty">
+                        <div class="results-empty-icon">📋</div>
+                        <h3>جاري التحميل...</h3>
+                    </div>
                 </div>
             </div>
         </main>
@@ -84,6 +214,7 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
@@ -93,21 +224,19 @@
         document.addEventListener('DOMContentLoaded', async function() {
             const user = await examAuth.getUser();
             if (!user) { window.location.href = '../login.html'; return; }
-            
-            const isAdmin = await examAuth.isAdmin();
-            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
-            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
-            
-            if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+
+            document.getElementById('userName').textContent = user.user_metadata?.full_name || user.email || 'طالب';
+
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
 
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await examAuth.signOut();
                 window.location.href = '../login.html';
             });
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
 
+            // Get student record
             const { data: student } = await examDB.students()
                 .select('id')
                 .eq('user_id', user.id)
@@ -117,8 +246,10 @@
             await loadSubjects();
             await loadResults();
 
+            // Filters
             document.getElementById('subjectFilter').addEventListener('change', filterResults);
-            document.getElementById('periodFilter').addEventListener('change', filterResults);
+            document.getElementById('statusFilter').addEventListener('change', filterResults);
+            document.getElementById('searchInput').addEventListener('input', debounce(filterResults, 300));
         });
 
         async function loadSubjects() {
@@ -134,69 +265,110 @@
         async function loadResults() {
             App.Loading.show();
             try {
-                const { data: attempts } = await examDB.attempts()
+                const { data: attempts, error } = await examDB.attempts()
                     .select('*, exam_exams(title, total_score, subject_id, exam_subjects(name))')
                     .eq('student_id', studentId)
-                    .eq('status', 'completed')
                     .order('ended_at', { ascending: false });
+
+                if (error) throw error;
 
                 allResults = attempts || [];
                 renderResults(allResults);
+                updateStats(allResults);
+
             } catch (err) {
+                console.error(err);
                 App.Toast.error('حدث خطأ في تحميل النتائج');
+                document.getElementById('resultsGrid').innerHTML = `
+                    <div class="results-empty">
+                        <div class="results-empty-icon">⚠️</div>
+                        <h3>تعذر تحميل النتائج</h3>
+                        <p>يرجى المحاولة مرة أخرى</p>
+                    </div>
+                `;
             } finally {
                 App.Loading.hide();
             }
         }
 
         function renderResults(results) {
-            const tbody = document.getElementById('resultsBody');
+            const grid = document.getElementById('resultsGrid');
+
             if (!results.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">لا توجد نتائج</td></tr>';
+                grid.innerHTML = `
+                    <div class="results-empty">
+                        <div class="results-empty-icon">📋</div>
+                        <h3>لا توجد نتائج بعد</h3>
+                        <p>ستظهر نتائج اختباراتك هنا بعد إكمالها</p>
+                        <a href="./exams.html" class="btn btn-primary" style="margin-top: 16px;">استعراض الاختبارات</a>
+                    </div>
+                `;
                 return;
             }
 
-            tbody.innerHTML = results.map(r => {
-                const total = r.exam_exams?.total_score || 1;
-                const score = r.score || 0;
+            grid.innerHTML = results.map(attempt => {
+                const exam = attempt.exam_exams;
+                const total = exam?.total_score || 1;
+                const score = attempt.score || 0;
                 const pct = Math.round((score / total) * 100);
-                const badgeClass = pct >= 80 ? 'badge-success' : pct >= 60 ? 'badge-warning' : 'badge-danger';
+                
+                let scoreClass = 'score-fail';
+                if (pct >= 80) scoreClass = 'score-excellent';
+                else if (pct >= 60) scoreClass = 'score-good';
+
+                const statusMap = {
+                    'completed': '✅ مكتمل',
+                    'time_expired': '⏰ انتهى الوقت',
+                    'suspended': '🚫 موقوف',
+                    'auto_submitted': '🤖 تسليم تلقائي'
+                };
 
                 return `
-                    <tr>
-                        <td>${r.exam_exams?.title || '-'}</td>
-                        <td>${r.exam_exams?.exam_subjects?.name || '-'}</td>
-                        <td>${score} / ${total}</td>
-                        <td>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${pct}%; background: ${pct >= 80 ? '#4caf50' : pct >= 60 ? '#ff9800' : '#f44336'}"></div>
-                                <span>${pct}%</span>
+                    <div class="result-card">
+                        <div class="result-info">
+                            <h3>${exam?.title || 'اختبار'}</h3>
+                            <div class="meta">
+                                <span>📚 ${exam?.exam_subjects?.name || '-'}</span>
+                                <span>📅 ${App.DateTime.format(attempt.ended_at || attempt.created_at)}</span>
+                                <span>${statusMap[attempt.status] || attempt.status}</span>
                             </div>
-                        </td>
-                        <td><span class="badge ${badgeClass}">${pct >= 80 ? 'ممتاز' : pct >= 60 ? 'جيد' : 'يحتاج تحسين'}</span></td>
-                        <td>${App.DateTime.format(r.ended_at || r.created_at)}</td>
-                        <td>
-                            <a href="./exam-review.html?attempt=${r.id}" class="btn btn-sm">مراجعة</a>
-                        </td>
-                    </tr>
+                        </div>
+                        <div class="result-score">
+                            <div class="score-value ${scoreClass}">${pct}%</div>
+                            <div class="score-label">${score} / ${total}</div>
+                        </div>
+                        <div class="result-actions">
+                            <a href="./exam-review.html?attempt=${attempt.id}" class="btn btn-sm btn-primary">مراجعة</a>
+                            ${attempt.status === 'completed' ? `<button class="btn btn-sm btn-secondary" onclick="App.copy('${exam?.title} - ${pct}%')">🔗 نسخ</button>` : ''}
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
 
+        function updateStats(results) {
+            const completed = results.filter(r => r.status === 'completed' || r.status === 'auto_submitted');
+            const scores = completed.map(r => {
+                const total = r.exam_exams?.total_score || 1;
+                return ((r.score || 0) / total) * 100;
+            });
+
+            document.getElementById('statTotal').textContent = results.length;
+            document.getElementById('statAvg').textContent = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) + '%' : '0%';
+            document.getElementById('statBest').textContent = scores.length ? Math.round(Math.max(...scores)) + '%' : '0%';
+            document.getElementById('statPassed').textContent = scores.filter(s => s >= 60).length;
+        }
+
         function filterResults() {
             const subject = document.getElementById('subjectFilter').value;
-            const period = document.getElementById('periodFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
 
             let filtered = allResults.filter(r => {
-                if (subject && r.exam_exams?.subject_id !== subject) return false;
-                if (period) {
-                    const date = new Date(r.ended_at || r.created_at);
-                    const now = new Date();
-                    const diff = now - date;
-                    if (period === 'week' && diff > 7 * 24 * 60 * 60 * 1000) return false;
-                    if (period === 'month' && diff > 30 * 24 * 60 * 60 * 1000) return false;
-                    if (period === 'year' && diff > 365 * 24 * 60 * 60 * 1000) return false;
-                }
+                const exam = r.exam_exams;
+                if (subject && exam?.subject_id !== subject) return false;
+                if (status && r.status !== status) return false;
+                if (search && !exam?.title?.toLowerCase().includes(search)) return false;
                 return true;
             });
 

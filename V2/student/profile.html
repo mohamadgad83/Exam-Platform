@@ -5,6 +5,163 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الملف الشخصي | منصة الاختبارات</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+        }
+
+        .profile-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .profile-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 16px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .profile-card h3 {
+            margin-bottom: 4px;
+        }
+
+        .profile-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .profile-stat {
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .profile-stat .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        .profile-stat .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .settings-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+        }
+
+        .settings-card h3 {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.1rem;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: all var(--transition-fast);
+            width: 0%;
+        }
+
+        .strength-weak { background: var(--danger-color); }
+        .strength-fair { background: var(--warning-color); }
+        .strength-good { background: var(--info-color); }
+        .strength-strong { background: var(--success-color); }
+
+        .strength-text {
+            font-size: 0.8rem;
+            margin-top: 4px;
+            color: var(--text-secondary);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            border-right: 3px solid var(--border-color);
+        }
+
+        .activity-item.success { border-right-color: var(--success-color); }
+        .activity-item.warning { border-right-color: var(--warning-color); }
+
+        .activity-icon {
+            font-size: 1.5rem;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-info .title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .activity-info .time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body class="dark-mode">
     <div class="app-layout">
@@ -30,10 +187,6 @@
                     <span class="nav-icon">👤</span>
                     <span class="nav-text">الملف الشخصي</span>
                 </a>
-                <a href="../admin/dashboard.html" class="nav-item admin-only" style="display:none;">
-                    <span class="nav-icon">🔧</span>
-                    <span class="nav-text">لوحة الأدمن</span>
-                </a>
             </nav>
             <div class="sidebar-footer">
                 <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
@@ -43,85 +196,83 @@
         <main class="main-content">
             <header class="top-bar">
                 <h1>الملف الشخصي</h1>
+                <div class="user-info">
+                    <span id="userName">...</span>
+                    <span class="badge badge-primary" id="userRole">طالب</span>
+                </div>
             </header>
 
             <div class="content-wrapper">
                 <div class="profile-grid">
-                    <!-- Profile Info -->
-                    <div class="section-card">
-                        <h2>👤 المعلومات الشخصية</h2>
-                        <form id="profileForm" class="form-grid">
-                            <div class="form-group">
-                                <label>الاسم الكامل</label>
-                                <input type="text" id="fullName" class="form-input" required>
+                    <!-- Sidebar -->
+                    <div class="profile-sidebar">
+                        <div class="profile-card">
+                            <div class="profile-avatar" id="profileAvatar">👤</div>
+                            <h3 id="profileName">—</h3>
+                            <p id="profileEmail">—</p>
+                            <span class="badge badge-primary" id="profileRole">طالب</span>
+                            
+                            <div class="profile-stats">
+                                <div class="profile-stat">
+                                    <div class="value" id="statExams">0</div>
+                                    <div class="label">اختبار</div>
+                                </div>
+                                <div class="profile-stat">
+                                    <div class="value" id="statAvg">0%</div>
+                                    <div class="label">متوسط</div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>البريد الإلكتروني</label>
-                                <input type="email" id="email" class="form-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label>رقم الهاتف</label>
-                                <input type="tel" id="phone" class="form-input">
-                            </div>
-                            <div class="form-group">
-                                <label>الصف الدراسي</label>
-                                <input type="text" id="gradeName" class="form-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label>المرحلة الدراسية</label>
-                                <input type="text" id="stageName" class="form-input" disabled>
-                            </div>
-                            <div class="form-group full-width">
-                                <label>نبذة</label>
-                                <textarea id="bio" class="form-input" rows="3"></textarea>
-                            </div>
-                            <div class="form-actions full-width">
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="profile-content">
+                        <!-- Personal Info -->
+                        <div class="settings-card">
+                            <h3>👤 المعلومات الشخصية</h3>
+                            <form id="profileForm">
+                                <div class="form-group">
+                                    <label>الاسم الكامل</label>
+                                    <input type="text" class="form-input" id="editName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>البريد الإلكتروني</label>
+                                    <input type="email" class="form-input" id="editEmail" disabled style="opacity: 0.6;">
+                                    <small style="color: var(--text-muted);">لا يمكن تغيير البريد الإلكتروني</small>
+                                </div>
                                 <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
-                            </div>
-                        </form>
-                    </div>
+                            </form>
+                        </div>
 
-                    <!-- Change Password -->
-                    <div class="section-card">
-                        <h2>🔐 تغيير كلمة المرور</h2>
-                        <form id="passwordForm" class="form-grid">
-                            <div class="form-group">
-                                <label>كلمة المرور الحالية</label>
-                                <input type="password" id="currentPassword" class="form-input" required>
-                            </div>
-                            <div class="form-group">
-                                <label>كلمة المرور الجديدة</label>
-                                <input type="password" id="newPassword" class="form-input" required minlength="6">
-                            </div>
-                            <div class="form-group">
-                                <label>تأكيد كلمة المرور</label>
-                                <input type="password" id="confirmPassword" class="form-input" required>
-                            </div>
-                            <div class="form-actions full-width">
-                                <button type="submit" class="btn btn-secondary">تغيير كلمة المرور</button>
-                            </div>
-                        </form>
-                    </div>
+                        <!-- Change Password -->
+                        <div class="settings-card">
+                            <h3>🔐 تغيير كلمة المرور</h3>
+                            <form id="passwordForm">
+                                <div class="form-group">
+                                    <label>كلمة المرور الحالية</label>
+                                    <input type="password" class="form-input" id="currentPassword" required placeholder="••••••••">
+                                </div>
+                                <div class="form-group">
+                                    <label>كلمة المرور الجديدة</label>
+                                    <input type="password" class="form-input" id="newPassword" required minlength="8" placeholder="••••••••">
+                                    <div class="password-strength">
+                                        <div class="password-strength-fill" id="strengthFill"></div>
+                                    </div>
+                                    <div class="strength-text" id="strengthText">أدخل كلمة مرور جديدة</div>
+                                </div>
+                                <div class="form-group">
+                                    <label>تأكيد كلمة المرور الجديدة</label>
+                                    <input type="password" class="form-input" id="confirmPassword" required placeholder="••••••••">
+                                </div>
+                                <button type="submit" class="btn btn-primary">تحديث كلمة المرور</button>
+                            </form>
+                        </div>
 
-                    <!-- Stats -->
-                    <div class="section-card">
-                        <h2>📊 إحصائيات</h2>
-                        <div class="stats-list">
-                            <div class="stat-row">
-                                <span>📅 تاريخ الانضمام</span>
-                                <span id="joinDate">-</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>📝 الاختبارات المكتملة</span>
-                                <span id="completedCount">0</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>⭐ المتوسط العام</span>
-                                <span id="avgScore">0%</span>
-                            </div>
-                            <div class="stat-row">
-                                <span>🏆 أفضل نتيجة</span>
-                                <span id="bestScore">0%</span>
+                        <!-- Recent Activity -->
+                        <div class="settings-card">
+                            <h3>📋 النشاط الأخير</h3>
+                            <div class="activity-list" id="activityList">
+                                <div class="text-center" style="padding: 40px; color: var(--text-muted);">جاري التحميل...</div>
                             </div>
                         </div>
                     </div>
@@ -132,142 +283,198 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
-        let studentData = null;
+        let currentUser = null;
+        let studentId = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            const user = await examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
+            currentUser = await examAuth.getUser();
+            if (!currentUser) { window.location.href = '../login.html'; return; }
+
+            document.getElementById('userName').textContent = currentUser.user_metadata?.full_name || currentUser.email || 'طالب';
+            document.getElementById('profileName').textContent = currentUser.user_metadata?.full_name || '—';
+            document.getElementById('profileEmail').textContent = currentUser.email || '—';
+            document.getElementById('editName').value = currentUser.user_metadata?.full_name || '';
+            document.getElementById('editEmail').value = currentUser.email || '';
             
-            const isAdmin = await examAuth.isAdmin();
-            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
-            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
-            
-            if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            // Avatar initial
+            const name = currentUser.user_metadata?.full_name || currentUser.email || 'U';
+            document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
 
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await examAuth.signOut();
                 window.location.href = '../login.html';
             });
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
 
-            await loadProfile(user.id);
-            await loadStats(user.id);
+            // Get student
+            const { data: student } = await examDB.students()
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .single();
+            studentId = student?.id;
 
+            await loadStats();
+            await loadActivity();
+
+            // Forms
             document.getElementById('profileForm').addEventListener('submit', updateProfile);
             document.getElementById('passwordForm').addEventListener('submit', updatePassword);
+            document.getElementById('newPassword').addEventListener('input', checkPasswordStrength);
         });
 
-        async function loadProfile(userId) {
-            App.Loading.show();
-            try {
-                const { data: student } = await examDB.students()
-                    .select('*, exam_grades(name), exam_stages(name)')
-                    .eq('user_id', userId)
-                    .single();
+        async function loadStats() {
+            if (!studentId) return;
+            
+            const { data: attempts } = await examDB.attempts()
+                .select('score, exam_exams(total_score)')
+                .eq('student_id', studentId)
+                .eq('status', 'completed');
 
-                if (!student) {
-                    App.Toast.error('لم يتم العثور على بيانات الطالب');
-                    return;
-                }
+            const total = attempts?.length || 0;
+            const scores = attempts?.map(a => ((a.score || 0) / (a.exam_exams?.total_score || 1)) * 100) || [];
+            const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
 
-                studentData = student;
-                document.getElementById('fullName').value = student.full_name || '';
-                document.getElementById('email').value = student.email || '';
-                document.getElementById('phone').value = student.phone || '';
-                document.getElementById('gradeName').value = student.exam_grades?.name || '';
-                document.getElementById('stageName').value = student.exam_stages?.name || '';
-                document.getElementById('bio').value = student.bio || '';
-                document.getElementById('joinDate').textContent = App.DateTime.format(student.created_at);
-
-            } catch (err) {
-                App.Toast.error('حدث خطأ في تحميل البيانات');
-            } finally {
-                App.Loading.hide();
-            }
+            document.getElementById('statExams').textContent = total;
+            document.getElementById('statAvg').textContent = avg + '%';
         }
 
-        async function loadStats(userId) {
-            try {
-                const { data: student } = await examDB.students()
-                    .select('id')
-                    .eq('user_id', userId)
-                    .single();
+        async function loadActivity() {
+            if (!studentId) return;
 
-                if (!student) return;
+            const { data: attempts } = await examDB.attempts()
+                .select('*, exam_exams(title)')
+                .eq('student_id', studentId)
+                .order('ended_at', { ascending: false })
+                .limit(5);
 
-                const { data: attempts } = await examDB.attempts()
-                    .select('score, exam_exams(total_score)')
-                    .eq('student_id', student.id)
-                    .eq('status', 'completed');
-
-                const completed = attempts ? attempts.length : 0;
-                const scores = attempts ? attempts.filter(a => a.score !== null).map(a => (a.score / a.exam_exams.total_score) * 100) : [];
-                const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
-                const best = scores.length ? Math.round(Math.max(...scores)) : 0;
-
-                document.getElementById('completedCount').textContent = completed;
-                document.getElementById('avgScore').textContent = avg + '%';
-                document.getElementById('bestScore').textContent = best + '%';
-
-            } catch (err) {
-                console.error(err);
+            const list = document.getElementById('activityList');
+            
+            if (!attempts?.length) {
+                list.innerHTML = '<div class="text-center" style="padding: 40px; color: var(--text-muted);">لا يوجد نشاط حديث</div>';
+                return;
             }
+
+            list.innerHTML = attempts.map(a => {
+                const exam = a.exam_exams;
+                const isSuccess = a.status === 'completed' && ((a.score || 0) / (exam?.total_score || 1)) >= 0.6;
+                const icon = isSuccess ? '🎉' : a.status === 'time_expired' ? '⏰' : '📝';
+                const title = isSuccess ? `أكمل ${exam?.title || 'اختبار'}` : 
+                              a.status === 'time_expired' ? `انتهى وقت ${exam?.title || 'اختبار'}` :
+                              `شارك في ${exam?.title || 'اختبار'}`;
+                
+                return `
+                    <div class="activity-item ${isSuccess ? 'success' : 'warning'}">
+                        <div class="activity-icon">${icon}</div>
+                        <div class="activity-info">
+                            <div class="title">${title}</div>
+                            <div class="time">${App.DateTime.relative(a.ended_at || a.created_at)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function updateProfile(e) {
             e.preventDefault();
-            if (!studentData) return;
+            App.Loading.show('جاري الحفظ...');
 
-            App.Loading.show();
+            const newName = document.getElementById('editName').value.trim();
+            
             try {
-                const { error } = await examDB.students()
-                    .update({
-                        full_name: document.getElementById('fullName').value,
-                        phone: document.getElementById('phone').value,
-                        bio: document.getElementById('bio').value,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', studentData.id);
-
-                if (error) throw error;
-
-                // Update user metadata
-                await examAuth.updateUser({
-                    data: { full_name: document.getElementById('fullName').value }
+                // Update auth metadata
+                const { error: authError } = await examDB.client().auth.updateUser({
+                    data: { full_name: newName }
                 });
 
+                if (authError) throw authError;
+
+                // Update profiles
+                await examDB.profiles()
+                    .update({ full_name: newName, updated_at: new Date().toISOString() })
+                    .eq('id', currentUser.id);
+
+                // Update students
+                if (studentId) {
+                    await examDB.students()
+                        .update({ full_name: newName, updated_at: new Date().toISOString() })
+                        .eq('id', studentId);
+                }
+
+                document.getElementById('profileName').textContent = newName;
+                document.getElementById('userName').textContent = newName;
                 App.Toast.success('تم تحديث الملف الشخصي');
+
             } catch (err) {
+                console.error(err);
                 App.Toast.error('حدث خطأ في التحديث');
             } finally {
                 App.Loading.hide();
             }
         }
 
+        function checkPasswordStrength() {
+            const password = document.getElementById('newPassword').value;
+            const result = App.Validator.password(password);
+            const fill = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+
+            const widths = ['0%', '25%', '50%', '75%', '100%'];
+            const classes = ['', 'strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
+            const labels = ['أدخل كلمة مرور', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
+
+            fill.style.width = widths[result.score];
+            fill.className = 'password-strength-fill ' + classes[result.score];
+            text.textContent = labels[result.score];
+            text.style.color = result.score >= 3 ? 'var(--success-color)' : result.score >= 2 ? 'var(--warning-color)' : 'var(--danger-color)';
+        }
+
         async function updatePassword(e) {
             e.preventDefault();
+            
+            const current = document.getElementById('currentPassword').value;
             const newPass = document.getElementById('newPassword').value;
-            const confirmPass = document.getElementById('confirmPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
 
-            if (newPass !== confirmPass) {
-                App.Toast.error('كلمات المرور غير متطابقة');
+            if (newPass !== confirm) {
+                App.Toast.error('كلمات المرور الجديدة غير متطابقة');
                 return;
             }
 
-            App.Loading.show();
+            const validation = App.Validator.password(newPass);
+            if (!validation.valid) {
+                App.Toast.error('كلمة المرور ضعيفة جداً');
+                return;
+            }
+
+            App.Loading.show('جاري التحديث...');
+
             try {
-                const { error } = await examAuth.updateUser({ password: newPass });
+                // Verify current password by signing in
+                const { error: verifyError } = await examAuth.signIn(currentUser.email, current);
+                if (verifyError) {
+                    App.Toast.error('كلمة المرور الحالية غير صحيحة');
+                    return;
+                }
+
+                // Update password
+                const { error } = await examAuth.updatePassword(newPass);
                 if (error) throw error;
-                
-                App.Toast.success('تم تغيير كلمة المرور');
+
+                App.Toast.success('تم تحديث كلمة المرور بنجاح');
                 document.getElementById('passwordForm').reset();
+                document.getElementById('strengthFill').style.width = '0%';
+                document.getElementById('strengthText').textContent = 'أدخل كلمة مرور جديدة';
+
             } catch (err) {
-                App.Toast.error('حدث خطأ في تغيير كلمة المرور');
+                console.error(err);
+                App.Toast.error('حدث خطأ في تحديث كلمة المرور');
             } finally {
                 App.Loading.hide();
             }
