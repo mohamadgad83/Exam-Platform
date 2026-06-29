@@ -1,182 +1,284 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الطالب - منصة الاختبارات</title>
-  <link rel="stylesheet" href="../shared/styles.css">
-  <style>
-    .welcome-banner {
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white; border-radius: var(--radius-xl);
-      padding: 2rem; margin-bottom: 2rem;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 1rem;
-    }
-    .welcome-banner h2 { font-size: 1.5rem; font-weight: 700; }
-    .welcome-banner p { opacity: 0.85; margin-top: 0.375rem; }
-    .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الطالب | منصة الاختبارات</title>
+    <link rel="stylesheet" href="../shared/styles.css">
 </head>
-<body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-
-        <!-- Welcome Banner -->
-        <div class="welcome-banner">
-          <div>
-            <h2>مرحباً، <span id="student-name">طالب</span>! 👋</h2>
-            <p id="welcome-subtitle">جاهز لاختبار اليوم؟</p>
-          </div>
-          <a href="exams.html" class="btn" style="background:white;color:var(--primary);font-weight:700;">📝 ابدأ اختباراً</a>
-        </div>
-
-        <!-- Stats -->
-        <div class="stats-grid" style="margin-bottom:2rem;">
-          <div class="stat-card">
-            <div class="stat-icon blue">📝</div>
-            <div class="stat-info"><h3 id="stat-done">-</h3><p>اختبارات مكتملة</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">✅</div>
-            <div class="stat-info"><h3 id="stat-passed">-</h3><p>اختبارات ناجحة</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon orange">📊</div>
-            <div class="stat-info"><h3 id="stat-avg">-</h3><p>متوسط درجاتي</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple">⏳</div>
-            <div class="stat-info"><h3 id="stat-available">-</h3><p>اختبارات متاحة</p></div>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
-
-          <!-- Available Exams -->
-          <div>
-            <div class="card-header" style="background:none;border:none;padding:0 0 1rem 0;">
-              <h2 class="card-title">📝 الاختبارات المتاحة</h2>
-              <a href="exams.html" class="btn btn-outline btn-sm">عرض الكل</a>
+<body class="dark-mode">
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🎓 منصة الاختبارات</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
             </div>
-            <div class="exams-grid" id="available-exams">
-              <div style="padding:2rem;text-align:center;"><div class="spinner spinner-lg"></div></div>
+            <nav class="sidebar-nav">
+                <a href="./dashboard.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">لوحة التحكم</span>
+                </a>
+                <a href="./exams.html" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">الاختبارات</span>
+                </a>
+                <a href="./results.html" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">النتائج</span>
+                </a>
+                <a href="./profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">الملف الشخصي</span>
+                </a>
+                <a href="../admin/dashboard.html" class="nav-item admin-only" style="display:none;">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">لوحة الأدمن</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
             </div>
-          </div>
+        </aside>
 
-          <!-- Recent Results -->
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">📊 آخر نتائجي</h2>
-              <a href="results.html" class="btn btn-outline btn-sm">كل النتائج</a>
-            </div>
-            <div id="recent-results" style="padding:0.5rem 0;">
-              <div style="padding:1.5rem;text-align:center;"><div class="spinner"></div></div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </main>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../shared/app.js"></script>
-  <script src="../shared/supabase-client.js"></script>
-  <script>
-    requireAuth('student');
-    renderLayout('student', 'dashboard');
-
-    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-    const sb = getSupabase();
-
-    document.getElementById('student-name').textContent = user.full_name?.split(' ')[0] || 'طالب';
-
-    const subjectMap = { math:'الرياضيات', arabic:'اللغة العربية', english:'الإنجليزية', science:'العلوم', history:'التاريخ', other:'أخرى' };
-
-    async function loadDashboard() {
-      try {
-        const [subsRes, examsRes] = await Promise.all([
-          sb.from('exam_submissions').select('*, exams(title, subject)').eq('student_id', user.id).order('submitted_at', { ascending: false }),
-          sb.from('exams').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(6)
-        ]);
-
-        const subs = subsRes.data || [];
-        const allExams = examsRes.data || [];
-        const submittedIds = new Set(subs.map(s => s.exam_id));
-        const availableExams = allExams.filter(e => !submittedIds.has(e.id));
-
-        // Stats
-        document.getElementById('stat-done').textContent = subs.length;
-        document.getElementById('stat-passed').textContent = subs.filter(s => s.passed).length;
-        document.getElementById('stat-available').textContent = availableExams.length;
-        const avg = subs.length > 0
-          ? Math.round(subs.reduce((sum, s) => sum + (s.percentage || 0), 0) / subs.length)
-          : 0;
-        document.getElementById('stat-avg').textContent = avg + '%';
-
-        // Welcome message
-        const hour = new Date().getHours();
-        const greeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور';
-        document.getElementById('welcome-subtitle').textContent = `${greeting}! لديك ${availableExams.length} اختبار متاح الآن`;
-
-        // Available exams
-        const examsEl = document.getElementById('available-exams');
-        if (availableExams.length === 0) {
-          examsEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-            <div class="empty-icon">✅</div>
-            <h3>لا توجد اختبارات متاحة الآن</h3>
-            <p>أنهيت جميع الاختبارات المتاحة!</p>
-          </div>`;
-        } else {
-          examsEl.innerHTML = availableExams.slice(0, 3).map(e => `
-            <div class="exam-card">
-              <div class="exam-card-header">
-                <div>
-                  <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:0.5rem;">${sanitizeHTML(e.title)}</h3>
-                  <span class="badge" style="background:rgba(255,255,255,0.2);color:white;">${subjectMap[e.subject] || e.subject || 'عام'}</span>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>لوحة تحكم الطالب</h1>
+                <div class="user-info">
+                    <span id="userName">...</span>
+                    <span class="badge" id="userRole">طالب</span>
                 </div>
-              </div>
-              <div class="exam-card-body">
-                <div class="exam-meta">
-                  <span>⏱️ ${e.duration_minutes} دقيقة</span>
-                  <span>📊 ${e.total_marks} درجة</span>
-                  <span>✅ النجاح: ${e.passing_score || 50}%</span>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-info">
+                            <h3 id="totalExams">0</h3>
+                            <p>الاختبارات المتاحة</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <h3 id="completedExams">0</h3>
+                            <p>اختبارات مكتملة</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <h3 id="avgScore">0%</h3>
+                            <p>المتوسط العام</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-info">
+                            <h3 id="bestScore">0%</h3>
+                            <p>أفضل نتيجة</p>
+                        </div>
+                    </div>
                 </div>
-                <a href="exam-attempt.html?id=${e.id}" class="btn btn-primary btn-block" style="margin-top:1.25rem;">▶️ ابدأ الاختبار</a>
-              </div>
+
+                <!-- Upcoming Exams -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>⏰ اختبارات قادمة</h2>
+                        <a href="./exams.html" class="btn btn-sm">عرض الكل</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="upcomingTable">
+                            <thead>
+                                <tr>
+                                    <th>الاختبار</th>
+                                    <th>المادة</th>
+                                    <th>التاريخ</th>
+                                    <th>المدة</th>
+                                    <th>الحالة</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="upcomingBody">
+                                <tr><td colspan="6" class="text-center">جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Results -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>📈 أحدث النتائج</h2>
+                        <a href="./results.html" class="btn btn-sm">عرض الكل</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>الاختبار</th>
+                                    <th>الدرجة</th>
+                                    <th>النسبة</th>
+                                    <th>التاريخ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="5" class="text-center">جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-          `).join('');
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Auth Guard
+            const user = await examAuth.getUser();
+            if (!user) {
+                window.location.href = '../login.html';
+                return;
+            }
+            
+            // Check role (student or admin)
+            const isAdmin = await examAuth.isAdmin();
+            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
+            
+            if (!isStudent && !isAdmin) {
+                window.location.href = '../unauthorized.html';
+                return;
+            }
+
+            // Show admin link if admin
+            if (isAdmin) {
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            }
+
+            // Set user name
+            document.getElementById('userName').textContent = user.user_metadata?.full_name || user.email || 'طالب';
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await examAuth.signOut();
+                window.location.href = '../login.html';
+            });
+
+            // Sidebar toggle
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            // Load Dashboard Data
+            await loadDashboardData(user.id);
+        });
+
+        async function loadDashboardData(userId) {
+            App.Loading.show();
+            try {
+                // Get student record
+                const { data: student } = await examDB.students()
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (!student) {
+                    App.Toast.error('لم يتم العثور على سجل الطالب');
+                    return;
+                }
+
+                // Upcoming exams (enrolled + not attempted)
+                const { data: upcoming } = await examDB.exams()
+                    .select('*, exam_subjects(name)')
+                    .eq('status', 'published')
+                    .gte('start_time', new Date().toISOString())
+                    .order('start_time', { ascending: true })
+                    .limit(5);
+
+                // Get attempts for this student
+                const { data: attempts } = await examDB.attempts()
+                    .select('*, exam_exams(title, total_score)')
+                    .eq('student_id', student.id)
+                    .order('created_at', { ascending: false });
+
+                // Calculate stats
+                const completed = attempts ? attempts.filter(a => a.status === 'completed').length : 0;
+                const scores = attempts ? attempts.filter(a => a.score !== null).map(a => (a.score / a.exam_exams.total_score) * 100) : [];
+                const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+                const best = scores.length ? Math.round(Math.max(...scores)) : 0;
+
+                document.getElementById('totalExams').textContent = upcoming ? upcoming.length : 0;
+                document.getElementById('completedExams').textContent = completed;
+                document.getElementById('avgScore').textContent = avg + '%';
+                document.getElementById('bestScore').textContent = best + '%';
+
+                // Render upcoming
+                const upcomingBody = document.getElementById('upcomingBody');
+                if (upcoming && upcoming.length > 0) {
+                    upcomingBody.innerHTML = upcoming.map(exam => {
+                        const startDate = new Date(exam.start_time);
+                        const now = new Date();
+                        const isAvailable = startDate <= now;
+                        return `
+                            <tr>
+                                <td>${exam.title}</td>
+                                <td>${exam.exam_subjects?.name || '-'}</td>
+                                <td>${App.DateTime.format(exam.start_time)}</td>
+                                <td>${exam.duration_minutes} دقيقة</td>
+                                <td><span class="badge ${isAvailable ? 'badge-success' : 'badge-warning'}">${isAvailable ? 'متاح' : 'قادم'}</span></td>
+                                <td>
+                                    ${isAvailable ? `<a href="./exams.html?exam=${exam.id}" class="btn btn-sm btn-primary">بدء</a>` : '-'}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    upcomingBody.innerHTML = '<tr><td colspan="6" class="text-center">لا توجد اختبارات قادمة</td></tr>';
+                }
+
+                // Render recent results
+                const resultsBody = document.getElementById('resultsBody');
+                if (attempts && attempts.length > 0) {
+                    const recent = attempts.slice(0, 5);
+                    resultsBody.innerHTML = recent.map(attempt => {
+                        const pct = attempt.exam_exams?.total_score ? Math.round((attempt.score / attempt.exam_exams.total_score) * 100) : 0;
+                        return `
+                            <tr>
+                                <td>${attempt.exam_exams?.title || '-'}</td>
+                                <td>${attempt.score || 0} / ${attempt.exam_exams?.total_score || 0}</td>
+                                <td>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${pct}%; background: ${pct >= 80 ? '#4caf50' : pct >= 60 ? '#ff9800' : '#f44336'}"></div>
+                                        <span>${pct}%</span>
+                                    </div>
+                                </td>
+                                <td>${App.DateTime.format(attempt.created_at)}</td>
+                                <td>
+                                    <a href="./exam-review.html?attempt=${attempt.id}" class="btn btn-sm">مراجعة</a>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    resultsBody.innerHTML = '<tr><td colspan="5" class="text-center">لا توجد نتائج بعد</td></tr>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                App.Toast.error('حدث خطأ في تحميل البيانات');
+            } finally {
+                App.Loading.hide();
+            }
         }
-
-        // Recent results
-        const resultsEl = document.getElementById('recent-results');
-        if (subs.length === 0) {
-          resultsEl.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><div class="empty-icon" style="font-size:2rem;">📊</div><p>لم تؤدِ أي اختبار بعد</p></div>';
-        } else {
-          resultsEl.innerHTML = subs.slice(0, 5).map(s => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.5rem;border-bottom:1px solid var(--gray-100);">
-              <div>
-                <div style="font-weight:600;font-size:0.9375rem;">${sanitizeHTML(s.exams?.title || '-')}</div>
-                <div style="font-size:0.8125rem;color:var(--gray-500);">${timeAgo(s.submitted_at)}</div>
-              </div>
-              <div style="text-align:left;">
-                <div style="font-weight:700;color:${s.passed?'var(--success)':'var(--danger)'};">${s.score}/${s.total_marks}</div>
-                <span class="badge ${s.passed?'badge-success':'badge-danger'}">${s.passed?'ناجح':'راسب'}</span>
-              </div>
-            </div>
-          `).join('');
-        }
-
-      } catch (err) {
-        console.error(err);
-        showToast('حدث خطأ في تحميل البيانات', 'error');
-      }
-    }
-
-    loadDashboard();
-  </script>
+    </script>
 </body>
 </html>

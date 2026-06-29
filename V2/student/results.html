@@ -1,178 +1,207 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>نتائجي - منصة الاختبارات</title>
-  <link rel="stylesheet" href="../shared/styles.css">
-  <style>
-    .results-chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 120px; padding: 1rem 1.5rem; border-bottom: 2px solid var(--gray-200); overflow-x: auto; }
-    .chart-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; min-width: 48px; }
-    .chart-bar { width: 36px; border-radius: 4px 4px 0 0; transition: height 0.5s ease; cursor: pointer; position: relative; }
-    .chart-bar:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--gray-900); color: white; padding: 0.25rem 0.625rem; border-radius: var(--radius); font-size: 0.75rem; white-space: nowrap; margin-bottom: 4px; }
-    .chart-label { font-size: 0.65rem; color: var(--gray-500); text-align: center; max-width: 48px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النتائج | منصة الاختبارات</title>
+    <link rel="stylesheet" href="../shared/styles.css">
 </head>
-<body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-
-        <!-- Stats -->
-        <div class="stats-grid" style="margin-bottom:1.5rem;">
-          <div class="stat-card"><div class="stat-icon blue">📝</div><div class="stat-info"><h3 id="stat-total">-</h3><p>إجمالي الاختبارات</p></div></div>
-          <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><h3 id="stat-passed">-</h3><p>ناجح</p></div></div>
-          <div class="stat-card"><div class="stat-icon orange">📊</div><div class="stat-info"><h3 id="stat-avg">-</h3><p>متوسط الدرجات</p></div></div>
-          <div class="stat-card"><div class="stat-icon purple">🏆</div><div class="stat-info"><h3 id="stat-best">-</h3><p>أعلى درجة</p></div></div>
-        </div>
-
-        <!-- Performance Chart -->
-        <div class="card" style="margin-bottom:1.5rem;">
-          <div class="card-header">
-            <h2 class="card-title">📈 أداؤي في آخر 10 اختبارات</h2>
-          </div>
-          <div class="results-chart" id="results-chart">
-            <div style="width:100%;text-align:center;padding:1rem;"><div class="spinner"></div></div>
-          </div>
-        </div>
-
-        <!-- Results Table -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">📋 سجل نتائجي</h2>
-            <div style="display:flex;gap:0.75rem;">
-              <select class="form-select" style="width:auto;" id="filter-result" onchange="filterResults()">
-                <option value="">كل النتائج</option>
-                <option value="passed">✅ ناجح فقط</option>
-                <option value="failed">❌ راسب فقط</option>
-              </select>
+<body class="dark-mode">
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🎓 منصة الاختبارات</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
             </div>
-          </div>
-          <div class="table-container" style="border-radius:0;border:none;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>الاختبار</th>
-                  <th>المادة</th>
-                  <th>الدرجة</th>
-                  <th>النسبة</th>
-                  <th>النتيجة</th>
-                  <th>التاريخ</th>
-                  <th>الإجراء</th>
-                </tr>
-              </thead>
-              <tbody id="results-body">
-                <tr><td colspan="7" style="text-align:center;padding:2rem;"><div class="spinner"></div></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+            <nav class="sidebar-nav">
+                <a href="./dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">لوحة التحكم</span>
+                </a>
+                <a href="./exams.html" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">الاختبارات</span>
+                </a>
+                <a href="./results.html" class="nav-item active">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">النتائج</span>
+                </a>
+                <a href="./profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">الملف الشخصي</span>
+                </a>
+                <a href="../admin/dashboard.html" class="nav-item admin-only" style="display:none;">
+                    <span class="nav-icon">🔧</span>
+                    <span class="nav-text">لوحة الأدمن</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
+            </div>
+        </aside>
 
-      </div>
-    </main>
-  </div>
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>سجل النتائج</h1>
+                <div class="filters">
+                    <select id="subjectFilter" class="form-select">
+                        <option value="">جميع المواد</option>
+                    </select>
+                    <select id="periodFilter" class="form-select">
+                        <option value="">كل الفترات</option>
+                        <option value="week">آخر أسبوع</option>
+                        <option value="month">آخر شهر</option>
+                        <option value="year">آخر سنة</option>
+                    </select>
+                </div>
+            </header>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../shared/app.js"></script>
-  <script src="../shared/supabase-client.js"></script>
-  <script>
-    requireAuth('student');
-    renderLayout('student', 'results');
+            <div class="content-wrapper">
+                <div class="section-card">
+                    <div class="table-responsive">
+                        <table class="data-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>الاختبار</th>
+                                    <th>المادة</th>
+                                    <th>الدرجة</th>
+                                    <th>النسبة</th>
+                                    <th>الحالة</th>
+                                    <th>التاريخ</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="7" class="text-center">جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-    const sb = getSupabase();
-    let allResults = [];
+    <div class="toast-container" id="toastContainer"></div>
 
-    const subjectMap = { math:'الرياضيات', arabic:'اللغة العربية', english:'الإنجليزية', science:'العلوم', history:'التاريخ', other:'أخرى' };
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        let allResults = [];
+        let studentId = null;
 
-    async function loadResults() {
-      try {
-        const { data, error } = await sb
-          .from('exam_submissions')
-          .select('*, exams(title, subject)')
-          .eq('student_id', user.id)
-          .order('submitted_at', { ascending: false });
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await examAuth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+            
+            const isAdmin = await examAuth.isAdmin();
+            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
+            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
+            
+            if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
 
-        if (error) throw error;
-        allResults = data || [];
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await examAuth.signOut();
+                window.location.href = '../login.html';
+            });
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
 
-        // Stats
-        const total = allResults.length;
-        const passed = allResults.filter(r => r.passed).length;
-        const percentages = allResults.map(r => r.percentage || (r.total_marks > 0 ? (r.score/r.total_marks*100) : 0));
-        const avg = total > 0 ? Math.round(percentages.reduce((a,b) => a+b, 0) / total) : 0;
-        const best = total > 0 ? Math.round(Math.max(...percentages)) : 0;
+            const { data: student } = await examDB.students()
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+            studentId = student?.id;
 
-        document.getElementById('stat-total').textContent = total;
-        document.getElementById('stat-passed').textContent = passed;
-        document.getElementById('stat-avg').textContent = avg + '%';
-        document.getElementById('stat-best').textContent = best + '%';
+            await loadSubjects();
+            await loadResults();
 
-        // Chart (last 10)
-        const chartData = [...allResults].reverse().slice(-10);
-        const chartEl = document.getElementById('results-chart');
-        if (chartData.length === 0) {
-          chartEl.innerHTML = '<div style="width:100%;text-align:center;color:var(--gray-400);">لا توجد بيانات بعد</div>';
-        } else {
-          chartEl.innerHTML = chartData.map(r => {
-            const pct = r.percentage || (r.total_marks > 0 ? Math.round(r.score/r.total_marks*100) : 0);
-            const color = pct >= 90 ? 'var(--success)' : pct >= 70 ? 'var(--warning)' : pct >= 50 ? 'var(--info)' : 'var(--danger)';
-            const title = (r.exams?.title || '').substring(0, 10);
-            return `<div class="chart-bar-wrap">
-              <div class="chart-bar" style="height:${pct}px;background:${color};" data-tooltip="${pct}%"></div>
-              <div class="chart-label">${pct}%</div>
-              <div class="chart-label">${sanitizeHTML(title)}</div>
-            </div>`;
-          }).join('');
+            document.getElementById('subjectFilter').addEventListener('change', filterResults);
+            document.getElementById('periodFilter').addEventListener('change', filterResults);
+        });
+
+        async function loadSubjects() {
+            const { data } = await examDB.subjects().select('id, name').order('name');
+            const select = document.getElementById('subjectFilter');
+            if (data) {
+                data.forEach(s => {
+                    select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+            }
         }
 
-        filterResults();
-      } catch (err) {
-        console.error(err);
-        showToast('حدث خطأ في تحميل النتائج', 'error');
-      }
-    }
+        async function loadResults() {
+            App.Loading.show();
+            try {
+                const { data: attempts } = await examDB.attempts()
+                    .select('*, exam_exams(title, total_score, subject_id, exam_subjects(name))')
+                    .eq('student_id', studentId)
+                    .eq('status', 'completed')
+                    .order('ended_at', { ascending: false });
 
-    function filterResults() {
-      const filter = document.getElementById('filter-result').value;
-      let filtered = allResults;
-      if (filter === 'passed') filtered = filtered.filter(r => r.passed);
-      if (filter === 'failed') filtered = filtered.filter(r => !r.passed);
-      renderTable(filtered);
-    }
+                allResults = attempts || [];
+                renderResults(allResults);
+            } catch (err) {
+                App.Toast.error('حدث خطأ في تحميل النتائج');
+            } finally {
+                App.Loading.hide();
+            }
+        }
 
-    function renderTable(results) {
-      const tbody = document.getElementById('results-body');
-      if (results.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7">
-          <div class="empty-state"><div class="empty-icon">📊</div>
-          <h3>لا توجد نتائج</h3>
-          <p>لم تؤدِ أي اختبار بعد</p>
-          <a href="exams.html" class="btn btn-primary" style="margin-top:1rem;">📝 ابدأ اختباراً</a>
-          </div></td></tr>`;
-        return;
-      }
+        function renderResults(results) {
+            const tbody = document.getElementById('resultsBody');
+            if (!results.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">لا توجد نتائج</td></tr>';
+                return;
+            }
 
-      tbody.innerHTML = results.map(r => {
-        const pct = r.percentage || (r.total_marks > 0 ? Math.round(r.score/r.total_marks*100) : 0);
-        return `<tr>
-          <td><strong>${sanitizeHTML(r.exams?.title || '-')}</strong></td>
-          <td>${subjectMap[r.exams?.subject] || r.exams?.subject || '-'}</td>
-          <td><strong style="color:${getGradeColor(pct)}">${r.score}/${r.total_marks}</strong></td>
-          <td>
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <div class="progress" style="width:80px;"><div class="progress-bar ${r.passed?'success':'danger'}" style="width:${pct}%"></div></div>
-              <span style="font-weight:600;color:${getGradeColor(pct)}">${pct}%</span>
-            </div>
-          </td>
-          <td><span class="badge ${r.passed?'badge-success':'badge-danger'}">${r.passed?'✅ ناجح':'❌ راسب'}</span></td>
-          <td style="color:var(--gray-500);font-size:0.875rem;">${formatDate(r.submitted_at)}</td>
-          <td><a href="exam-review.html?submission_id=${r.id}" class="btn btn-outline btn-sm">👁️ مراجعة</a></td>
-        </tr>`;
-      }).join('');
-    }
+            tbody.innerHTML = results.map(r => {
+                const total = r.exam_exams?.total_score || 1;
+                const score = r.score || 0;
+                const pct = Math.round((score / total) * 100);
+                const badgeClass = pct >= 80 ? 'badge-success' : pct >= 60 ? 'badge-warning' : 'badge-danger';
 
-    loadResults();
-  </script>
+                return `
+                    <tr>
+                        <td>${r.exam_exams?.title || '-'}</td>
+                        <td>${r.exam_exams?.exam_subjects?.name || '-'}</td>
+                        <td>${score} / ${total}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${pct}%; background: ${pct >= 80 ? '#4caf50' : pct >= 60 ? '#ff9800' : '#f44336'}"></div>
+                                <span>${pct}%</span>
+                            </div>
+                        </td>
+                        <td><span class="badge ${badgeClass}">${pct >= 80 ? 'ممتاز' : pct >= 60 ? 'جيد' : 'يحتاج تحسين'}</span></td>
+                        <td>${App.DateTime.format(r.ended_at || r.created_at)}</td>
+                        <td>
+                            <a href="./exam-review.html?attempt=${r.id}" class="btn btn-sm">مراجعة</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterResults() {
+            const subject = document.getElementById('subjectFilter').value;
+            const period = document.getElementById('periodFilter').value;
+
+            let filtered = allResults.filter(r => {
+                if (subject && r.exam_exams?.subject_id !== subject) return false;
+                if (period) {
+                    const date = new Date(r.ended_at || r.created_at);
+                    const now = new Date();
+                    const diff = now - date;
+                    if (period === 'week' && diff > 7 * 24 * 60 * 60 * 1000) return false;
+                    if (period === 'month' && diff > 30 * 24 * 60 * 60 * 1000) return false;
+                    if (period === 'year' && diff > 365 * 24 * 60 * 60 * 1000) return false;
+                }
+                return true;
+            });
+
+            renderResults(filtered);
+        }
+    </script>
 </body>
 </html>

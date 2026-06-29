@@ -1,266 +1,201 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مراجعة الاختبار - منصة الاختبارات</title>
-  <link rel="stylesheet" href="../shared/styles.css">
-  <style>
-    .review-header { margin-bottom: 2rem; }
-    .review-summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-    .summary-box {
-      background: var(--white);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem;
-      text-align: center;
-      box-shadow: var(--shadow);
-      border: 1px solid var(--gray-200);
-    }
-    .summary-box .value {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-    .summary-box .label {
-      font-size: 0.875rem;
-      color: var(--gray-500);
-    }
-    .review-question { transition: var(--transition); }
-    .review-question:hover { transform: translateX(-4px); }
-    .option-review {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.875rem 1rem;
-      border-radius: var(--radius);
-      margin-bottom: 0.5rem;
-      font-size: 0.9375rem;
-    }
-    .option-review.student-selected { background: var(--info-light); border: 1px solid var(--info); }
-    .option-review.correct-answer { background: var(--success-light); border: 1px solid var(--success); }
-    .option-review.wrong-answer { background: var(--danger-light); border: 1px solid var(--danger); }
-    .option-review.neutral { background: var(--gray-50); border: 1px solid var(--gray-200); }
-    .option-review .marker {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .explanation-box {
-      background: var(--primary-light);
-      border: 1px solid var(--primary);
-      border-radius: var(--radius-lg);
-      padding: 1rem;
-      margin-top: 1rem;
-    }
-    .explanation-box h4 {
-      color: var(--primary-dark);
-      font-size: 0.875rem;
-      margin-bottom: 0.5rem;
-    }
-    .explanation-box p {
-      color: var(--gray-700);
-      font-size: 0.9375rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مراجعة الاختبار | منصة الاختبارات</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .review-container { max-width: 800px; margin: 0 auto; }
+        .question-card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .question-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .question-number { font-weight: bold; color: var(--primary-color); }
+        .question-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .status-correct { background: #4caf5022; color: #4caf50; }
+        .status-wrong { background: #f4433622; color: #f44336; }
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-item { padding: 12px 15px; border-radius: 8px; border: 2px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+        .option-correct { border-color: #4caf50; background: #4caf5011; }
+        .option-wrong { border-color: #f44336; background: #f4433611; }
+        .option-selected::before { content: '✓'; font-weight: bold; }
+        .option-correct::before { content: '✓'; color: #4caf50; font-weight: bold; }
+        .option-wrong.option-selected::before { content: '✗'; color: #f44336; }
+        .explanation { background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 14px; }
+        .score-banner { text-align: center; padding: 30px; background: var(--card-bg); border-radius: 16px; margin-bottom: 30px; }
+        .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; font-weight: bold; border: 4px solid; }
+        .score-high { border-color: #4caf50; color: #4caf50; }
+        .score-mid { border-color: #ff9800; color: #ff9800; }
+        .score-low { border-color: #f44336; color: #f44336; }
+    </style>
 </head>
-<body>
-  <div class="app-layout">
-    <main class="main-content">
-      <div class="content-area">
-        <!-- Review Header -->
-        <div class="review-header">
-          <div class="review-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 2.5rem 2rem; border-radius: var(--radius-xl); text-align: center;">
-            <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">📊 مراجعة الاختبار</h1>
-            <p id="exam-title" style="opacity: 0.9; font-size: 1.125rem;">جاري التحميل...</p>
-
-            <div class="review-summary" style="margin-top: 1.5rem;">
-              <div class="summary-box">
-                <div class="value" id="score-value" style="color: var(--success);">0</div>
-                <div class="label">الدرجة</div>
-              </div>
-              <div class="summary-box">
-                <div class="value" id="percentage-value" style="color: var(--primary);">0%</div>
-                <div class="label">النسبة</div>
-              </div>
-              <div class="summary-box">
-                <div class="value" id="correct-value" style="color: var(--success);">0</div>
-                <div class="label">صحيحة</div>
-              </div>
-              <div class="summary-box">
-                <div class="value" id="wrong-value" style="color: var(--danger);">0</div>
-                <div class="label">خاطئة</div>
-              </div>
-              <div class="summary-box">
-                <div class="value" id="time-value" style="color: var(--warning);">0</div>
-                <div class="label">الوقت (دقيقة)</div>
-              </div>
+<body class="dark-mode">
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🎓 منصة الاختبارات</h2>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
             </div>
-          </div>
-        </div>
-
-        <!-- Questions Review -->
-        <div id="questions-review">
-          <!-- Questions loaded here -->
-        </div>
-
-        <!-- Actions -->
-        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; padding-bottom: 2rem;">
-          <a href="results.html" class="btn btn-primary btn-lg">
-            <span>📊</span> كل النتائج
-          </a>
-          <a href="exams.html" class="btn btn-secondary btn-lg">
-            <span>📝</span> اختبارات أخرى
-          </a>
-          <button class="btn btn-outline btn-lg" onclick="window.print()">
-            <span>🖨️</span> طباعة
-          </button>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="../shared/app.js"></script>
-  <script src="../shared/supabase-client.js"></script>
-  <script>
-    requireAuth('student');
-    renderLayout('student', 'exams');
-    document.title = 'مراجعة الاختبار';
-
-    // Demo data
-    const demoSubmission = {
-      exam_title: 'اختبار الرياضيات - الوحدة الأولى: الجبر',
-      score: 8,
-      total_marks: 10,
-      correct_count: 4,
-      wrong_count: 1,
-      time_taken: 38 * 60, // seconds
-      questions: [
-        {
-          id: 1,
-          question_text: 'ما هو حل المعادلة 2x + 5 = 15؟',
-          options: ['x = 5', 'x = 10', 'x = 7.5', 'x = 20'],
-          correct_answer: 0,
-          student_answer: 0,
-          marks: 2,
-          explanation: 'نطرح 5 من الطرفين: 2x = 10، ثم نقسم على 2: x = 5'
-        },
-        {
-          id: 2,
-          question_text: 'إذا كان طول ضلع المربع 4 سم، فما هو محيطه؟',
-          options: ['12 سم', '16 سم', '8 سم', '20 سم'],
-          correct_answer: 1,
-          student_answer: 1,
-          marks: 2,
-          explanation: 'محيط المربع = 4 × طول الضلع = 4 × 4 = 16 سم'
-        },
-        {
-          id: 3,
-          question_text: 'أي من التالي يمثل العدد الأولي؟',
-          options: ['9', '15', '17', '21'],
-          correct_answer: 2,
-          student_answer: 2,
-          marks: 2,
-          explanation: '17 هو عدد أولي لأنه لا يقبل القسمة إلا على 1 ونفسه'
-        },
-        {
-          id: 4,
-          question_text: 'ما هو ناتج 3² + 4²؟',
-          options: ['25', '49', '7', '14'],
-          correct_answer: 0,
-          student_answer: 0,
-          marks: 2,
-          explanation: '3² = 9 و 4² = 16، إذن 9 + 16 = 25'
-        },
-        {
-          id: 5,
-          question_text: 'إذا كان سعر 5 كتب 75 جنيهاً، فما سعر 8 كتب؟',
-          options: ['100 جنيه', '120 جنيه', '90 جنيه', '150 جنيه'],
-          correct_answer: 1,
-          student_answer: 2, // Wrong!
-          marks: 2,
-          explanation: 'سعر الكتاب الواحد = 75 ÷ 5 = 15 جنيه، سعر 8 كتب = 15 × 8 = 120 جنيه'
-        }
-      ]
-    };
-
-    function loadReview() {
-      const sub = demoSubmission;
-      const percentage = ((sub.score / sub.total_marks) * 100).toFixed(1);
-      const timeMinutes = Math.floor(sub.time_taken / 60);
-
-      document.getElementById('exam-title').textContent = sub.exam_title;
-      document.getElementById('score-value').textContent = `${sub.score}/${sub.total_marks}`;
-      document.getElementById('percentage-value').textContent = `${percentage}%`;
-      document.getElementById('percentage-value').style.color = getGradeColor(parseFloat(percentage));
-      document.getElementById('correct-value').textContent = sub.correct_count;
-      document.getElementById('wrong-value').textContent = sub.wrong_count;
-      document.getElementById('time-value').textContent = timeMinutes;
-
-      const container = document.getElementById('questions-review');
-      container.innerHTML = sub.questions.map((q, i) => {
-        const isCorrect = q.student_answer === q.correct_answer;
-        const statusClass = isCorrect ? 'correct' : 'wrong';
-        const statusText = isCorrect ? '✅ إجابة صحيحة' : '❌ إجابة خاطئة';
-        const statusColor = isCorrect ? 'var(--success)' : 'var(--danger)';
-
-        return `
-          <div class="review-question ${statusClass}">
-            <div class="status-badge">${statusText}</div>
-            <div style="margin-top: 0.5rem;">
-              <span class="badge badge-secondary" style="margin-bottom: 0.75rem; display: inline-block;">سؤال ${i + 1}</span>
-              <span class="badge ${isCorrect ? 'badge-success' : 'badge-danger'}" style="margin-bottom: 0.75rem; display: inline-block;">${q.marks} درجة</span>
+            <nav class="sidebar-nav">
+                <a href="./dashboard.html" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">لوحة التحكم</span>
+                </a>
+                <a href="./exams.html" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">الاختبارات</span>
+                </a>
+                <a href="./results.html" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">النتائج</span>
+                </a>
+                <a href="./profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">الملف الشخصي</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
             </div>
-            <div class="question-text" style="font-size: 1.0625rem; margin-bottom: 1.25rem;">${q.question_text}</div>
+        </aside>
 
-            <div class="answer-options" style="margin-bottom: 1rem;">
-              ${q.options.map((opt, idx) => {
-                let optClass = 'neutral';
-                let marker = '';
-                if (idx === q.correct_answer) {
-                  optClass = 'correct-answer';
-                  marker = '<div class="marker" style="background: var(--success); color: white;">✓</div>';
-                } else if (idx === q.student_answer && idx !== q.correct_answer) {
-                  optClass = 'wrong-answer';
-                  marker = '<div class="marker" style="background: var(--danger); color: white;">✗</div>';
-                } else if (idx === q.student_answer) {
-                  optClass = 'student-selected';
-                  marker = '<div class="marker" style="background: var(--info); color: white;">●</div>';
-                } else {
-                  marker = `<div class="marker" style="background: var(--gray-200); color: var(--gray-500);">${String.fromCharCode(1611 + idx)}</div>`;
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>مراجعة الاختبار</h1>
+                <a href="./results.html" class="btn btn-sm">← العودة للنتائج</a>
+            </header>
+
+            <div class="content-wrapper">
+                <div class="review-container" id="reviewContainer">
+                    <div class="loading-spinner">جاري التحميل...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const user = await examAuth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+            
+            const isAdmin = await examAuth.isAdmin();
+            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
+            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
+
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await examAuth.signOut();
+                window.location.href = '../login.html';
+            });
+            document.getElementById('sidebarToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const attemptId = params.get('attempt');
+            if (!attemptId) {
+                App.Toast.error('معرف المحاولة غير موجود');
+                return;
+            }
+
+            await loadReview(attemptId, user.id, isAdmin);
+        });
+
+        async function loadReview(attemptId, userId, isAdmin) {
+            App.Loading.show();
+            try {
+                // Get attempt with exam details
+                let query = examDB.attempts()
+                    .select('*, exam_exams(*, exam_subjects(name)), exam_students(user_id)')
+                    .eq('id', attemptId)
+                    .single();
+                
+                const { data: attempt, error } = await query;
+                if (error || !attempt) throw new Error('المحاولة غير موجودة');
+
+                // Security: only owner or admin can view
+                if (!isAdmin && attempt.exam_students?.user_id !== userId) {
+                    window.location.href = '../unauthorized.html';
+                    return;
                 }
-                return `
-                  <div class="option-review ${optClass}">
-                    ${marker}
-                    <span>${opt}</span>
-                    ${idx === q.correct_answer ? '<span style="margin-right: auto; color: var(--success); font-size: 0.8125rem; font-weight: 600;">الإجابة الصحيحة</span>' : ''}
-                    ${idx === q.student_answer && idx !== q.correct_answer ? '<span style="margin-right: auto; color: var(--danger); font-size: 0.8125rem; font-weight: 600;">إجابتك</span>' : ''}
-                  </div>
+
+                // Get questions and answers
+                const { data: questions } = await examDB.examQuestions()
+                    .select('*, exam_questions_bank(*, exam_exam_answers(*))')
+                    .eq('exam_id', attempt.exam_id)
+                    .order('order_index', { ascending: true });
+
+                // Get student answers
+                const { data: answers } = await examDB.from('exam_student_answers')
+                    .select('*')
+                    .eq('attempt_id', attemptId);
+
+                const totalScore = attempt.exam_exams?.total_score || 1;
+                const score = attempt.score || 0;
+                const pct = Math.round((score / totalScore) * 100);
+                const scoreClass = pct >= 80 ? 'score-high' : pct >= 60 ? 'score-mid' : 'score-low';
+
+                const container = document.getElementById('reviewContainer');
+                container.innerHTML = `
+                    <div class="score-banner">
+                        <div class="score-circle ${scoreClass}">${pct}%</div>
+                        <h2>${attempt.exam_exams?.title || 'اختبار'}</h2>
+                        <p>الدرجة: ${score} / ${totalScore} | ${attempt.exam_exams?.exam_subjects?.name || ''}</p>
+                        <p>تاريخ الاختبار: ${App.DateTime.format(attempt.created_at)}</p>
+                        <p>المدة: ${Math.round((new Date(attempt.ended_at || Date.now()) - new Date(attempt.started_at)) / 60000} دقيقة</p>
+                    </div>
+                    <div id="questionsList"></div>
                 `;
-              }).join('')}
-            </div>
 
-            <div class="explanation-box">
-              <h4>💡 الشرح</h4>
-              <p>${q.explanation}</p>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+                const list = document.getElementById('questionsList');
+                if (questions) {
+                    list.innerHTML = questions.map((q, idx) => {
+                        const qb = q.exam_questions_bank;
+                        const studentAnswer = answers?.find(a => a.question_id === q.id);
+                        const isCorrect = studentAnswer?.is_correct;
+                        const correctAnswer = qb?.exam_exam_answers?.find(a => a.is_correct);
 
-    document.addEventListener('DOMContentLoaded', loadReview);
-  </script>
+                        const options = qb?.options || [];
+                        return `
+                            <div class="question-card">
+                                <div class="question-header">
+                                    <span class="question-number">سؤال ${idx + 1}</span>
+                                    <span class="question-status ${isCorrect ? 'status-correct' : 'status-wrong'}">
+                                        ${isCorrect ? '✓ صحيح' : '✗ خطأ'} (${studentAnswer?.score_earned || 0}/${q.points})
+                                    </span>
+                                </div>
+                                <p class="question-text">${qb?.question_text || ''}</p>
+                                <div class="options-list">
+                                    ${options.map((opt, oIdx) => {
+                                        const isSelected = studentAnswer?.answer_text === opt || studentAnswer?.selected_option_index === oIdx;
+                                        const isCorrectOpt = correctAnswer?.answer_text === opt || correctAnswer?.option_index === oIdx;
+                                        let cls = 'option-item';
+                                        if (isCorrectOpt) cls += ' option-correct';
+                                        else if (isSelected && !isCorrectOpt) cls += ' option-wrong option-selected';
+                                        else if (isSelected) cls += ' option-selected';
+                                        
+                                        return `<div class="${cls}">${opt}</div>`;
+                                    }).join('')}
+                                </div>
+                                ${qb?.explanation ? `
+                                    <div class="explanation">
+                                        <strong>💡 التوضيح:</strong> ${qb.explanation}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+            } catch (err) {
+                console.error(err);
+                App.Toast.error('حدث خطأ في تحميل المراجعة');
+            } finally {
+                App.Loading.hide();
+            }
+        }
+    </script>
 </body>
 </html>
