@@ -1,214 +1,326 @@
-// ============================================
-// shared/supabase-client.js
-// Supabase Client - مع دعم الـ Prefixes الجديدة
-// ============================================
+/**
+ * ============================================
+ * Supabase Client & Auth Module
+ * Exam Platform V2
+ * ============================================
+ */
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-
-// ============================================
-// التكوين - استخدم قيمك الحقيقية
-// ============================================
-
+// Supabase configuration - يجب تعديلها حسب مشروعك
 const SUPABASE_URL = 'https://your-project.supabase.co';
-// المفتاح مشفر (استخدم btoa('your_anon_key_here') لتشفيره)
-const ENCODED_KEY = 'ZW5jb2RlZC1rZXktaGVyZQ=='; // 👈 استبدل هذا بمفتاحك المشفر
-const SUPABASE_ANON_KEY = atob(ENCODED_KEY);
+const SUPABASE_ANON_KEY = 'your-anon-key';
 
-// ============================================
-// إنشاء العميل الرئيسي
-// ============================================
+// Initialize Supabase client
+let supabaseClient = null;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    storage: window.sessionStorage,
-    storageKey: 'exam-platform-auth',
-  },
-  global: {
-    headers: {
-      'X-Application-Name': 'Exam Platform',
-      'X-Client-Version': '3.0.0',
-    },
-  },
-});
-
-// ============================================
-// 📚 دوال مساعدة لجداول الاختبارات (exam_*)
-// ============================================
-
-export const examDB = {
-  // 👤 المستخدمون والأدوار
-  users: () => supabase.from('exam_users'),
-  students: () => supabase.from('exam_students'),
-  teachers: () => supabase.from('exam_teachers'),
-  
-  // 📚 المواد والفصول
-  subjects: () => supabase.from('exam_subjects'),
-  classes: () => supabase.from('exam_classes'),
-  grades: () => supabase.from('exam_grades'),
-  stages: () => supabase.from('exam_stages'),
-  
-  // 📝 الاختبارات
-  exams: () => supabase.from('exam_exams'),
-  questions: () => supabase.from('exam_questions_bank'),
-  examQuestions: () => supabase.from('exam_exam_questions'),
-  
-  // 📊 المحاولات والنتائج
-  attempts: () => supabase.from('exam_attempts'),
-  enrollments: () => supabase.from('exam_enrollments'),
-  requests: () => supabase.from('exam_requests'),
-  
-  // 👥 المجموعات
-  groups: () => supabase.from('exam_groups'),
-  groupMembers: () => supabase.from('exam_group_members'),
-  groupEnrollments: () => supabase.from('exam_group_enrollments'),
-  
-  // 💰 المدفوعات
-  payments: () => supabase.from('exam_payments'),
-  paymentMethods: () => supabase.from('exam_payment_methods'),
-  paymentRequests: () => supabase.from('exam_payment_requests'),
-  coupons: () => supabase.from('exam_coupons'),
-  couponUsages: () => supabase.from('exam_coupon_usages'),
-  
-  // 🔔 الإشعارات
-  notifications: () => supabase.from('exam_notifications'),
-  
-  // 🔗 العلاقات
-  teacherAssignments: () => supabase.from('exam_teacher_assignments'),
-  studentClasses: () => supabase.from('exam_student_classes'),
-  classSubjects: () => supabase.from('exam_class_subjects'),
-  
-  // 📖 المنهج
-  curriculum: () => supabase.from('exam_curriculum'),
-  teacherCurriculum: () => supabase.from('exam_teacher_curriculum'),
-  studentSubjects: () => supabase.from('exam_student_subjects'),
-  
-  // 📦 بنك الأسئلة
-  questionBank: () => supabase.from('exam_question_bank'),
-  questionShareRequests: () => supabase.from('exam_question_share_requests'),
-  
-  // 📝 حقول التسجيل
-  registerFields: () => supabase.from('exam_register_fields'),
-};
-
-// ============================================
-// 🏥 دوال مساعدة لجداول العيادة (clinic_*)
-// ============================================
-
-export const clinicDB = {
-  profiles: () => supabase.from('clinic_profiles'),
-  patients: () => supabase.from('clinic_patients'),
-  appointments: () => supabase.from('clinic_appointments'),
-  medicalRecords: () => supabase.from('clinic_medical_records'),
-  settings: () => supabase.from('clinic_settings'),
-  invoices: () => supabase.from('clinic_invoices'),
-};
-
-// ============================================
-// 🔐 دوال المصادقة المحسنة
-// ============================================
-
-export const auth = {
-  async login(email, password) {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      // تحديث آخر دخول في جدول exam_users
-      await examDB.users()
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
-      
-      return data;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+function getSupabaseClient() {
+    if (!supabaseClient) {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            }
+        });
     }
-  },
-  
-  async logout() {
-    return supabase.auth.signOut();
-  },
-  
-  async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    return user;
-  },
-  
-  async isAuthenticated() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return !!session;
-  },
-  
-  async getRole() {
-    const user = await this.getCurrentUser();
-    if (!user) return null;
-    
-    const { data, error } = await examDB.users()
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    
-    if (error) return null;
-    return data?.role || 'student';
-  },
-  
-  async getUserProfile() {
-    const user = await this.getCurrentUser();
-    if (!user) return null;
-    
-    const { data, error } = await examDB.users()
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    if (error) return null;
-    return data;
-  }
+    return supabaseClient;
+}
+
+// ============================================
+// Auth Module
+// ============================================
+const examAuth = {
+    /**
+     * Get current user with role info
+     */
+    async getUser() {
+        const client = getSupabaseClient();
+        const { data: { user }, error } = await client.auth.getUser();
+        if (error || !user) return null;
+        
+        // Fetch additional profile data
+        const { data: profile } = await client
+            .from('profiles')
+            .select('role, full_name, avatar_url')
+            .eq('id', user.id)
+            .single();
+        
+        if (profile) {
+            user.user_metadata = { ...user.user_metadata, ...profile };
+            user.role = profile.role || 'student';
+        }
+        
+        return user;
+    },
+
+    /**
+     * Sign in with email and password
+     */
+    async signIn(email, password, options = {}) {
+        const client = getSupabaseClient();
+        const { data, error } = await client.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) return { data: null, error };
+        
+        // Update last login
+        await client
+            .from('profiles')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', data.user.id);
+        
+        return { data, error: null };
+    },
+
+    /**
+     * Sign up new user
+     */
+    async signUp(email, password, metadata = {}) {
+        const client = getSupabaseClient();
+        
+        const { data, error } = await client.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: metadata.full_name || '',
+                    role: metadata.role || 'student'
+                }
+            }
+        });
+        
+        if (error) return { data: null, error };
+        
+        // Create profile record
+        if (data.user) {
+            await client.from('profiles').insert({
+                id: data.user.id,
+                email: email,
+                full_name: metadata.full_name || '',
+                role: metadata.role || 'student',
+                created_at: new Date().toISOString()
+            });
+            
+            // If student, create student record
+            if (metadata.role === 'student') {
+                await client.from('exam_students').insert({
+                    user_id: data.user.id,
+                    full_name: metadata.full_name || '',
+                    email: email,
+                    created_at: new Date().toISOString()
+                });
+            }
+        }
+        
+        return { data, error: null };
+    },
+
+    /**
+     * Sign out
+     */
+    async signOut() {
+        const client = getSupabaseClient();
+        await client.auth.signOut();
+        localStorage.clear();
+        sessionStorage.clear();
+    },
+
+    /**
+     * Reset password
+     */
+    async resetPassword(email) {
+        const client = getSupabaseClient();
+        const { data, error } = await client.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/reset-password.html'
+        });
+        return { data, error };
+    },
+
+    /**
+     * Update password
+     */
+    async updatePassword(newPassword) {
+        const client = getSupabaseClient();
+        const { data, error } = await client.auth.updateUser({
+            password: newPassword
+        });
+        return { data, error };
+    },
+
+    /**
+     * Check if admin
+     */
+    async isAdmin() {
+        const user = await this.getUser();
+        return user?.role === 'admin' || user?.user_metadata?.role === 'admin';
+    },
+
+    /**
+     * Check if teacher
+     */
+    async isTeacher() {
+        const user = await this.getUser();
+        return user?.role === 'teacher' || user?.user_metadata?.role === 'teacher';
+    },
+
+    /**
+     * Get current session
+     */
+    async getSession() {
+        const client = getSupabaseClient();
+        const { data, error } = await client.auth.getSession();
+        return { data, error };
+    },
+
+    /**
+     * Subscribe to auth changes
+     */
+    onAuthStateChange(callback) {
+        const client = getSupabaseClient();
+        return client.auth.onAuthStateChange(callback);
+    }
 };
 
 // ============================================
-// 🛡️ دوال الأمان
+// Database Module
 // ============================================
+const examDB = {
+    /**
+     * Get raw Supabase client for advanced queries
+     */
+    client() {
+        return getSupabaseClient();
+    },
 
-// دالة لتسجيل الأحداث الأمنية
-export async function logSecurityEvent(eventType, details = {}, success = true) {
-  try {
-    const user = await auth.getCurrentUser();
-    const ip = await getClientIP();
+    /**
+     * Students table
+     */
+    students() {
+        return getSupabaseClient().from('exam_students');
+    },
+
+    /**
+     * Exams table
+     */
+    exams() {
+        return getSupabaseClient().from('exam_exams');
+    },
+
+    /**
+     * Exam questions junction table
+     */
+    examQuestions() {
+        return getSupabaseClient().from('exam_exam_questions');
+    },
+
+    /**
+     * Questions bank
+     */
+    questionsBank() {
+        return getSupabaseClient().from('exam_questions_bank');
+    },
+
+    /**
+     * Exam attempts
+     */
+    attempts() {
+        return getSupabaseClient().from('exam_attempts');
+    },
+
+    /**
+     * Student answers
+     */
+    answers() {
+        return getSupabaseClient().from('exam_student_answers');
+    },
+
+    /**
+     * Subjects
+     */
+    subjects() {
+        return getSupabaseClient().from('exam_subjects');
+    },
+
+    /**
+     * Security logs
+     */
+    securityLogs() {
+        return getSupabaseClient().from('exam_security_logs');
+    },
+
+    /**
+     * Notifications
+     */
+    notifications() {
+        return getSupabaseClient().from('exam_notifications');
+    },
+
+    /**
+     * Profiles
+     */
+    profiles() {
+        return getSupabaseClient().from('profiles');
+    },
+
+    /**
+     * Generic query builder
+     */
+    from(table) {
+        return getSupabaseClient().from(table);
+    },
+
+    /**
+     * RPC call
+     */
+    rpc(functionName, params = {}) {
+        return getSupabaseClient().rpc(functionName, params);
+    },
+
+    /**
+     * Realtime subscription
+     */
+    subscribe(channel, callback) {
+        return getSupabaseClient()
+            .channel(channel)
+            .on('postgres_changes', { event: '*', schema: 'public' }, callback)
+            .subscribe();
+    },
+
+    /**
+     * Upload file to storage
+     */
+    async uploadFile(bucket, path, file) {
+        const { data, error } = await getSupabaseClient()
+            .storage
+            .from(bucket)
+            .upload(path, file, { upsert: true });
+        return { data, error };
+    },
+
+    /**
+     * Get public URL for file
+     */
+    getPublicUrl(bucket, path) {
+        return getSupabaseClient()
+            .storage
+            .from(bucket)
+            .getPublicUrl(path).data.publicUrl;
+    }
+};
+
+// Initialize on load
+(function init() {
+    // Ensure supabase library is loaded
+    if (typeof supabase === 'undefined') {
+        console.error('Supabase library not loaded. Please include supabase-js script.');
+        return;
+    }
     
-    await supabase.from('security_events').insert({
-      event_type: eventType,
-      user_id: user?.id || null,
-      ip_address: ip,
-      user_agent: navigator.userAgent,
-      details,
-      success,
+    // Auto-refresh session
+    getSupabaseClient().auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+            localStorage.removeItem('exam_backup');
+        }
     });
-  } catch (error) {
-    console.error('Failed to log security event:', error);
-  }
-}
-
-// الحصول على IP العميل
-async function getClientIP() {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch {
-    return null;
-  }
-}
-
-// ============================================
-// 📦 تصدير الكل
-// ============================================
-
-export default supabase;
+})();

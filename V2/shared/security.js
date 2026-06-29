@@ -1,554 +1,351 @@
 /**
  * ============================================
- * Exam Platform - Security System (K-12)
+ * Exam Security Module
+ * Anti-Cheating System
+ * Exam Platform V2
  * ============================================
- * 
- * Features:
- * - Full-screen lock with enforcement
- * - Tab/window switch detection
- * - Copy/paste/print block
- * - Right-click block
- * - DevTools detection
- * - Watermarking with student info
- * - Timer with auto-submit
- * - Webcam snapshot (optional)
- * - Activity logging
  */
 
-class ExamSecurity {
-  constructor(options = {}) {
-    this.options = {
-      enforceFullscreen: true,
-      detectTabSwitch: true,
-      blockCopyPaste: true,
-      blockRightClick: true,
-      blockDevTools: true,
-      watermark: true,
-      timer: true,
-      webcam: false,
-      maxTabSwitches: 3,
-      ...options
-    };
-
-    this.tabSwitchCount = 0;
-    this.isFullscreen = false;
-    this.timerInterval = null;
-    this.remainingSeconds = 0;
-    this.examSubmitted = false;
-    this.securityViolations = [];
-    this.webcamStream = null;
-    this.originalTitle = document.title;
-
-    this.elements = {
-      overlay: null,
-      timer: null,
-      alert: null,
-      watermark: null
-    };
-  }
-
-  /**
-   * Initialize all security measures
-   */
-  init(examData = {}) {
-    this.examData = examData;
-    this.studentInfo = this.getStudentInfo();
-
-    if (this.options.enforceFullscreen) this.setupFullscreen();
-    if (this.options.detectTabSwitch) this.setupTabDetection();
-    if (this.options.blockCopyPaste) this.setupCopyPasteBlock();
-    if (this.options.blockRightClick) this.setupRightClickBlock();
-    if (this.options.blockDevTools) this.setupDevToolsDetection();
-    if (this.options.watermark) this.setupWatermark();
-    if (this.options.timer) this.setupTimer(examData.duration);
-    if (this.options.webcam) this.setupWebcam();
-
-    this.setupKeyboardBlock();
-    this.setupBeforeUnload();
-    this.logActivity('EXAM_STARTED', { exam_id: examData.id });
-
-    console.log('🔒 Exam Security initialized');
-  }
-
-  /**
-   * Full-screen enforcement
-   */
-  setupFullscreen() {
-    this.elements.overlay = document.createElement('div');
-    this.elements.overlay.className = 'security-overlay';
-    this.elements.overlay.innerHTML = `
-      <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
-      <h2>وضع الامتحان الآمن</h2>
-      <p>يجب تشغيل وضع الشاشة الكاملة لبدء الامتحان</p>
-      <button class="btn btn-primary btn-lg" onclick="examSecurity.enterFullscreen()">
-        <span>🖥️</span> دخول وضع الشاشة الكاملة
-      </button>
-      <p style="margin-top: 1rem; font-size: 0.875rem; opacity: 0.6;">
-        لا يمكنك الخروج من هذا الوضع حتى تسلم الامتحان
-      </p>
-    `;
-    document.body.appendChild(this.elements.overlay);
-
-    document.addEventListener('fullscreenchange', () => this.handleFullscreenChange());
-    document.addEventListener('webkitfullscreenchange', () => this.handleFullscreenChange());
-    document.addEventListener('mozfullscreenchange', () => this.handleFullscreenChange());
-    document.addEventListener('MSFullscreenChange', () => this.handleFullscreenChange());
-  }
-
-  enterFullscreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-  }
-
-  handleFullscreenChange() {
-    this.isFullscreen = !!(document.fullscreenElement || 
-      document.webkitFullscreenElement || 
-      document.mozFullScreenElement || 
-      document.msFullscreenElement);
-
-    if (this.isFullscreen) {
-      this.elements.overlay.style.display = 'none';
-      this.showToast('✅ تم تفعيل وضع الامتحان الآمن', 'success');
-    } else if (!this.examSubmitted) {
-      this.elements.overlay.style.display = 'flex';
-      this.recordViolation('FULLSCREEN_EXIT', 'الخروج من وضع الشاشة الكاملة');
-      this.showToast('⚠️ الخروج من وضع الامتحان غير مسموح!', 'warning');
-      setTimeout(() => this.enterFullscreen(), 500);
-    }
-  }
-
-  /**
-   * Tab/Window switch detection
-   */
-  setupTabDetection() {
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && !this.examSubmitted) {
-        this.tabSwitchCount++;
-        this.recordViolation('TAB_SWITCH', `تبديل التبويب (${this.tabSwitchCount}/${this.options.maxTabSwitches})`);
-
-        if (this.tabSwitchCount >= this.options.maxTabSwitches) {
-          this.showSecurityAlert('🚫 تم إنهاء الامتحان بسبب تكرار الخروج من الصفحة');
-          setTimeout(() => this.autoSubmit('TAB_SWITCH_LIMIT'), 3000);
-        } else {
-          this.showToast(`⚠️ تحذير: تبديل التبويب (${this.tabSwitchCount}/${this.options.maxTabSwitches})`, 'warning');
-        }
-      }
-    });
-
-    window.addEventListener('blur', () => {
-      if (!this.examSubmitted) {
-        document.title = '⚠️ عد للامتحان!';
-      }
-    });
-
-    window.addEventListener('focus', () => {
-      document.title = this.originalTitle;
-    });
-  }
-
-  /**
-   * Copy/Paste/Print block
-   */
-  setupCopyPasteBlock() {
-    const blockEvent = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.recordViolation('COPY_PASTE', 'محاولة نسخ/لصق');
-      this.showToast('❌ النسخ واللصق غير مسموح به', 'error');
-      return false;
-    };
-
-    document.addEventListener('copy', blockEvent);
-    document.addEventListener('paste', blockEvent);
-    document.addEventListener('cut', blockEvent);
-
-    // Block print
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault();
-        this.recordViolation('PRINT', 'محاولة طباعة');
-        this.showToast('❌ الطباعة غير مسموح بها', 'error');
-      }
-    });
-
-    // Block text selection on questions
-    document.addEventListener('selectstart', (e) => {
-      if (e.target.closest('.question-text')) {
-        e.preventDefault();
-      }
-    });
-  }
-
-  /**
-   * Right-click block
-   */
-  setupRightClickBlock() {
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      this.recordViolation('RIGHT_CLICK', 'نقرة يمين');
-      this.showToast('❌ النقرة باليمين غير مسموح بها', 'error');
-      return false;
-    });
-  }
-
-  /**
-   * DevTools detection
-   */
-  setupDevToolsDetection() {
-    // Method 1: Console size detection
-    const threshold = 160;
-    const detectDevTools = () => {
-      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-
-      if (widthThreshold || heightThreshold) {
-        this.recordViolation('DEVTOOLS', 'فتح أدوات المطور');
-        this.showSecurityAlert('🚫 تم إنهاء الامتحان: فتح أدوات المطور');
-        setTimeout(() => this.autoSubmit('DEVTOOLS_OPEN'), 2000);
-      }
-    };
-
-    setInterval(detectDevTools, 1000);
-
-    // Method 2: Debugger detection
-    const checkDebugger = () => {
-      const start = performance.now();
-      debugger;
-      const end = performance.now();
-      if (end - start > 100) {
-        this.recordViolation('DEBUGGER', 'تفعيل debugger');
-        this.showSecurityAlert('🚫 تم إنهاء الامتحان');
-        setTimeout(() => this.autoSubmit('DEBUGGER'), 2000);
-      }
-    };
-    setInterval(checkDebugger, 2000);
-
-    // Method 3: Block F12, Ctrl+Shift+I/J
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12' || 
-          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-          (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
-        this.recordViolation('DEVTOOLS_KEY', 'ضغط مفتاح DevTools');
-        this.showToast('❌ هذا المفتاح غير مسموح به', 'error');
-      }
-    });
-  }
-
-  /**
-   * Keyboard block for exam mode
-   */
-  setupKeyboardBlock() {
-    document.addEventListener('keydown', (e) => {
-      // Block Alt+Tab, Alt+F4, Windows key
-      if (e.altKey && (e.key === 'Tab' || e.key === 'F4')) {
-        e.preventDefault();
-        this.recordViolation('SYSTEM_KEY', 'ضغط مفتاح نظام');
-      }
-
-      // Block Escape (unless in dialog)
-      if (e.key === 'Escape' && !e.target.closest('.modal')) {
-        e.preventDefault();
-      }
-    });
-  }
-
-  /**
-   * Watermarking
-   */
-  setupWatermark() {
-    if (!this.studentInfo) return;
-
-    const text = `${this.studentInfo.name} | ${this.studentInfo.id} | ${new Date().toLocaleDateString('ar-EG')}`;
-
-    // Create multiple watermarks
-    for (let i = 0; i < 20; i++) {
-      const wm = document.createElement('div');
-      wm.className = 'watermark';
-      wm.textContent = text;
-      wm.style.top = `${(i * 10) + 5}%`;
-      wm.style.left = `${(i % 2 === 0 ? 5 : 50)}%`;
-      document.body.appendChild(wm);
-    }
-  }
-
-  /**
-   * Timer with auto-submit
-   */
-  setupTimer(durationMinutes) {
-    this.remainingSeconds = durationMinutes * 60;
-
-    this.elements.timer = document.createElement('div');
-    this.elements.timer.className = 'exam-timer';
-    document.body.appendChild(this.elements.timer);
-
-    this.updateTimerDisplay();
-
-    this.timerInterval = setInterval(() => {
-      this.remainingSeconds--;
-      this.updateTimerDisplay();
-
-      if (this.remainingSeconds <= 0) {
-        this.autoSubmit('TIME_UP');
-      }
-    }, 1000);
-  }
-
-  updateTimerDisplay() {
-    const mins = Math.floor(this.remainingSeconds / 60);
-    const secs = this.remainingSeconds % 60;
-    const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-    this.elements.timer.innerHTML = `
-      <span>⏱️</span>
-      <span>${timeStr}</span>
-    `;
-
-    if (this.remainingSeconds <= 60) {
-      this.elements.timer.className = 'exam-timer danger';
-    } else if (this.remainingSeconds <= 300) {
-      this.elements.timer.className = 'exam-timer warning';
-    }
-  }
-
-  getRemainingTime() {
-    return this.remainingSeconds;
-  }
-
-  /**
-   * Webcam snapshot (optional)
-   */
-  async setupWebcam() {
-    try {
-      this.webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-      // Take snapshot every 30 seconds
-      setInterval(() => this.takeSnapshot(), 30000);
-
-      // Also take snapshot on violations
-      console.log('📷 Webcam initialized');
-    } catch (err) {
-      console.warn('Webcam access denied:', err);
-      this.recordViolation('WEBCAM_DENIED', 'رفض الوصول للكاميرا');
-    }
-  }
-
-  async takeSnapshot() {
-    if (!this.webcamStream) return;
-
-    try {
-      const video = document.createElement('video');
-      video.srcObject = this.webcamStream;
-      await video.play();
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 320;
-      canvas.height = 240;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, 320, 240);
-
-      // In production: upload to Supabase Storage
-      // const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
-      // await Storage.uploadFile('proctoring', `snapshots/${this.examData.id}/${Date.now()}.jpg`, blob);
-
-      console.log('📷 Snapshot taken');
-    } catch (err) {
-      console.error('Snapshot error:', err);
-    }
-  }
-
-  /**
-   * Before unload warning
-   */
-  setupBeforeUnload() {
-    window.addEventListener('beforeunload', (e) => {
-      if (!this.examSubmitted) {
-        e.preventDefault();
-        e.returnValue = 'هل أنت متأكد من مغادرة الامتحان؟ سيتم فقدان تقدمك.';
-        return e.returnValue;
-      }
-    });
-  }
-
-  /**
-   * Record security violation
-   */
-  recordViolation(type, details) {
-    const violation = {
-      type,
-      details,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    };
-    this.securityViolations.push(violation);
-
-    // Log to database
-    this.logActivity('SECURITY_VIOLATION', violation);
-
-    // Show to user
-    console.warn('🚨 Security Violation:', violation);
-  }
-
-  /**
-   * Auto-submit exam
-   */
-  autoSubmit(reason) {
-    if (this.examSubmitted) return;
-    this.examSubmitted = true;
-
-    clearInterval(this.timerInterval);
-    this.logActivity('EXAM_AUTO_SUBMITTED', { reason, violations: this.securityViolations });
-
-    // Trigger submit event
-    window.dispatchEvent(new CustomEvent('examAutoSubmit', {
-      detail: { reason, violations: this.securityViolations, remainingTime: this.remainingSeconds }
-    }));
-  }
-
-  /**
-   * Submit exam manually
-   */
-  submit() {
-    this.examSubmitted = true;
-    clearInterval(this.timerInterval);
-    this.logActivity('EXAM_SUBMITTED', { violations: this.securityViolations });
-
-    // Exit fullscreen
-    if (document.exitFullscreen) document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
-
-    // Stop webcam
-    if (this.webcamStream) {
-      this.webcamStream.getTracks().forEach(track => track.stop());
-    }
-
-    // Remove overlays
-    if (this.elements.overlay) this.elements.overlay.remove();
-    if (this.elements.timer) this.elements.timer.remove();
-    if (this.elements.alert) this.elements.alert.remove();
-    document.querySelectorAll('.watermark').forEach(el => el.remove());
-    document.querySelectorAll('.security-alert').forEach(el => el.remove());
-  }
-
-  /**
-   * Show security alert
-   */
-  showSecurityAlert(message) {
-    if (!this.elements.alert) {
-      this.elements.alert = document.createElement('div');
-      this.elements.alert.className = 'security-alert';
-      document.body.appendChild(this.elements.alert);
-    }
-
-    this.elements.alert.innerHTML = `
-      <span>🚨</span>
-      <span>${message}</span>
-    `;
-    this.elements.alert.classList.add('show');
-
-    setTimeout(() => {
-      this.elements.alert.classList.remove('show');
-    }, 5000);
-  }
-
-  /**
-   * Show toast notification
-   */
-  showToast(message, type = 'info') {
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.className = 'toast-container';
-      document.body.appendChild(container);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-
-    setTimeout(() => toast.remove(), 4000);
-  }
-
-  /**
-   * Get student info from localStorage/session
-   */
-  getStudentInfo() {
-    try {
-      const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-      return {
-        id: user.id || 'unknown',
-        name: user.full_name || user.email || 'Unknown Student',
-        email: user.email || ''
-      };
-    } catch {
-      return { id: 'unknown', name: 'Unknown Student', email: '' };
-    }
-  }
-
-  /**
-   * Log activity
-   */
-  async logActivity(action, details) {
-    try {
-      const user = JSON.parse(localStorage.getItem('exam_platform_user') || '{}');
-      if (typeof DB !== 'undefined' && DB.logActivity) {
-        await DB.logActivity({
-          user_id: user.id,
-          action,
-          details: JSON.stringify(details),
-          ip: await this.getIP()
+const ExamSecurity = {
+    config: {
+        maxViolations: 3,
+        onViolation: null,
+        onMaxViolations: null,
+        onLog: null,
+        enabled: true
+    },
+    
+    state: {
+        violations: 0,
+        isActive: false,
+        listeners: [],
+        lastFocus: true,
+        blurCount: 0,
+        copyAttempts: 0,
+        resizeCount: 0,
+        devToolsOpen: false,
+        lastWidth: window.outerWidth,
+        lastHeight: window.outerHeight
+    },
+
+    /**
+     * Initialize security monitoring
+     */
+    init(options = {}) {
+        this.config = { ...this.config, ...options };
+        if (!this.config.enabled) return;
+        
+        this.state.isActive = true;
+        this.state.violations = 0;
+        this.state.blurCount = 0;
+        this.state.copyAttempts = 0;
+        
+        this._bindEvents();
+        
+        // Enter exam mode
+        document.body.classList.add('exam-mode');
+        
+        // Prevent context menu
+        this._addListener('contextmenu', document, (e) => {
+            e.preventDefault();
+            this._logViolation('right_click', 'تم محاولة فتح قائمة السياق');
+            return false;
         });
-      }
-    } catch (err) {
-      console.error('Activity log error:', err);
+        
+        // Prevent text selection
+        this._addListener('selectstart', document, (e) => {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Prevent drag
+        this._addListener('dragstart', document, (e) => {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Monitor focus/blur
+        this._addListener('blur', window, () => {
+            if (!this.state.isActive) return;
+            this.state.blurCount++;
+            this._logViolation('tab_switch', `تم مغادرة نافذة الاختبار (${this.state.blurCount})`);
+        });
+        
+        // Prevent keyboard shortcuts
+        this._addListener('keydown', document, (e) => {
+            // Prevent F12
+            if (e.key === 'F12') {
+                e.preventDefault();
+                this._logViolation('devtools', 'تم محاولة فتح أدوات المطور (F12)');
+                return false;
+            }
+            
+            // Prevent Ctrl+Shift+I/J/C/U
+            if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'U'].includes(e.key)) {
+                e.preventDefault();
+                this._logViolation('devtools', 'تم محاولة فتح أدوات المطور');
+                return false;
+            }
+            
+            // Prevent Ctrl+U (view source)
+            if (e.ctrlKey && e.key === 'u') {
+                e.preventDefault();
+                this._logViolation('view_source', 'تم محاولة عرض مصدر الصفحة');
+                return false;
+            }
+            
+            // Prevent Ctrl+P (print)
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                this._logViolation('print', 'تم محاولة الطباعة');
+                return false;
+            }
+            
+            // Prevent Ctrl+S (save)
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                this._logViolation('save', 'تم محاولة حفظ الصفحة');
+                return false;
+            }
+            
+            // Prevent Ctrl+C / Ctrl+X / Ctrl+V outside inputs
+            if ((e.ctrlKey && ['c', 'x', 'v'].includes(e.key.toLowerCase()))) {
+                const active = document.activeElement;
+                if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    this.state.copyAttempts++;
+                    this._logViolation('copy_paste', `تم محاولة نسخ (${this.state.copyAttempts})`);
+                    return false;
+                }
+            }
+            
+            // Prevent Print Screen
+            if (e.key === 'PrintScreen') {
+                e.preventDefault();
+                this._logViolation('screenshot', 'تم ضغط زر Print Screen');
+                return false;
+            }
+        });
+        
+        // Prevent copy/cut/paste events
+        this._addListener('copy', document, (e) => {
+            const active = document.activeElement;
+            if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                this._logViolation('copy', 'محاولة نسخ');
+                return false;
+            }
+        });
+        
+        this._addListener('cut', document, (e) => {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Monitor window resize (possible devtools)
+        this._addListener('resize', window, () => {
+            const widthDiff = Math.abs(window.outerWidth - this.state.lastWidth);
+            const heightDiff = Math.abs(window.outerHeight - this.state.lastHeight);
+            
+            if (widthDiff > 100 || heightDiff > 100) {
+                this.state.resizeCount++;
+                this._logViolation('resize', `تغيير حجم النافذة (${this.state.resizeCount})`);
+            }
+            
+            this.state.lastWidth = window.outerWidth;
+            this.state.lastHeight = window.outerHeight;
+        });
+        
+        // Monitor mouse leaving window
+        this._addListener('mouseout', document, (e) => {
+            if (e.relatedTarget === null) {
+                this._logViolation('mouse_leave', 'مؤشر الماوس غادر النافذة');
+            }
+        });
+        
+        // Detect devtools via console
+        this._detectDevTools();
+        
+        // Periodic check
+        this._intervalId = setInterval(() => {
+            this._detectDevTools();
+            this._checkFullscreen();
+        }, 1000);
+        
+        // Enter fullscreen
+        this._requestFullscreen();
+        
+        console.log('[ExamSecurity] Initialized');
+    },
+
+    /**
+     * Disable security monitoring
+     */
+    disable() {
+        this.state.isActive = false;
+        this.state.listeners.forEach(({ el, event, handler }) => {
+            el.removeEventListener(event, handler);
+        });
+        this.state.listeners = [];
+        
+        if (this._intervalId) {
+            clearInterval(this._intervalId);
+        }
+        
+        document.body.classList.remove('exam-mode');
+        console.log('[ExamSecurity] Disabled');
+    },
+
+    /**
+     * Get current violation count
+     */
+    getViolationCount() {
+        return this.state.violations;
+    },
+
+    /**
+     * Reset violations
+     */
+    reset() {
+        this.state.violations = 0;
+        this.state.blurCount = 0;
+        this.state.copyAttempts = 0;
+    },
+
+    // ============================================
+    // Private Methods
+    // ============================================
+
+    _addListener(element, event, handler) {
+        const el = typeof element === 'string' ? document : element;
+        el.addEventListener(event, handler, true);
+        this.state.listeners.push({ el, event, handler });
+    },
+
+    _logViolation(type, message) {
+        if (!this.state.isActive) return;
+        
+        this.state.violations++;
+        
+        const entry = {
+            type,
+            message,
+            count: this.state.violations,
+            timestamp: new Date().toISOString(),
+            url: window.location.href
+        };
+        
+        // Call log callback
+        if (this.config.onLog) {
+            this.config.onLog(entry);
+        }
+        
+        // Call violation callback
+        if (this.config.onViolation) {
+            this.config.onViolation(this.state.violations, message);
+        }
+        
+        // Check max violations
+        if (this.state.violations >= this.config.maxViolations) {
+            this._triggerMaxViolations();
+        }
+        
+        // Send to server
+        this._sendToServer(entry);
+    },
+
+    _triggerMaxViolations() {
+        this.disable();
+        
+        if (this.config.onMaxViolations) {
+            this.config.onMaxViolations(this.state.violations);
+        }
+        
+        // Auto submit
+        if (typeof autoSubmit === 'function') {
+            autoSubmit('security_violation');
+        }
+    },
+
+    async _sendToServer(entry) {
+        try {
+            const user = await examAuth.getUser();
+            await fetch('../supabase/functions/security-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user?.id,
+                    type: entry.type,
+                    message: entry.message,
+                    data: { count: entry.count },
+                    url: entry.url,
+                    user_agent: navigator.userAgent
+                })
+            });
+        } catch (e) {
+            console.error('[ExamSecurity] Failed to log:', e);
+        }
+    },
+
+    _detectDevTools() {
+        const threshold = 160;
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        
+        if (widthThreshold || heightThreshold) {
+            if (!this.state.devToolsOpen) {
+                this.state.devToolsOpen = true;
+                this._logViolation('devtools_open', 'تم اكتشاف فتح أدوات المطور');
+            }
+        } else {
+            this.state.devToolsOpen = false;
+        }
+    },
+
+    _checkFullscreen() {
+        if (!document.fullscreenElement && this.state.isActive) {
+            // Optional: warn about not being in fullscreen
+            // this._logViolation('fullscreen_exit', 'تم الخروج من وضع ملء الشاشة');
+        }
+    },
+
+    _requestFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(() => {});
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        }
+    },
+
+    _bindEvents() {
+        // Prevent beforeunload spam
+        this._addListener(window, 'beforeunload', (e) => {
+            if (this.state.isActive) {
+                e.preventDefault();
+                e.returnValue = 'هل أنت متأكد من مغادرة الاختبار؟';
+            }
+        });
     }
-  }
+};
 
-  async getIP() {
-    try {
-      const res = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
-      return data.ip;
-    } catch {
-      return 'unknown';
+// ============================================
+// Visibility API (additional protection)
+// ============================================
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && ExamSecurity.state.isActive) {
+        ExamSecurity._logViolation('visibility_hidden', 'تم إخفاء الصفحة');
     }
-  }
+});
 
-  /**
-   * Get security report
-   */
-  getSecurityReport() {
-    return {
-      violations: this.securityViolations,
-      tabSwitchCount: this.tabSwitchCount,
-      remainingTime: this.remainingSeconds,
-      examSubmitted: this.examSubmitted,
-      startTime: this.examData?.startTime,
-      endTime: new Date().toISOString()
-    };
-  }
-}
-
-// Global instance
-let examSecurity = null;
-
-function initExamSecurity(options) {
-  examSecurity = new ExamSecurity(options);
-  return examSecurity;
-}
-
-function getExamSecurity() {
-  return examSecurity;
-}
-
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ExamSecurity, initExamSecurity, getExamSecurity };
-}
+// Prevent console clearing
+const originalClear = console.clear;
+console.clear = function() {
+    if (ExamSecurity.state.isActive) {
+        ExamSecurity._logViolation('console_clear', 'تم محاولة مسح الكونسول');
+    }
+    originalClear.apply(console, arguments);
+};
