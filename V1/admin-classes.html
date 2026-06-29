@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة الصفوف والمواد - منصة الاختبارات</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
@@ -391,8 +393,6 @@
         </div>
     </div>
 
-    <script src="js/supabase-config.js"></script>
-    <script src="js/utils.js"></script>
     <script>
         // ==================== التحقق من صلاحية الدخول ====================
         (function() {
@@ -408,12 +408,9 @@
         let currentClassId = null;
         let currentSubjectId = null;
         let currentClassSubjects = [];
-        
-        // Pagination variables
         let allClasses = [];
         let classesPage = 1;
         let itemsPerPage = 10;
-        
         let allSubjects = [];
         let subjectsPage = 1;
         
@@ -436,6 +433,7 @@
         // ==================== تحميل الإحصائيات ====================
         async function loadStats() {
             try {
+                // استخدام TABLES من supabase-config.js
                 const classes = await fetchClasses();
                 const subjects = await fetchSubjects();
                 const teachers = await fetchUsers({ role: 'teacher' });
@@ -465,12 +463,11 @@
                 
                 allClasses = classes;
                 
-                // Pagination
                 const totalPages = Math.ceil(allClasses.length / itemsPerPage);
                 const startIndex = (classesPage - 1) * itemsPerPage;
                 const paginatedClasses = allClasses.slice(startIndex, startIndex + itemsPerPage);
                 
-                await renderClassesTable(paginatedClasses);
+                renderClassesTable(paginatedClasses);
                 renderClassesPagination(totalPages);
                 
             } catch (error) {
@@ -492,6 +489,7 @@
             tbody.innerHTML = '';
             for (let i = 0; i < classes.length; i++) {
                 const c = classes[i];
+                // استخدام fetchClassSubjects من supabase-config.js
                 const classSubjects = await fetchClassSubjects(c.id);
                 const subjectsNames = classSubjects.map(cs => cs.subjects?.name).filter(n => n).join(', ');
                 
@@ -621,12 +619,11 @@
                 
                 allSubjects = subjects;
                 
-                // Pagination
                 const totalPages = Math.ceil(allSubjects.length / itemsPerPage);
                 const startIndex = (subjectsPage - 1) * itemsPerPage;
                 const paginatedSubjects = allSubjects.slice(startIndex, startIndex + itemsPerPage);
                 
-                await renderSubjectsTable(paginatedSubjects);
+                renderSubjectsTable(paginatedSubjects);
                 renderSubjectsPagination(totalPages);
                 
             } catch (error) {
@@ -648,6 +645,7 @@
             tbody.innerHTML = '';
             for (let i = 0; i < subjects.length; i++) {
                 const s = subjects[i];
+                // استخدام fetchSubjectClasses من supabase-config.js
                 const subjectClasses = await fetchSubjectClasses(s.id);
                 const classesNames = subjectClasses.map(sc => sc.classes?.name).filter(n => n).join(', ');
                 
@@ -817,7 +815,7 @@
                 return;
             }
             
-            const success = await addSubjectToClassId(parseInt(classId), parseInt(subjectId));
+            const success = await addSubjectToClass(parseInt(classId), parseInt(subjectId));
             if (success) {
                 showToast('تم إضافة المادة إلى الصف', 'success');
                 loadClassSubjects();
@@ -830,48 +828,13 @@
         
         async function removeSubjectFromClass(classSubjectId) {
             showConfirm('هل أنت متأكد من إزالة هذه المادة من الصف؟', async function() {
-                const success = await removeSubjectFromClassId(classSubjectId);
+                const success = await removeSubjectFromClass(classSubjectId);
                 if (success) {
                     showToast('تم إزالة المادة من الصف', 'success');
                     loadClassSubjects();
                     loadClasses();
                     loadSubjects();
                 }
-            });
-        }
-        
-        // ==================== دوال مساعدة ====================
-        async function addSubjectToClassId(classId, subjectId) {
-            const { error } = await sb
-                .from('class_subjects')
-                .insert({ class_id: classId, subject_id: subjectId });
-            return !error;
-        }
-        
-        async function removeSubjectFromClassId(classSubjectId) {
-            const { error } = await sb
-                .from('class_subjects')
-                .delete()
-                .eq('id', classSubjectId);
-            return !error;
-        }
-        
-        async function fetchSubjectClasses(subjectId) {
-            const { data, error } = await sb
-                .from('class_subjects')
-                .select('*, classes(*)')
-                .eq('subject_id', subjectId);
-            if (error) return [];
-            return data || [];
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
             });
         }
         
@@ -885,6 +848,7 @@
             loadSubjects();
         });
         
+        // ==================== تصدير الدوال ====================
         window.showTab = showTab;
         window.goToClassesPage = goToClassesPage;
         window.goToSubjectsPage = goToSubjectsPage;
@@ -901,6 +865,10 @@
         window.addSubjectToClass = addSubjectToClass;
         window.removeSubjectFromClass = removeSubjectFromClass;
         window.loadClassSubjects = loadClassSubjects;
+        window.loadClassSubjectsSelect = loadClassSubjectsSelect;
+        window.loadStats = loadStats;
+        window.loadClasses = loadClasses;
+        window.loadSubjects = loadSubjects;
         
         // ==================== تحميل أولي ====================
         loadStats();
