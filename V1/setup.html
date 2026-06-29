@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعداد المستخدمين - منصة الاختبارات</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+body{background:linear-gradient(135deg,#f5f7fa 0%,#e4e8f0 100%);min-height:100vh;padding:40px 20px}
+.setup-container{max-width:800px;margin:0 auto}
+.setup-card{background:white;border-radius:24px;padding:32px;margin-bottom:24px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1)}
+.setup-title{font-size:1.5rem;font-weight:800;color:#1e293b;margin-bottom:8px}
+.setup-desc{color:#64748b;margin-bottom:24px}
+.user-type{border:2px solid #e2e8f0;border-radius:16px;padding:20px;margin-bottom:16px;transition:all 0.2s}
+.user-type:hover{border-color:#6366f1}
+.user-type-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.user-type-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.user-type-admin .user-type-icon{background:#fee2e2}
+.user-type-teacher .user-type-icon{background:#dbeafe}
+.user-type-student .user-type-icon{background:#d1fae5}
+.user-type h3{font-size:1.125rem;font-weight:700}
+.user-type p{color:#64748b;font-size:0.875rem;margin-bottom:12px}
+.credentials{background:#f8fafc;border-radius:12px;padding:16px;font-family:monospace;font-size:0.875rem}
+.credentials strong{color:#4f46e5}
+.btn-create{width:100%;margin-top:12px}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;margin-top:8px}
+.status-exists{background:#d1fae5;color:#065f46}
+.status-missing{background:#fee2e2;color:#991b1b}
+.log-console{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:20px;font-family:monospace;font-size:0.875rem;max-height:300px;overflow-y:auto;margin-top:24px}
+.log-entry{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #334155}
+.log-time{color:#94a3b8;font-size:0.75rem}
+.log-success{color:#34d399}
+.log-error{color:#f87171}
+.log-info{color:#60a5fa}
+</style>
+</head>
+<body>
+<div class="setup-container">
+<div class="setup-card">
+<h1 class="setup-title">⚙️ إعداد المستخدمين التجريبيين</h1>
+<p class="setup-desc">أنشئ مستخدمين جاهزين للاختبار في ثوانٍ. كلمة المرور للجميع: <strong>demo123</strong></p>
+<div id="usersStatus"></div>
+<div style="display:flex;gap:12px;margin-top:24px">
+<button class="btn btn-primary" onclick="createAllUsers()" style="flex:1">✨ إنشاء كل المستخدمين</button>
+<button class="btn btn-outline" onclick="checkExisting()" style="flex:1">🔍 فحص القاعدة</button>
+</div>
+</div>
+<div class="log-console" id="logConsole">
+<div class="log-entry"><span class="log-time">[System]</span> جاهز للبدء...</div>
+</div>
+</div>
+<script>
+const SUPABASE_URL='https://cuchwughgvhiwgaoodib.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1Y2h3dWdoZ3ZoaXdnYW9vZGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDUzMTUsImV4cCI6MjA5NjUyMTMxNX0.vM_wo2q8QYzdSa93wv4lAXv2q-zR1_5VXk2yfJ9pxgQ';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+async function hashPassword(password){const encoder=new TextEncoder();const data=encoder.encode(password);const hash=await crypto.subtle.digest('SHA-256',data);return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+function log(message,type='info'){const console=document.getElementById('logConsole');const time=new Date().toLocaleTimeString('ar-EG');const colorClass=type==='success'?'log-success':type==='error'?'log-error':'log-info';console.innerHTML+=`<div class="log-entry"><span class="log-time">[${time}]</span> <span class="${colorClass}">${message}</span></div>`;console.scrollTop=console.scrollHeight;}
+const demoUsers=[{role:'admin',name:'مدير النظام',username:'admin',phone:'01000000001',icon:'👨‍💼',color:'user-type-admin'},{role:'teacher',name:'معلم تجريبي',username:'teacher',phone:'01000000002',icon:'👨‍🏫',color:'user-type-teacher'},{role:'student',name:'طالب تجريبي',username:'student',phone:'01000000003',icon:'👨‍🎓',color:'user-type-student'}];
+async function checkExisting(){log('جاري فحص المستخدمين الموجودين...','info');const container=document.getElementById('usersStatus');container.innerHTML='';for(const user of demoUsers){const{data}=await sb.from('users').select('id,name,role,status').eq('username',user.username).maybeSingle();const div=document.createElement('div');div.className=`user-type ${user.color}`;div.innerHTML=`<div class="user-type-header"><div class="user-type-icon">${user.icon}</div><div><h3>${user.name}</h3><span class="status-badge ${data?'status-exists':'status-missing'}">${data?'✅ موجود':'❌ غير موجود'}</span></div></div><p>اسم المستخدم: <strong>${user.username}</strong> | كلمة المرور: <strong>demo123</strong></p>${data?`<p>الحالة: ${data.status} | ID: ${data.id}</p>`:''}`;container.appendChild(div);}log('اكتمل الفحص','success');}
+async function createAllUsers(){log('بدء إنشاء المستخدمين...','info');const password=await hashPassword('demo123');for(const user of demoUsers){const{data:existing}=await sb.from('users').select('id').eq('username',user.username).maybeSingle();if(existing){log(`المستخدم ${user.username} موجود بالفعل، يتم تخطيه...`,'info');continue;}const{data,error}=await sb.from('users').insert({name:user.name,username:user.username,phone:user.phone,password_hash:password,role:user.role,status:'active',created_at:new Date().toISOString()}).select().single();if(error){log(`❌ فشل إنشاء ${user.username}: ${error.message}`,'error');}else{log(`✅ تم إنشاء ${user.name} (${user.username}) بنجاح!`,'success');}}log('اكتملت العملية! يمكنك الآن تسجيل الدخول.','success');checkExisting();}
+checkExisting();
+</script>
+</body>
+</html>
