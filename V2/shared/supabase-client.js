@@ -16,12 +16,10 @@ let supabaseClient = null;
 
 function initSupabase() {
     if (typeof supabase === 'undefined') {
-        console.error('❌ Supabase library not loaded! Make sure to include:');
-        console.error('   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
-        console.error('   BEFORE this file in your HTML.');
+        console.error('Supabase library not loaded!');
         return null;
     }
-    
+
     if (!supabaseClient) {
         try {
             supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
@@ -31,9 +29,9 @@ function initSupabase() {
                     detectSessionInUrl: true
                 }
             });
-            console.log('✅ Supabase client initialized successfully');
+            console.log('Supabase client initialized');
         } catch (error) {
-            console.error('❌ Failed to initialize Supabase client:', error);
+            console.error('Failed to initialize Supabase:', error);
             return null;
         }
     }
@@ -47,7 +45,6 @@ function getSupabaseClient() {
     return supabaseClient;
 }
 
-// Legacy alias
 const sb = getSupabaseClient();
 
 // ==================== TABLE NAMES ====================
@@ -78,7 +75,6 @@ function getUser() {
         const user = localStorage.getItem('exam_user');
         return user ? JSON.parse(user) : null;
     } catch (e) {
-        console.error('Error getting user:', e);
         return null;
     }
 }
@@ -86,9 +82,7 @@ function getUser() {
 function setUser(user) {
     try {
         localStorage.setItem('exam_user', JSON.stringify(user));
-    } catch (e) {
-        console.error('Error setting user:', e);
-    }
+    } catch (e) {}
 }
 
 function logout() {
@@ -108,14 +102,16 @@ async function loginUser(identifier, password) {
     try {
         const client = getSupabaseClient();
         if (!client) {
-            return { success: false, error: 'فشل الاتصال بقاعدة البيانات' };
+            return { success: false, error: 'Database connection failed' };
         }
-        
+
         const hashedPassword = await hashPassword(password);
         let query = client.from(TABLES.users).select('*');
 
         if (/^\d+$/.test(identifier)) {
             query = query.eq('phone', identifier);
+        } else if (identifier.includes('@')) {
+            query = query.eq('email', identifier);
         } else {
             query = query.eq('username', identifier);
         }
@@ -123,33 +119,14 @@ async function loginUser(identifier, password) {
         const { data, error } = await query.single();
 
         if (error || !data) {
-            const { data: emailData, error: emailError } = await client
-                .from(TABLES.users).select('*').eq('email', identifier).single();
-            if (emailError || !emailData) {
-                return { success: false, error: 'المستخدم غير موجود' };
-            }
-            if (emailData.password_hash !== hashedPassword) {
-                return { success: false, error: 'كلمة المرور غير صحيحة' };
-            }
-            if (emailData.status !== 'active') {
-                return { success: false, error: 'الحساب غير مفعل' };
-            }
-            return {
-                success: true,
-                user: {
-                    id: emailData.id, name: emailData.name, role: emailData.role,
-                    email: emailData.email, phone: emailData.phone,
-                    username: emailData.username, class_id: emailData.class_id,
-                    status: emailData.status
-                }
-            };
+            return { success: false, error: 'User not found' };
         }
 
         if (data.password_hash !== hashedPassword) {
-            return { success: false, error: 'كلمة المرور غير صحيحة' };
+            return { success: false, error: 'Incorrect password' };
         }
         if (data.status !== 'active') {
-            return { success: false, error: 'الحساب غير مفعل' };
+            return { success: false, error: 'Account not active' };
         }
 
         return {
@@ -163,40 +140,35 @@ async function loginUser(identifier, password) {
         };
     } catch (error) {
         console.error('Error in loginUser:', error);
-        return { success: false, error: 'حدث خطأ غير متوقع' };
+        return { success: false, error: 'Unexpected error' };
     }
 }
 
 // ==================== ADMIN DEFAULT ACCOUNT ====================
-// Creates a default admin account if no admin exists
 async function createDefaultAdmin() {
     try {
         const client = getSupabaseClient();
         if (!client) return { success: false, error: 'No database connection' };
-        
-        // Check if any admin exists
+
         const { data: existingAdmins, error: checkError } = await client
             .from(TABLES.users)
             .select('id')
             .eq('role', 'admin')
             .limit(1);
-        
+
         if (checkError) {
-            console.error('Error checking admin:', checkError);
             return { success: false, error: checkError.message };
         }
-        
+
         if (existingAdmins && existingAdmins.length > 0) {
-            console.log('✅ Admin account already exists');
             return { success: true, message: 'Admin already exists', created: false };
         }
-        
-        // Create default admin
+
         const defaultPassword = await hashPassword('admin123');
         const { data: newAdmin, error: insertError } = await client
             .from(TABLES.users)
             .insert({
-                name: 'مدير النظام',
+                name: 'System Admin',
                 username: 'admin',
                 email: 'admin@examplatform.com',
                 password_hash: defaultPassword,
@@ -206,17 +178,13 @@ async function createDefaultAdmin() {
             })
             .select()
             .single();
-        
+
         if (insertError) {
-            console.error('Error creating admin:', insertError);
             return { success: false, error: insertError.message };
         }
-        
-        console.log('✅ Default admin created successfully');
-        console.log('   Username: admin');
-        console.log('   Password: admin123');
-        console.log('   Email: admin@examplatform.com');
-        
+
+        console.log('Default admin created: username=admin, password=admin123');
+
         return { 
             success: true, 
             message: 'Admin created', 
@@ -228,7 +196,6 @@ async function createDefaultAdmin() {
             }
         };
     } catch (error) {
-        console.error('Error creating default admin:', error);
         return { success: false, error: error.message };
     }
 }
@@ -258,12 +225,12 @@ function getEffectiveUser() {
 }
 
 async function impersonateUser(userId) {
-    if (!isAdmin()) return { success: false, error: 'غير مصرح' };
+    if (!isAdmin()) return { success: false, error: 'Not authorized' };
     const client = getSupabaseClient();
     if (!client) return { success: false, error: 'No database connection' };
-    
+
     const { data, error } = await client.from(TABLES.users).select('*').eq('id', userId).single();
-    if (error || !data) return { success: false, error: 'المستخدم غير موجود' };
+    if (error || !data) return { success: false, error: 'User not found' };
     const originalUser = getUser();
     localStorage.setItem('originalUser', JSON.stringify(originalUser));
     const impersonatedUser = {
@@ -433,7 +400,7 @@ async function fetchAdminStats() {
     try {
         const client = getSupabaseClient();
         if (!client) return { totalUsers: 0, teachers: 0, students: 0, totalExams: 0, pendingQuestions: 0, totalGroups: 0, totalAttempts: 0 };
-        
+
         const { data: users } = await client.from(TABLES.users).select('role');
         const { data: exams } = await client.from(TABLES.exams).select('status');
         const { data: questions } = await client.from(TABLES.questions).select('status').eq('status', 'pending');
@@ -516,4 +483,4 @@ window.fetchAdminStats = fetchAdminStats;
 window.fetchTeacherStats = fetchTeacherStats;
 window.fetchStudentStats = fetchStudentStats;
 
-console.log('✅ supabase-client.js (FIXED V2) loaded successfully');
+console.log('supabase-client.js (FIXED V2) loaded');
