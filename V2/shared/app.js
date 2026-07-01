@@ -1,6 +1,6 @@
 /**
  * ============================================
- * App Utilities Module - V2 Style
+ * App Utilities Module - FIXED V2
  * Exam Platform - Merged V1+V2
  * ============================================
  */
@@ -64,7 +64,7 @@ const App = {
                 this.overlay.className = 'loading-overlay';
                 this.overlay.innerHTML = `
                     <div class="loading-spinner"></div>
-                    <p class="loading-text">جاري التحميل...</p>
+                    <div class="loading-text">جاري التحميل...</div>
                 `;
                 document.body.appendChild(this.overlay);
             }
@@ -93,7 +93,7 @@ const App = {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
-                modal.offsetHeight; // Force reflow
+                modal.offsetHeight;
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
@@ -253,12 +253,12 @@ const App = {
             modal.id = modalId;
             modal.className = 'modal-overlay';
             modal.innerHTML = `
-                <div class="modal-content confirm-content">
+                <div class="modal-content">
                     <h3>${title}</h3>
                     <p>${message}</p>
-                    <div class="confirm-buttons">
-                        <button class="btn btn-success" id="confirmBtn_${modalId}">نعم</button>
-                        <button class="btn btn-secondary" id="cancelBtn_${modalId}">لا</button>
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" id="confirmBtn_${modalId}">تأكيد</button>
+                        <button class="btn btn-secondary" id="cancelBtn_${modalId}">إلغاء</button>
                     </div>
                 </div>
             `;
@@ -324,7 +324,7 @@ const App = {
     },
 
     // ============================================
-    // Export to Excel (using SheetJS if available)
+    // Export to Excel
     // ============================================
     exportExcel(data, filename, sheetName = 'Sheet1') {
         if (typeof XLSX === 'undefined') {
@@ -348,7 +348,7 @@ const App = {
     },
 
     // ============================================
-    // Format Number (Arabic numerals)
+    // Format Number
     // ============================================
     formatNumber(num) {
         return new Intl.NumberFormat('ar-SA').format(num);
@@ -431,19 +431,21 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================
-// Demo Mode Handler
+// Demo Mode Handler - FIXED: Small badge at bottom
 // ============================================
 const DemoMode = {
     isActive() {
-        return App.Storage.get('demo_user') !== null;
+        const user = getUser?.();
+        return user && user.id && String(user.id).startsWith('demo-');
     },
 
     getUser() {
-        return App.Storage.get('demo_user');
+        return getUser?.();
     },
 
     getRole() {
-        return App.Storage.get('demo_role');
+        const user = this.getUser();
+        return user ? user.role : null;
     },
 
     getMockData(type) {
@@ -477,23 +479,16 @@ const DemoMode = {
     init() {
         if (!this.isActive()) return;
 
-        window.examAuth = {
-            ...window.examAuth,
-            getUser: async () => this.getUser(),
-            isAdmin: async () => this.getRole() === 'admin',
-            isTeacher: async () => this.getRole() === 'teacher',
-            getSession: async () => ({ data: { session: { user: this.getUser() } }, error: null })
-        };
-
+        // Add demo badge - FIXED: Small, positioned at bottom-left
         const badge = document.createElement('div');
-        badge.className = 'demo-badge';
+        badge.className = 'demo-badge-fixed';
         badge.innerHTML = `⚡ وضع المعاينة — ${this.getRole() === 'admin' ? 'مدير' : this.getRole() === 'teacher' ? 'معلم' : 'طالب'}`;
         document.body.appendChild(badge);
     },
 
     exit() {
         App.Storage.clear();
-        window.location.href = '../login.html';
+        window.location.href = 'login.html';
     }
 };
 

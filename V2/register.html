@@ -268,17 +268,6 @@
             font-weight: 700;
         }
 
-        .step-line {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            height: 3px;
-            background: #e8e8e8;
-            z-index: -1;
-        }
-
         /* ========== Form Groups ========== */
         .form-group {
             margin-bottom: 22px;
@@ -863,7 +852,16 @@
         // ========== Toggle Password ==========
         function togglePassword(fieldId) {
             const field = document.getElementById(fieldId);
-            field.type = field.type === 'password' ? 'text' : 'password';
+            const icon = event.target;
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
 
         // ========== Password Strength ==========

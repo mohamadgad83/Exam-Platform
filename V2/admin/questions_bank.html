@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بنك الأسئلة — لوحة التحكم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: #f5f7fa; }
+
+        .sidebar { width: 260px; background: #1a1a2e; min-height: 100vh; position: fixed; right: 0; top: 0; color: white; z-index: 100; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header h2 { font-size: 20px; }
+        .sidebar-menu { padding: 20px 0; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 14px 25px; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(102,126,234,0.2); color: white; border-right: 3px solid #667eea; }
+        .sidebar-menu i { width: 24px; text-align: center; }
+
+        .main-content { margin-right: 260px; padding: 30px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: #333; font-size: 28px; }
+
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-family: 'Tajawal'; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.3); }
+
+        .btn-secondary { background: #e8e8e8; color: #333; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Tajawal'; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-secondary:hover { background: #d0d0d0; }
+
+        .card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
+
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 10px 16px; border: 2px solid #e8e8e8; border-radius: 10px; font-family: 'Tajawal'; font-size: 14px; }
+        .filters select:focus, .filters input:focus { outline: none; border-color: #667eea; }
+
+        /* Question Card */
+        .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent; transition: all 0.3s; }
+        .question-card:hover { border-color: #667eea; box-shadow: 0 4px 20px rgba(102,126,234,0.1); }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .question-type { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .type-mcq { background: #e8f4fd; color: #2980b9; }
+        .type-truefalse { background: #efe; color: #27ae60; }
+        .type-essay { background: #fff3e0; color: #f39c12; }
+        .question-text { font-size: 16px; color: #333; line-height: 1.8; margin-bottom: 15px; font-weight: 500; }
+        .question-image { max-width: 300px; max-height: 200px; border-radius: 10px; margin: 10px 0; }
+        .options-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        .option-item { padding: 10px 15px; background: #f8f9ff; border: 2px solid #e8e8ff; border-radius: 10px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .option-item.correct { background: #efe; border-color: #27ae60; color: #27ae60; }
+        .option-item i { font-size: 12px; }
+        .question-meta { display: flex; gap: 20px; font-size: 12px; color: #888; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+        .question-actions { display: flex; gap: 8px; }
+        .question-actions button { padding: 6px 12px; border-radius: 6px; border: none; font-family: 'Tajawal'; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 700px; margin: 40px auto; animation: modalSlide 0.3s ease; }
+        @keyframes modalSlide { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { margin-bottom: 25px; }
+        .modal-header h3 { color: #333; font-size: 22px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; font-family: 'Tajawal'; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Options */
+        .options-container { display: flex; flex-direction: column; gap: 10px; }
+        .option-row { display: flex; align-items: center; gap: 10px; }
+        .option-row input[type="text"] { flex: 1; }
+        .option-row input[type="radio"] { width: 20px; height: 20px; accent-color: #667eea; }
+        .option-row .remove-option { color: #e74c3c; cursor: pointer; font-size: 14px; padding: 5px; }
+        .option-row .option-image-preview { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 2px solid #e8e8e8; }
+
+        .add-option-btn { padding: 10px; background: #f0f4ff; color: #667eea; border: 2px dashed #667eea; border-radius: 10px; font-family: 'Tajawal'; font-weight: 600; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .add-option-btn:hover { background: #667eea; color: white; }
+
+        /* Image Paste Area */
+        .image-paste-area { 
+            border: 3px dashed #ddd; 
+            border-radius: 12px; 
+            padding: 30px; 
+            text-align: center; 
+            color: #888; 
+            cursor: pointer; 
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        .image-paste-area:hover, .image-paste-area.dragover { border-color: #667eea; background: #f0f4ff; color: #667eea; }
+        .image-paste-area i { font-size: 32px; margin-bottom: 10px; }
+        .image-paste-area p { font-size: 13px; }
+        .pasted-image { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 10px; }
+        .remove-image { color: #e74c3c; cursor: pointer; font-size: 13px; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; }
+
+        .empty-state { text-align: center; padding: 60px; color: #888; }
+        .empty-state i { font-size: 64px; margin-bottom: 20px; color: #ddd; }
+
+        .demo-badge-fixed { position: fixed; bottom: 20px; left: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 999; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🎓 منصة الاختبارات</h2>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
+            <a href="classes.html"><i class="fas fa-school"></i> الصفوف والمواد</a>
+            <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
+            <a href="questions.html" class="active"><i class="fas fa-question-circle"></i> بنك الأسئلة</a>
+            <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
+            <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>❓ بنك الأسئلة</h1>
+            <button class="btn-primary" onclick="openAddQuestionModal()">
+                <i class="fas fa-plus"></i> إضافة سؤال
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="card">
+            <div class="filters">
+                <select id="filterClass" onchange="onClassFilterChange()">
+                    <option value="">جميع الصفوف</option>
+                </select>
+                <select id="filterSubject" onchange="loadQuestions()">
+                    <option value="">جميع المواد</option>
+                </select>
+                <select id="filterType" onchange="loadQuestions()">
+                    <option value="">جميع الأنواع</option>
+                    <option value="mcq">اختيار من متعدد</option>
+                    <option value="true_false">صح/خطأ</option>
+                    <option value="essay">مقالي</option>
+                </select>
+                <input type="text" id="searchQuestion" placeholder="🔍 البحث في الأسئلة..." oninput="loadQuestions()">
+            </div>
+        </div>
+
+        <!-- Questions List -->
+        <div id="questionsList">
+            <div class="empty-state">
+                <i class="fas fa-question-circle"></i>
+                <h3>لا توجد أسئلة</h3>
+                <p>ابدأ بإضافة أسئلة جديدة لبنك الأسئلة</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Question Modal -->
+    <div class="modal-overlay" id="questionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ إضافة سؤال جديد</h3>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>الصف الدراسي *</label>
+                    <select id="questionClass" onchange="onQuestionClassChange()">
+                        <option value="">اختر الصف</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>المادة الدراسية *</label>
+                    <select id="questionSubject">
+                        <option value="">اختر المادة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>نوع السؤال *</label>
+                <select id="questionType" onchange="onQuestionTypeChange()">
+                    <option value="mcq">اختيار من متعدد</option>
+                    <option value="true_false">صح / خطأ</option>
+                    <option value="essay">مقالي</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>نص السؤال *</label>
+                <textarea id="questionText" placeholder="اكتب نص السؤال هنا..."></textarea>
+            </div>
+
+            <!-- Image Paste Area for Question -->
+            <div class="form-group">
+                <label>صورة السؤال (اختياري)</label>
+                <div class="image-paste-area" id="questionImageArea" onclick="document.getElementById('questionImageInput').click()">
+                    <i class="fas fa-image"></i>
+                    <p>اضغط هنا أو الصق صورة (Ctrl+V) أو اسحب وأفلت</p>
+                    <input type="file" id="questionImageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event, 'question')">
+                </div>
+                <div id="questionImagePreview" style="display: none;">
+                    <img class="pasted-image" id="questionPreviewImg">
+                    <div class="remove-image" onclick="removeImage('question')">
+                        <i class="fas fa-trash"></i> حذف الصورة
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCQ Options -->
+            <div class="form-group" id="mcqOptions">
+                <label>الخيارات * <span style="color: #888; font-weight: normal;">(اختر الإجابة الصحيحة)</span></label>
+                <div class="options-container" id="optionsContainer">
+                    <!-- 4 default options -->
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="0" checked>
+                        <input type="text" placeholder="الخيار الأول" class="option-input" data-index="0">
+                        <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage0').click()" title="إضافة صورة للخيار"></i>
+                        <input type="file" id="optionImage0" accept="image/*" style="display: none;" onchange="handleOptionImage(event, 0)">
+                        <img class="option-image-preview" id="optionPreview0" style="display: none;">
+                        <i class="fas fa-times remove-option" onclick="removeOption(0)" style="display: none;"></i>
+                    </div>
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="1">
+                        <input type="text" placeholder="الخيار الثاني" class="option-input" data-index="1">
+                        <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage1').click()" title="إضافة صورة للخيار"></i>
+                        <input type="file" id="optionImage1" accept="image/*" style="display: none;" onchange="handleOptionImage(event, 1)">
+                        <img class="option-image-preview" id="optionPreview1" style="display: none;">
+                        <i class="fas fa-times remove-option" onclick="removeOption(1)" style="display: none;"></i>
+                    </div>
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="2">
+                        <input type="text" placeholder="الخيار الثالث" class="option-input" data-index="2">
+                        <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage2').click()" title="إضافة صورة للخيار"></i>
+                        <input type="file" id="optionImage2" accept="image/*" style="display: none;" onchange="handleOptionImage(event, 2)">
+                        <img class="option-image-preview" id="optionPreview2" style="display: none;">
+                        <i class="fas fa-times remove-option" onclick="removeOption(2)"></i>
+                    </div>
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="3">
+                        <input type="text" placeholder="الخيار الرابع" class="option-input" data-index="3">
+                        <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage3').click()" title="إضافة صورة للخيار"></i>
+                        <input type="file" id="optionImage3" accept="image/*" style="display: none;" onchange="handleOptionImage(event, 3)">
+                        <img class="option-image-preview" id="optionPreview3" style="display: none;">
+                        <i class="fas fa-times remove-option" onclick="removeOption(3)"></i>
+                    </div>
+                </div>
+                <button class="add-option-btn" onclick="addOption()">
+                    <i class="fas fa-plus"></i> إضافة خيار آخر
+                </button>
+            </div>
+
+            <!-- True/False Answer -->
+            <div class="form-group" id="trueFalseOptions" style="display: none;">
+                <label>الإجابة الصحيحة *</label>
+                <div style="display: flex; gap: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 20px; background: #efe; border-radius: 10px; border: 2px solid #27ae60;">
+                        <input type="radio" name="tfAnswer" value="true" checked style="width: 20px; height: 20px; accent-color: #27ae60;">
+                        <span style="font-weight: 600; color: #27ae60;">صحيح ✅</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px 20px; background: #fee; border-radius: 10px; border: 2px solid #e74c3c;">
+                        <input type="radio" name="tfAnswer" value="false" style="width: 20px; height: 20px; accent-color: #e74c3c;">
+                        <span style="font-weight: 600; color: #e74c3c;">خطأ ❌</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>درجة السؤال</label>
+                    <input type="number" id="questionPoints" value="1" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>مستوى الصعوبة</label>
+                    <select id="questionDifficulty">
+                        <option value="easy">سهل</option>
+                        <option value="medium" selected>متوسط</option>
+                        <option value="hard">صعب</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('questionModal')">إلغاء</button>
+                <button class="btn-primary" onclick="saveQuestion()">حفظ السؤال</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+
+    <script>
+        let classes = [];
+        let subjects = [];
+        let questions = [];
+        let currentUser = null;
+        let optionCount = 4;
+        let questionImageData = null;
+        let optionImages = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = getUser?.();
+            if (!currentUser) {
+                window.location.href = '../login.html';
+                return;
+            }
+            await loadClasses();
+            await loadSubjects();
+            await loadQuestions();
+            setupPasteListeners();
+        });
+
+        async function loadClasses() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                // Admin sees all classes, teacher sees assigned classes
+                let query = client.from('exam_classes').select('*').order('name');
+
+                if (currentUser.role === 'teacher') {
+                    const { data: assignments } = await client
+                        .from('exam_teacher_assignments')
+                        .select('class_id')
+                        .eq('teacher_id', currentUser.id);
+
+                    if (assignments && assignments.length > 0) {
+                        const classIds = assignments.map(a => a.class_id);
+                        query = query.in('id', classIds);
+                    }
+                }
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                classes = data || [];
+                populateClassSelects();
+            } catch (error) {
+                console.error('Error loading classes:', error);
+            }
+        }
+
+        async function loadSubjects() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { data, error } = await client
+                    .from('exam_subjects')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+                subjects = data || [];
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+            }
+        }
+
+        async function loadQuestions() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const classFilter = document.getElementById('filterClass').value;
+                const subjectFilter = document.getElementById('filterSubject').value;
+                const typeFilter = document.getElementById('filterType').value;
+                const search = document.getElementById('searchQuestion').value.toLowerCase();
+
+                let query = client.from('exam_questions_bank').select('*');
+
+                if (currentUser.role === 'teacher') {
+                    query = query.eq('teacher_id', currentUser.id);
+                }
+                if (classFilter) query = query.eq('class_id', classFilter);
+                if (subjectFilter) query = query.eq('subject_id', subjectFilter);
+                if (typeFilter) query = query.eq('type', typeFilter);
+
+                const { data, error } = await query.order('created_at', { ascending: false });
+                if (error) throw error;
+
+                questions = data || [];
+
+                // Filter by search
+                if (search) {
+                    questions = questions.filter(q => 
+                        (q.text && q.text.toLowerCase().includes(search))
+                    );
+                }
+
+                renderQuestions();
+            } catch (error) {
+                console.error('Error loading questions:', error);
+            }
+        }
+
+        function populateClassSelects() {
+            // Filter selects
+            const filterSelect = document.getElementById('filterClass');
+            filterSelect.innerHTML = '<option value="">جميع الصفوف</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            // Question modal select
+            const questionSelect = document.getElementById('questionClass');
+            questionSelect.innerHTML = '<option value="">اختر الصف</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function onClassFilterChange() {
+            const classId = document.getElementById('filterClass').value;
+            const subjectSelect = document.getElementById('filterSubject');
+
+            if (classId) {
+                const classSubjects = subjects.filter(s => s.class_id === classId);
+                subjectSelect.innerHTML = '<option value="">جميع المواد</option>' + 
+                    classSubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            } else {
+                subjectSelect.innerHTML = '<option value="">جميع المواد</option>';
+            }
+
+            loadQuestions();
+        }
+
+        function onQuestionClassChange() {
+            const classId = document.getElementById('questionClass').value;
+            const subjectSelect = document.getElementById('questionSubject');
+
+            if (classId) {
+                const classSubjects = subjects.filter(s => s.class_id === classId);
+                subjectSelect.innerHTML = '<option value="">اختر المادة</option>' + 
+                    classSubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            } else {
+                subjectSelect.innerHTML = '<option value="">اختر المادة</option>';
+            }
+        }
+
+        function onQuestionTypeChange() {
+            const type = document.getElementById('questionType').value;
+            document.getElementById('mcqOptions').style.display = type === 'mcq' ? 'block' : 'none';
+            document.getElementById('trueFalseOptions').style.display = type === 'true_false' ? 'block' : 'none';
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsList');
+
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-question-circle"></i>
+                        <h3>لا توجد أسئلة</h3>
+                        <p>ابدأ بإضافة أسئلة جديدة لبنك الأسئلة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = questions.map(q => {
+                const typeLabels = { mcq: 'اختيار من متعدد', true_false: 'صح/خطأ', essay: 'مقالي' };
+                const className = classes.find(c => c.id === q.class_id)?.name || '—';
+                const subjectName = subjects.find(s => s.id === q.subject_id)?.name || '—';
+
+                let optionsHtml = '';
+                if (q.type === 'mcq' && q.options) {
+                    const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                    optionsHtml = `
+                        <div class="options-list">
+                            ${opts.map((opt, idx) => `
+                                <div class="option-item ${idx === q.correct_answer ? 'correct' : ''}">
+                                    <i class="fas ${idx === q.correct_answer ? 'fa-check-circle' : 'fa-circle'}"></i>
+                                    ${opt.text || opt}
+                                    ${opt.image ? `<img src="${opt.image}" style="max-width: 50px; max-height: 50px; border-radius: 4px;">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (q.type === 'true_false') {
+                    optionsHtml = `
+                        <div class="options-list">
+                            <div class="option-item ${q.correct_answer === true ? 'correct' : ''}">
+                                <i class="fas ${q.correct_answer === true ? 'fa-check-circle' : 'fa-circle'}"></i> صحيح
+                            </div>
+                            <div class="option-item ${q.correct_answer === false ? 'correct' : ''}">
+                                <i class="fas ${q.correct_answer === false ? 'fa-check-circle' : 'fa-circle'}"></i> خطأ
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div>
+                                <span class="question-type type-${q.type}">${typeLabels[q.type] || q.type}</span>
+                                <span style="color: #888; font-size: 12px; margin-right: 10px;">${className} / ${subjectName}</span>
+                            </div>
+                            <div class="question-actions">
+                                <button class="btn-secondary" onclick="editQuestion('${q.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
+                                <button class="btn-danger" onclick="deleteQuestion('${q.id}')" title="حذف"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="question-text">${q.text || '—'}</div>
+                        ${q.image_url ? `<img src="${q.image_url}" class="question-image">` : ''}
+                        ${optionsHtml}
+                        <div class="question-meta">
+                            <span><i class="fas fa-star"></i> ${q.points || 1} درجة</span>
+                            <span><i class="fas fa-signal"></i> ${q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'hard' ? 'صعب' : 'متوسط'}</span>
+                            <span><i class="fas fa-calendar"></i> ${q.created_at ? new Date(q.created_at).toLocaleDateString('ar-SA') : '—'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== Image Handling ==========
+        function setupPasteListeners() {
+            // Paste for question image
+            const questionArea = document.getElementById('questionImageArea');
+
+            questionArea.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        const blob = item.getAsFile();
+                        handleImageBlob(blob, 'question');
+                    }
+                }
+            });
+
+            questionArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                questionArea.classList.add('dragover');
+            });
+
+            questionArea.addEventListener('dragleave', () => {
+                questionArea.classList.remove('dragover');
+            });
+
+            questionArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                questionArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    handleImageBlob(files[0], 'question');
+                }
+            });
+        }
+
+        function handleImageSelect(event, type) {
+            const file = event.target.files[0];
+            if (file) handleImageBlob(file, type);
+        }
+
+        function handleImageBlob(blob, type) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                if (type === 'question') {
+                    questionImageData = dataUrl;
+                    document.getElementById('questionImageArea').style.display = 'none';
+                    document.getElementById('questionPreviewImg').src = dataUrl;
+                    document.getElementById('questionImagePreview').style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        function removeImage(type) {
+            if (type === 'question') {
+                questionImageData = null;
+                document.getElementById('questionImageArea').style.display = 'block';
+                document.getElementById('questionImagePreview').style.display = 'none';
+                document.getElementById('questionImageInput').value = '';
+            }
+        }
+
+        function handleOptionImage(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                optionImages[index] = e.target.result;
+                document.getElementById(`optionPreview${index}`).src = e.target.result;
+                document.getElementById(`optionPreview${index}`).style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ========== Options Management ==========
+        function addOption() {
+            const container = document.getElementById('optionsContainer');
+            const newIndex = optionCount++;
+
+            const optionRow = document.createElement('div');
+            optionRow.className = 'option-row';
+            optionRow.innerHTML = `
+                <input type="radio" name="correctOption" value="${newIndex}">
+                <input type="text" placeholder="خيار جديد" class="option-input" data-index="${newIndex}">
+                <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage${newIndex}').click()" title="إضافة صورة للخيار"></i>
+                <input type="file" id="optionImage${newIndex}" accept="image/*" style="display: none;" onchange="handleOptionImage(event, ${newIndex})">
+                <img class="option-image-preview" id="optionPreview${newIndex}" style="display: none;">
+                <i class="fas fa-times remove-option" onclick="removeOption(${newIndex})"></i>
+            `;
+            container.appendChild(optionRow);
+        }
+
+        function removeOption(index) {
+            const rows = document.querySelectorAll('.option-row');
+            if (rows.length <= 2) {
+                alert('يجب أن يكون هناك خياران على الأقل');
+                return;
+            }
+
+            const row = document.querySelector(`.option-input[data-index="${index}"]`)?.closest('.option-row');
+            if (row) {
+                row.remove();
+                delete optionImages[index];
+            }
+        }
+
+        // ========== Save Question ==========
+        async function saveQuestion() {
+            const classId = document.getElementById('questionClass').value;
+            const subjectId = document.getElementById('questionSubject').value;
+            const type = document.getElementById('questionType').value;
+            const text = document.getElementById('questionText').value.trim();
+            const points = parseInt(document.getElementById('questionPoints').value) || 1;
+            const difficulty = document.getElementById('questionDifficulty').value;
+
+            if (!classId || !subjectId || !text) {
+                alert('يرجى ملء جميع الحقول المطلوبة');
+                return;
+            }
+
+            let correctAnswer = null;
+            let options = null;
+
+            if (type === 'mcq') {
+                const optionInputs = document.querySelectorAll('.option-input');
+                options = [];
+                optionInputs.forEach((input, idx) => {
+                    const index = parseInt(input.dataset.index);
+                    const optionText = input.value.trim();
+                    if (optionText) {
+                        options.push({
+                            text: optionText,
+                            image: optionImages[index] || null
+                        });
+                    }
+                });
+
+                if (options.length < 2) {
+                    alert('يجب إدخال خيارين على الأقل');
+                    return;
+                }
+
+                const selectedRadio = document.querySelector('input[name="correctOption"]:checked');
+                correctAnswer = selectedRadio ? parseInt(selectedRadio.value) : 0;
+            } else if (type === 'true_false') {
+                const tfAnswer = document.querySelector('input[name="tfAnswer"]:checked');
+                correctAnswer = tfAnswer ? tfAnswer.value === 'true' : true;
+            }
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) throw new Error('No connection');
+
+                const questionData = {
+                    text: text,
+                    type: type,
+                    class_id: classId,
+                    subject_id: subjectId,
+                    teacher_id: currentUser.id,
+                    points: points,
+                    difficulty: difficulty,
+                    options: type === 'mcq' ? JSON.stringify(options) : null,
+                    correct_answer: correctAnswer,
+                    image_url: questionImageData,
+                    created_at: new Date().toISOString()
+                };
+
+                const { error } = await client
+                    .from('exam_questions_bank')
+                    .insert(questionData);
+
+                if (error) throw error;
+
+                closeModal('questionModal');
+                resetQuestionForm();
+                loadQuestions();
+                alert('✅ تم إضافة السؤال بنجاح!');
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        function resetQuestionForm() {
+            document.getElementById('questionClass').value = '';
+            document.getElementById('questionSubject').value = '';
+            document.getElementById('questionType').value = 'mcq';
+            document.getElementById('questionText').value = '';
+            document.getElementById('questionPoints').value = '1';
+            document.getElementById('questionDifficulty').value = 'medium';
+            removeImage('question');
+
+            // Reset options to 4
+            optionCount = 4;
+            optionImages = {};
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                container.innerHTML += `
+                    <div class="option-row">
+                        <input type="radio" name="correctOption" value="${i}" ${i === 0 ? 'checked' : ''}>
+                        <input type="text" placeholder="الخيار ${['الأول', 'الثاني', 'الثالث', 'الرابع'][i]}" class="option-input" data-index="${i}">
+                        <i class="fas fa-image" style="color: #667eea; cursor: pointer;" onclick="document.getElementById('optionImage${i}').click()"></i>
+                        <input type="file" id="optionImage${i}" accept="image/*" style="display: none;" onchange="handleOptionImage(event, ${i})">
+                        <img class="option-image-preview" id="optionPreview${i}" style="display: none;">
+                        <i class="fas fa-times remove-option" onclick="removeOption(${i})" ${i < 2 ? 'style="display: none;"' : ''}></i>
+                    </div>
+                `;
+            }
+            onQuestionTypeChange();
+        }
+
+        async function deleteQuestion(questionId) {
+            if (!confirm('هل أنت متأكد من حذف هذا السؤال؟')) return;
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_questions_bank')
+                    .delete()
+                    .eq('id', questionId);
+
+                if (error) throw error;
+                loadQuestions();
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        function openAddQuestionModal() {
+            resetQuestionForm();
+            document.getElementById('questionModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        });
+    </script>
+</body>
+</html>

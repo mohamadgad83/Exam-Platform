@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الصفوف والمواد — لوحة التحكم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: #f5f7fa; }
+
+        .sidebar { width: 260px; background: #1a1a2e; min-height: 100vh; position: fixed; right: 0; top: 0; color: white; z-index: 100; }
+        .sidebar-header { padding: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header h2 { font-size: 20px; }
+        .sidebar-menu { padding: 20px 0; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 14px 25px; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.3s; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(102,126,234,0.2); color: white; border-right: 3px solid #667eea; }
+        .sidebar-menu i { width: 24px; text-align: center; }
+
+        .main-content { margin-right: 260px; padding: 30px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: #333; font-size: 28px; }
+
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-family: 'Tajawal'; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.3); }
+
+        .btn-secondary { background: #e8e8e8; color: #333; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Tajawal'; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-secondary:hover { background: #d0d0d0; }
+
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Tajawal'; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-danger:hover { background: #c0392b; }
+
+        .card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .card-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .class-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 2px solid #f0f0f0; border-radius: 12px; margin-bottom: 10px; transition: all 0.3s; cursor: pointer; }
+        .class-item:hover { border-color: #667eea; background: #f8f9ff; }
+        .class-item.active { border-color: #667eea; background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); }
+        .class-info { display: flex; align-items: center; gap: 12px; }
+        .class-icon { width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .class-name { font-weight: 700; color: #333; }
+        .class-subjects-count { font-size: 12px; color: #888; }
+
+        .subjects-list { display: flex; flex-direction: column; gap: 8px; }
+        .subject-tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f0f4ff; border: 2px solid #e0e8ff; border-radius: 20px; font-size: 13px; color: #667eea; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .subject-tag:hover { background: #667eea; color: white; }
+        .subject-tag.selected { background: #667eea; color: white; border-color: #667eea; }
+        .subject-tag i { font-size: 11px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #333; font-weight: 600; font-size: 13px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-family: 'Tajawal'; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 500px; animation: modalSlide 0.3s ease; }
+        @keyframes modalSlide { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { margin-bottom: 20px; }
+        .modal-header h3 { color: #333; font-size: 20px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+        .empty-state { text-align: center; padding: 40px; color: #888; }
+        .empty-state i { font-size: 48px; margin-bottom: 15px; color: #ddd; }
+
+        .demo-badge-fixed { position: fixed; bottom: 20px; left: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 999; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
+
+        .teacher-assign { margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0; }
+        .teacher-assign h4 { font-size: 14px; color: #333; margin-bottom: 10px; }
+        .teacher-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .teacher-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #f5f5f5; border-radius: 20px; font-size: 12px; }
+        .teacher-chip.assigned { background: #efe; color: #27ae60; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🎓 منصة الاختبارات</h2>
+        </div>
+        <div class="sidebar-menu">
+            <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
+            <a href="classes.html" class="active"><i class="fas fa-school"></i> الصفوف والمواد</a>
+            <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
+            <a href="questions.html"><i class="fas fa-question-circle"></i> بنك الأسئلة</a>
+            <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
+            <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📚 إدارة الصفوف والمواد</h1>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="openClassModal()">
+                    <i class="fas fa-plus"></i> إضافة صف
+                </button>
+                <button class="btn-primary" onclick="openSubjectModal()">
+                    <i class="fas fa-plus"></i> إضافة مادة
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Classes Section -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-school" style="color: #667eea;"></i>
+                    الصفوف الدراسية
+                </div>
+                <div id="classesList">
+                    <div class="empty-state">
+                        <i class="fas fa-school"></i>
+                        <p>لا توجد صفوف مضافة</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subjects Section -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-book" style="color: #764ba2;"></i>
+                    المواد الدراسية
+                    <span id="selectedClassName" style="font-size: 13px; color: #888; margin-right: auto;"></span>
+                </div>
+                <div id="subjectsList">
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <p>اختر صفاً لعرض مواده</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Assignment Section -->
+        <div class="card" id="teacherAssignmentCard" style="display: none;">
+            <div class="card-title">
+                <i class="fas fa-chalkboard-teacher" style="color: #f39c12;"></i>
+                إسناد المعلمين للصف
+            </div>
+            <div id="teacherAssignmentContent">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Class Modal -->
+    <div class="modal-overlay" id="classModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🏫 إضافة صف دراسي جديد</h3>
+            </div>
+            <div class="form-group">
+                <label>اسم الصف</label>
+                <input type="text" id="className" placeholder="مثال: الصف الأول الثانوي">
+            </div>
+            <div class="form-group">
+                <label>الوصف (اختياري)</label>
+                <input type="text" id="classDesc" placeholder="وصف مختصر للصف">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('classModal')">إلغاء</button>
+                <button class="btn-primary" onclick="saveClass()">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Subject Modal -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📖 إضافة مادة دراسية</h3>
+            </div>
+            <div class="form-group">
+                <label>اسم المادة</label>
+                <input type="text" id="subjectName" placeholder="مثال: الرياضيات">
+            </div>
+            <div class="form-group">
+                <label>الصف الدراسي</label>
+                <select id="subjectClass">
+                    <option value="">اختر الصف</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>الوصف (اختياري)</label>
+                <input type="text" id="subjectDesc" placeholder="وصف المادة">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('subjectModal')">إلغاء</button>
+                <button class="btn-primary" onclick="saveSubject()">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+
+    <script>
+        let classes = [];
+        let subjects = [];
+        let selectedClassId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getUser?.();
+            if (!user || user.role !== 'admin') {
+                window.location.href = '../login.html';
+                return;
+            }
+            await loadClasses();
+            await loadSubjects();
+        });
+
+        async function loadClasses() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { data, error } = await client
+                    .from('exam_classes')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+                classes = data || [];
+                renderClasses();
+                updateSubjectClassSelect();
+            } catch (error) {
+                console.error('Error loading classes:', error);
+            }
+        }
+
+        async function loadSubjects() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { data, error } = await client
+                    .from('exam_subjects')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+                subjects = data || [];
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+            }
+        }
+
+        function renderClasses() {
+            const container = document.getElementById('classesList');
+
+            if (classes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-school"></i>
+                        <p>لا توجد صفوف مضافة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = classes.map(cls => {
+                const classSubjects = subjects.filter(s => s.class_id === cls.id);
+                return `
+                    <div class="class-item ${selectedClassId === cls.id ? 'active' : ''}" onclick="selectClass('${cls.id}')">
+                        <div class="class-info">
+                            <div class="class-icon">📚</div>
+                            <div>
+                                <div class="class-name">${cls.name}</div>
+                                <div class="class-subjects-count">${classSubjects.length} مادة</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-secondary" onclick="event.stopPropagation(); editClass('${cls.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
+                            <button class="btn-danger" onclick="event.stopPropagation(); deleteClass('${cls.id}')" title="حذف"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectClass(classId) {
+            selectedClassId = classId;
+            const cls = classes.find(c => c.id === classId);
+            document.getElementById('selectedClassName').textContent = cls ? `- ${cls.name}` : '';
+            renderClasses();
+            renderSubjectsForClass(classId);
+            renderTeacherAssignment(classId);
+        }
+
+        function renderSubjectsForClass(classId) {
+            const container = document.getElementById('subjectsList');
+            const classSubjects = subjects.filter(s => s.class_id === classId);
+
+            if (classSubjects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <p>لا توجد مواد مضافة لهذا الصف</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="subjects-list">
+                    ${classSubjects.map(sub => `
+                        <div class="subject-tag">
+                            <span>${sub.name}</span>
+                            <i class="fas fa-times" onclick="removeSubjectFromClass('${sub.id}')" style="cursor: pointer;"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function renderTeacherAssignment(classId) {
+            const card = document.getElementById('teacherAssignmentCard');
+            const content = document.getElementById('teacherAssignmentContent');
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                // Get teachers assigned to this class
+                const { data: assignments, error } = await client
+                    .from('exam_teacher_assignments')
+                    .select('*, teacher:teacher_id(name, email)')
+                    .eq('class_id', classId);
+
+                if (error) throw error;
+
+                // Get all teachers
+                const { data: teachers } = await client
+                    .from('exam_users')
+                    .select('id, name, email')
+                    .eq('role', 'teacher')
+                    .eq('status', 'active');
+
+                const assignedTeacherIds = (assignments || []).map(a => a.teacher_id);
+
+                content.innerHTML = `
+                    <div class="teacher-assign">
+                        <h4>👨‍🏫 المعلمون المسندون</h4>
+                        <div class="teacher-list">
+                            ${(assignments || []).length === 0 ? '<span style="color: #888; font-size: 13px;">لا يوجد معلمون مسندون</span>' : ''}
+                            ${(assignments || []).map(a => `
+                                <div class="teacher-chip assigned">
+                                    <i class="fas fa-check-circle"></i>
+                                    ${a.teacher?.name || 'معلم'}
+                                    <i class="fas fa-times" onclick="removeTeacherFromClass('${a.id}')" style="cursor: pointer;"></i>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="teacher-assign">
+                        <h4>➕ إسناد معلم جديد</h4>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="newTeacherSelect" style="flex: 1; padding: 10px; border: 2px solid #e8e8e8; border-radius: 10px; font-family: 'Tajawal';">
+                                <option value="">اختر معلماً</option>
+                                ${(teachers || []).filter(t => !assignedTeacherIds.includes(t.id)).map(t => `
+                                    <option value="${t.id}">${t.name} (${t.email})</option>
+                                `).join('')}
+                            </select>
+                            <button class="btn-primary" onclick="assignTeacherToClass()">إسناد</button>
+                        </div>
+                    </div>
+                `;
+
+                card.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading teacher assignments:', error);
+            }
+        }
+
+        function updateSubjectClassSelect() {
+            const select = document.getElementById('subjectClass');
+            select.innerHTML = '<option value="">اختر الصف</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        async function saveClass() {
+            const name = document.getElementById('className').value.trim();
+            const desc = document.getElementById('classDesc').value.trim();
+
+            if (!name) { alert('يرجى إدخال اسم الصف'); return; }
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_classes')
+                    .insert({ name, description: desc, created_at: new Date().toISOString() });
+
+                if (error) throw error;
+
+                closeModal('classModal');
+                loadClasses();
+                alert('✅ تم إضافة الصف بنجاح!');
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        async function saveSubject() {
+            const name = document.getElementById('subjectName').value.trim();
+            const classId = document.getElementById('subjectClass').value;
+            const desc = document.getElementById('subjectDesc').value.trim();
+
+            if (!name) { alert('يرجى إدخال اسم المادة'); return; }
+            if (!classId) { alert('يرجى اختيار الصف'); return; }
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_subjects')
+                    .insert({ name, class_id: classId, description: desc, created_at: new Date().toISOString() });
+
+                if (error) throw error;
+
+                closeModal('subjectModal');
+                await loadSubjects();
+                if (selectedClassId === classId) renderSubjectsForClass(classId);
+                alert('✅ تم إضافة المادة بنجاح!');
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        async function assignTeacherToClass() {
+            const teacherId = document.getElementById('newTeacherSelect').value;
+            if (!teacherId || !selectedClassId) return;
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_teacher_assignments')
+                    .insert({ teacher_id: teacherId, class_id: selectedClassId, created_at: new Date().toISOString() });
+
+                if (error) throw error;
+
+                renderTeacherAssignment(selectedClassId);
+                alert('✅ تم إسناد المعلم بنجاح!');
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        async function removeTeacherFromClass(assignmentId) {
+            if (!confirm('هل أنت متأكد من إلغاء إسناد هذا المعلم؟')) return;
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_teacher_assignments')
+                    .delete()
+                    .eq('id', assignmentId);
+
+                if (error) throw error;
+                renderTeacherAssignment(selectedClassId);
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        async function deleteClass(classId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الصف؟ سيتم حذف جميع مواده أيضاً.')) return;
+
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+
+                const { error } = await client
+                    .from('exam_classes')
+                    .delete()
+                    .eq('id', classId);
+
+                if (error) throw error;
+
+                selectedClassId = null;
+                loadClasses();
+                document.getElementById('subjectsList').innerHTML = `
+                    <div class="empty-state"><i class="fas fa-book"></i><p>اختر صفاً لعرض مواده</p></div>
+                `;
+                document.getElementById('teacherAssignmentCard').style.display = 'none';
+            } catch (error) {
+                alert('❌ خطأ: ' + error.message);
+            }
+        }
+
+        function openClassModal() {
+            document.getElementById('className').value = '';
+            document.getElementById('classDesc').value = '';
+            document.getElementById('classModal').classList.add('active');
+        }
+
+        function openSubjectModal() {
+            document.getElementById('subjectName').value = '';
+            document.getElementById('subjectDesc').value = '';
+            document.getElementById('subjectModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        });
+    </script>
+</body>
+</html>
