@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء اختبار | منصة الاختبارات</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-dark: #4338ca; --primary-light: #818cf8;
+            --secondary: #06b6d4; --accent: #f59e0b; --success: #10b981;
+            --danger: #ef4444; --dark: #0f172a; --gray: #64748b;
+            --gray-light: #e2e8f0; --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --radius: 12px; --radius-lg: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+        .app-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark); color: white; padding: 1.5rem;
+            position: fixed; right: 0; top: 0; bottom: 0; width: 260px;
+            overflow-y: auto; z-index: 100;
+        }
+        .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+        .sidebar-logo-icon {
+            width: 40px; height: 40px; border-radius: var(--radius);
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-size: 1.1rem;
+        }
+        .sidebar-logo-text { font-size: 1.1rem; font-weight: 800; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.25rem; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem; border-radius: var(--radius);
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            font-weight: 500; transition: all 0.3s; font-size: 0.9rem;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1); color: white;
+        }
+        .sidebar-menu a.active { background: var(--gradient-1); }
+        .sidebar-menu a i { width: 20px; text-align: center; }
+        .sidebar-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 1rem 0; }
+        .sidebar-user { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-user-info { display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+        }
+        .sidebar-user-name { font-weight: 700; font-size: 0.9rem; }
+        .sidebar-user-role { font-size: 0.75rem; opacity: 0.6; }
+
+        /* Main Content */
+        .main-content { margin-right: 260px; min-height: 100vh; }
+
+        /* Top Bar */
+        .top-bar {
+            background: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--gray-light); position: sticky; top: 0; z-index: 50;
+        }
+        .top-bar-title { font-size: 1.25rem; font-weight: 800; color: var(--dark); }
+        .top-bar-actions { display: flex; gap: 0.75rem; align-items: center; }
+        .top-bar-btn {
+            padding: 0.6rem 1.25rem; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            transition: all 0.3s; border: none; display: inline-flex;
+            align-items: center; gap: 0.5rem; text-decoration: none;
+        }
+        .top-bar-btn.primary { background: var(--gradient-1); color: white; }
+        .top-bar-btn.primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .top-bar-btn.secondary { background: var(--gray-light); color: var(--dark); }
+
+        /* Page Content */
+        .page-content { padding: 2rem; max-width: 1400px; }
+
+        /* Steps */
+        .exam-steps {
+            display: flex; gap: 0; margin-bottom: 2rem;
+            background: white; border-radius: var(--radius);
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+        .exam-step {
+            flex: 1; padding: 1rem 1.5rem; text-align: center;
+            cursor: pointer; transition: all 0.3s; position: relative;
+            border: none; background: white; font-family: 'Tajawal';
+        }
+        .exam-step:not(:last-child)::after {
+            content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+            width: 1px; background: var(--gray-light);
+        }
+        .exam-step.active { background: var(--gradient-1); color: white; }
+        .exam-step.completed { background: rgba(79,70,229,0.05); color: var(--primary); }
+        .exam-step.completed .step-num { background: var(--success); color: white; }
+        .step-num {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--gray-light); color: var(--gray);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; margin-left: 0.5rem;
+        }
+        .exam-step.active .step-num { background: rgba(255,255,255,0.2); color: white; }
+        .step-label { font-weight: 600; font-size: 0.9rem; }
+
+        /* Step Content */
+        .step-content { display: none; animation: fadeIn 0.4s ease; }
+        .step-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards */
+        .card {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            overflow: hidden; margin-bottom: 1.5rem;
+        }
+        .card-header {
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-header h3 { font-size: 1rem; font-weight: 800; color: var(--dark); }
+        .card-body { padding: 1.5rem; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .form-label .required { color: var(--danger); }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); font-family: 'Tajawal', sans-serif;
+            font-size: 0.95rem; transition: all 0.3s; background: white;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .form-textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+        /* Settings Toggles */
+        .toggle-group {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem; background: #f8fafc; border-radius: var(--radius);
+            margin-bottom: 0.75rem;
+        }
+        .toggle-info h4 { font-weight: 600; font-size: 0.9rem; color: var(--dark); }
+        .toggle-info p { color: var(--gray); font-size: 0.8rem; margin-top: 0.25rem; }
+        .toggle-switch {
+            position: relative; width: 50px; height: 26px;
+            background: var(--gray-light); border-radius: 13px; cursor: pointer;
+            transition: all 0.3s; flex-shrink: 0;
+        }
+        .toggle-switch.active { background: var(--primary); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 3px; right: 3px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: white; transition: all 0.3s; box-shadow: var(--shadow-sm);
+        }
+        .toggle-switch.active::after { right: 27px; }
+
+        /* Question Bank Selector */
+        .qb-filters {
+            display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .qb-filter-input {
+            padding: 0.625rem 0.875rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); font-family: 'Tajawal'; font-size: 0.9rem;
+        }
+        .qb-filter-input:focus { outline: none; border-color: var(--primary); }
+        .qb-search-btn {
+            padding: 0.625rem 1rem; border-radius: var(--radius);
+            background: var(--gradient-1); color: white; border: none;
+            font-family: 'Tajawal'; font-weight: 600; cursor: pointer;
+        }
+
+        .qb-list {
+            max-height: 400px; overflow-y: auto; border: 1px solid var(--gray-light);
+            border-radius: var(--radius); background: white;
+        }
+        .qb-item {
+            padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+            display: flex; align-items: center; gap: 1rem; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .qb-item:hover { background: #f8fafc; }
+        .qb-item.selected { background: rgba(79,70,229,0.05); border-right: 3px solid var(--primary); }
+        .qb-checkbox {
+            width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;
+        }
+        .qb-content { flex: 1; min-width: 0; }
+        .qb-text { font-size: 0.9rem; color: var(--dark); line-height: 1.5; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .qb-meta { display: flex; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap; }
+        .qb-badge {
+            padding: 0.15rem 0.5rem; border-radius: 50px; font-size: 0.7rem; font-weight: 600;
+        }
+        .qb-badge.type { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .qb-badge.diff { background: rgba(16,185,129,0.1); color: var(--success); }
+        .qb-badge.marks { background: rgba(245,158,11,0.1); color: var(--accent); }
+        .qb-empty { text-align: center; padding: 2rem; color: var(--gray); }
+
+        /* Selected Questions */
+        .selected-panel {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            position: sticky; top: 80px;
+        }
+        .selected-header {
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .selected-header h3 { font-size: 1rem; font-weight: 800; }
+        .selected-count { 
+            padding: 0.25rem 0.75rem; background: var(--gradient-1); color: white;
+            border-radius: 50px; font-size: 0.8rem; font-weight: 700;
+        }
+        .selected-list { max-height: 350px; overflow-y: auto; padding: 0.5rem; }
+        .selected-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem; border-radius: var(--radius);
+            background: #f8fafc; margin-bottom: 0.5rem;
+        }
+        .selected-item-num {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+        }
+        .selected-item-text { flex: 1; font-size: 0.85rem; color: var(--dark); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .selected-item-remove {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(239,68,68,0.1); color: var(--danger);
+            border: none; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; font-size: 0.7rem;
+        }
+        .selected-item-remove:hover { background: var(--danger); color: white; }
+
+        .selected-summary {
+            padding: 1rem 1.5rem; border-top: 1px solid var(--gray-light);
+            background: #f8fafc;
+        }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .summary-row.total { font-weight: 700; color: var(--dark); font-size: 0.95rem; border-top: 1px dashed var(--gray-light); padding-top: 0.5rem; }
+
+        /* Preview */
+        .preview-exam {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            padding: 2rem; max-width: 800px; margin: 0 auto;
+        }
+        .preview-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--gray-light); }
+        .preview-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+        .preview-header p { color: var(--gray); }
+        .preview-meta { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; font-size: 0.85rem; color: var(--gray); }
+        .preview-question { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9; }
+        .preview-question-num { color: var(--primary); font-weight: 700; margin-bottom: 0.5rem; }
+        .preview-question-text { font-size: 1rem; line-height: 1.8; margin-bottom: 1rem; }
+        .preview-options { display: flex; flex-direction: column; gap: 0.5rem; padding-right: 1.5rem; }
+        .preview-option { padding: 0.5rem 0; color: var(--gray); }
+
+        /* Buttons */
+        .step-buttons { display: flex; gap: 1rem; justify-content: space-between; margin-top: 2rem; }
+        .btn {
+            padding: 0.875rem 2rem; border-radius: var(--radius); font-weight: 700;
+            font-size: 0.9rem; cursor: pointer; transition: all 0.3s; border: none;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--gradient-1); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79,70,229,0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: var(--gray-light); color: var(--dark); }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: white; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 1rem; left: 1rem; z-index: 9999; }
+        .toast { padding: 1rem 1.5rem; border-radius: var(--radius); color: white; font-weight: 600; margin-bottom: 0.5rem; animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-lg); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--primary); }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Success State */
+        .success-state { text-align: center; padding: 3rem 2rem; }
+        .success-icon {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(16,185,129,0.1); color: var(--success);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; margin: 0 auto 1.5rem;
+            animation: scaleIn 0.5s ease;
+        }
+        @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
+        .success-state h2 { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+        .success-state p { color: var(--gray); margin-bottom: 1.5rem; }
+        .exam-link {
+            background: #f8fafc; border: 1px dashed var(--primary-light);
+            border-radius: var(--radius); padding: 1rem; margin: 1rem 0;
+            font-family: monospace; font-size: 0.9rem; color: var(--primary);
+            word-break: break-all;
+        }
+
+        /* Mobile */
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark); }
+        @media (max-width: 1024px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { transform: translateX(100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-menu-btn { display: block; }
+            .page-content { padding: 1rem; }
+            .exam-steps { flex-direction: column; }
+            .exam-step:not(:last-child)::after { display: none; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .qb-filters { grid-template-columns: 1fr; }
+            .step-buttons { flex-direction: column; }
+            .selected-panel { position: static; margin-top: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span class="sidebar-logo-text">ExamPlatform</span>
+            </div>
+            <ul class="sidebar-menu" id="sidebarMenu"></ul>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <div class="sidebar-user-name" id="userName">المستخدم</div>
+                        <div class="sidebar-user-role" id="userRole">...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <h1 class="top-bar-title"><i class="fas fa-file-alt" style="color:var(--primary);"></i> إنشاء اختبار جديد</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <button class="top-bar-btn secondary" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> حفظ مسودة
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Steps -->
+                <div class="exam-steps">
+                    <button class="exam-step active" onclick="goToStep(1)" id="stepBtn1">
+                        <span class="step-num">1</span>
+                        <span class="step-label">معلومات الاختبار</span>
+                    </button>
+                    <button class="exam-step" onclick="goToStep(2)" id="stepBtn2">
+                        <span class="step-num">2</span>
+                        <span class="step-label">اختيار الأسئلة</span>
+                    </button>
+                    <button class="exam-step" onclick="goToStep(3)" id="stepBtn3">
+                        <span class="step-num">3</span>
+                        <span class="step-label">الإعدادات</span>
+                    </button>
+                    <button class="exam-step" onclick="goToStep(4)" id="stepBtn4">
+                        <span class="step-num">4</span>
+                        <span class="step-label">مراجعة ونشر</span>
+                    </button>
+                </div>
+
+                <!-- Step 1: Exam Info -->
+                <div class="step-content active" id="step1">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-info-circle" style="color:var(--primary);"></i> معلومات الاختبار الأساسية</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">عنوان الاختبار <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="examTitle" placeholder="مثال: اختبار نصف الفصل - الفيزياء">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">وصف الاختبار</label>
+                                <textarea class="form-textarea" id="examDescription" placeholder="وصف مختصر للاختبار..."></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">المادة الدراسية <span class="required">*</span></label>
+                                    <select class="form-select" id="examSubject">
+                                        <option value="">اختر المادة</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">الصف الدراسي <span class="required">*</span></label>
+                                    <select class="form-select" id="examGrade">
+                                        <option value="">اختر الصف</option>
+                                        <option value="1">الصف الأول</option>
+                                        <option value="2">الصف الثاني</option>
+                                        <option value="3">الصف الثالث</option>
+                                        <option value="4">الصف الرابع</option>
+                                        <option value="5">الصف الخامس</option>
+                                        <option value="6">الصف السادس</option>
+                                        <option value="7">الصف السابع</option>
+                                        <option value="8">الصف الثامن</option>
+                                        <option value="9">الصف التاسع</option>
+                                        <option value="10">الصف العاشر</option>
+                                        <option value="11">الصف الحادي عشر</option>
+                                        <option value="12">الصف الثاني عشر</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">تاريخ البدء <span class="required">*</span></label>
+                                    <input type="datetime-local" class="form-input" id="examStartDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">تاريخ الانتهاء <span class="required">*</span></label>
+                                    <input type="datetime-local" class="form-input" id="examEndDate">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">مدة الاختبار (دقيقة) <span class="required">*</span></label>
+                                    <input type="number" class="form-input" id="examDuration" value="60" min="5" max="300">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">الدرجة الكلية</label>
+                                    <input type="number" class="form-input" id="examTotalMarks" value="100" min="1" max="500" readonly style="background:#f8fafc;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-buttons">
+                        <div></div>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            التالي <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Select Questions -->
+                <div class="step-content" id="step2">
+                    <div style="display:grid;grid-template-columns:1fr 350px;gap:1.5rem;">
+                        <div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-search" style="color:var(--primary);"></i> بنك الأسئلة</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="qb-filters">
+                                        <input type="text" class="qb-filter-input" id="qbSearch" placeholder="بحث في الأسئلة...">
+                                        <select class="qb-filter-input" id="qbType">
+                                            <option value="">جميع الأنواع</option>
+                                            <option value="mcq">اختيار من متعدد</option>
+                                            <option value="truefalse">صح / خطأ</option>
+                                            <option value="essay">مقالي</option>
+                                            <option value="fillblank">أكمل الفراغ</option>
+                                        </select>
+                                        <select class="qb-filter-input" id="qbDifficulty">
+                                            <option value="">جميع الصعوبات</option>
+                                            <option value="easy">سهل</option>
+                                            <option value="medium">متوسط</option>
+                                            <option value="hard">صعب</option>
+                                        </select>
+                                        <button class="qb-search-btn" onclick="loadQuestionBank()">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="qb-list" id="qbList">
+                                        <div class="qb-empty">ابحث لعرض الأسئلة المتاحة</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="selected-panel">
+                            <div class="selected-header">
+                                <h3><i class="fas fa-list-check" style="color:var(--primary);"></i> الأسئلة المختارة</h3>
+                                <span class="selected-count" id="selectedCount">0</span>
+                            </div>
+                            <div class="selected-list" id="selectedList">
+                                <div style="text-align:center;padding:2rem;color:var(--gray);font-size:0.9rem;">
+                                    <i class="fas fa-hand-pointer" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>
+                                    اختر أسئلة من البنك
+                                </div>
+                            </div>
+                            <div class="selected-summary">
+                                <div class="summary-row">
+                                    <span>عدد الأسئلة:</span>
+                                    <span id="summaryCount">0</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>إجمالي الدرجات:</span>
+                                    <span id="summaryMarks">0</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>الوقت المتوقع:</span>
+                                    <span id="summaryTime">0 دقيقة</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>الدرجة الكلية:</span>
+                                    <span id="summaryTotal">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-buttons">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="fas fa-arrow-right"></i> السابق
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            التالي <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Settings -->
+                <div class="step-content" id="step3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cog" style="color:var(--primary);"></i> إعدادات الاختبار</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>عرض الأسئلة بشكل عشوائي</h4>
+                                    <p>يتم ترتيب الأسئلة بشكل عشوائي لكل طالب</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this, 'randomize')" data-setting="randomize"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>عرض خيارات الإجابة بشكل عشوائي</h4>
+                                    <p>يتم ترتيب خيارات الإجابة بشكل عشوائي</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this, 'shuffleOptions')" data-setting="shuffleOptions"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>عرض إجابة واحدة في كل مرة</h4>
+                                    <p>يظهر للطالب سؤال واحد فقط في كل صفحة</p>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this, 'onePerPage')" data-setting="onePerPage"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>منع الرجوع للسؤال السابق</h4>
+                                    <p>لا يمكن للطالب العودة للأسئلة السابقة</p>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this, 'noBack')" data-setting="noBack"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>إظهار النتيجة فور الانتهاء</h4>
+                                    <p>يعرض النتيجة للطالب مباشرة بعد تسليم الاختبار</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this, 'showResult')" data-setting="showResult"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>إظهار الإجابات الصحيحة</h4>
+                                    <p>يعرض الإجابات الصحيحة بعد الانتهاء</p>
+                                </div>
+                                <div class="toggle-switch" onclick="toggleSetting(this, 'showAnswers')" data-setting="showAnswers"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>السماح بمحاولة واحدة فقط</h4>
+                                    <p>لا يمكن إعادة الاختبار إلا بإذن المعلم</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this, 'oneAttempt')" data-setting="oneAttempt"></div>
+                            </div>
+
+                            <div class="toggle-group">
+                                <div class="toggle-info">
+                                    <h4>كشف محاولات الغش</h4>
+                                    <p>تسجيل IP وتتبع الأجهزة المستخدمة</p>
+                                </div>
+                                <div class="toggle-switch active" onclick="toggleSetting(this, 'antiCheat')" data-setting="antiCheat"></div>
+                            </div>
+
+                            <div class="form-group" style="margin-top:1.5rem;">
+                                <label class="form-label">تعليمات للطلاب (تظهر قبل بدء الاختبار)</label>
+                                <textarea class="form-textarea" id="examInstructions" placeholder="اكتب تعليمات الاختبار هنا..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-buttons">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="fas fa-arrow-right"></i> السابق
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            التالي <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Review & Publish -->
+                <div class="step-content" id="step4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-eye" style="color:var(--primary);"></i> مراجعة الاختبار</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="preview-exam" id="previewContent">
+                                <!-- Preview generated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-buttons">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="fas fa-arrow-right"></i> السابق
+                        </button>
+                        <button class="btn btn-success" onclick="publishExam()" id="publishBtn">
+                            <i class="fas fa-paper-plane"></i> نشر الاختبار
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Success State -->
+                <div class="step-content" id="stepSuccess">
+                    <div class="success-state">
+                        <div class="success-icon"><i class="fas fa-check"></i></div>
+                        <h2>تم نشر الاختبار بنجاح!</h2>
+                        <p>يمكن للطلاب الآن الوصول إلى الاختبار خلال الفترة المحددة.</p>
+                        <div class="exam-link" id="examLink"></div>
+                        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="location.href='create-exam.html'">
+                                <i class="fas fa-plus"></i> اختبار جديد
+                            </button>
+                            <button class="btn btn-outline" onclick="viewExam()">
+                                <i class="fas fa-eye"></i> عرض الاختبار
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="shared/supabase-client.js"></script>
+    <script src="shared/app.js"></script>
+    <script>
+        let currentStep = 1;
+        let currentUser = null;
+        let subjects = [];
+        let qbQuestions = [];
+        let selectedQuestions = [];
+        let examSettings = {
+            randomize: true, shuffleOptions: true, onePerPage: false,
+            noBack: false, showResult: true, showAnswers: false,
+            oneAttempt: true, antiCheat: true
+        };
+        let createdExamId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = JSON.parse(localStorage.getItem('exam_user') || '{}');
+            if (!currentUser.id) { location.href = 'login.html'; return; }
+
+            setupSidebar();
+            await loadSubjects();
+
+            // Set default dates
+            const now = new Date();
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            document.getElementById('examStartDate').value = now.toISOString().slice(0, 16);
+            document.getElementById('examEndDate').value = tomorrow.toISOString().slice(0, 16);
+        });
+
+        function setupSidebar() {
+            const menu = document.getElementById('sidebarMenu');
+            const role = currentUser.role;
+
+            document.getElementById('userName').textContent = currentUser.first_name + ' ' + currentUser.last_name;
+            document.getElementById('userRole').textContent = role === 'admin' ? 'مدير النظام' : role === 'teacher' ? 'معلم' : 'طالب';
+            document.getElementById('userAvatar').textContent = (currentUser.first_name?.[0] || 'U');
+
+            let links = '';
+            if (role === 'admin') {
+                links = `
+                    <li><a href="admin/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="admin/users.html"><i class="fas fa-users"></i> المستخدمين</a></li>
+                    <li><a href="admin/subjects.html"><i class="fas fa-book"></i> المواد</a></li>
+                    <li><a href="questions-bank.html"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html" class="active"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="admin/reports.html"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="admin/settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                `;
+            } else if (role === 'teacher') {
+                links = `
+                    <li><a href="teacher/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="questions-bank.html"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html" class="active"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="teacher/students.html"><i class="fas fa-user-graduate"></i> الطلاب</a></li>
+                    <li><a href="teacher/results.html"><i class="fas fa-chart-line"></i> النتائج</a></li>
+                `;
+            }
+            links += `<li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>`;
+            menu.innerHTML = links;
+        }
+
+        async function loadSubjects() {
+            const { data, error } = await supabase.from('exam_subjects').select('*').order('name');
+            if (error) return;
+            subjects = data;
+            const select = document.getElementById('examSubject');
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function goToStep(step) {
+            if (step > currentStep && !validateCurrentStep()) return;
+
+            document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+
+            document.querySelectorAll('.exam-step').forEach((btn, i) => {
+                btn.classList.remove('active', 'completed');
+                if (i + 1 < step) btn.classList.add('completed');
+                else if (i + 1 === step) btn.classList.add('active');
+            });
+
+            currentStep = step;
+
+            if (step === 2) loadQuestionBank();
+            if (step === 4) generatePreview();
+        }
+
+        function nextStep() { goToStep(currentStep + 1); }
+        function prevStep() { goToStep(currentStep - 1); }
+
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                const title = document.getElementById('examTitle').value.trim();
+                const subject = document.getElementById('examSubject').value;
+                const grade = document.getElementById('examGrade').value;
+                const start = document.getElementById('examStartDate').value;
+                const end = document.getElementById('examEndDate').value;
+                const duration = document.getElementById('examDuration').value;
+
+                if (!title) { showToast('عنوان الاختبار مطلوب', 'error'); return false; }
+                if (!subject) { showToast('المادة الدراسية مطلوبة', 'error'); return false; }
+                if (!grade) { showToast('الصف الدراسي مطلوب', 'error'); return false; }
+                if (!start || !end) { showToast('تواريخ البدء والانتهاء مطلوبة', 'error'); return false; }
+                if (new Date(start) >= new Date(end)) { showToast('تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء', 'error'); return false; }
+                if (!duration || duration < 5) { showToast('مدة الاختبار يجب أن تكون 5 دقائق على الأقل', 'error'); return false; }
+            }
+
+            if (currentStep === 2) {
+                if (selectedQuestions.length === 0) { showToast('اختر سؤالاً واحداً على الأقل', 'error'); return false; }
+            }
+
+            return true;
+        }
+
+        async function loadQuestionBank() {
+            const container = document.getElementById('qbList');
+            container.innerHTML = '<div class="qb-empty"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+
+            const search = document.getElementById('qbSearch').value.trim();
+            const type = document.getElementById('qbType').value;
+            const difficulty = document.getElementById('qbDifficulty').value;
+            const subject = document.getElementById('examSubject').value;
+            const grade = document.getElementById('examGrade').value;
+
+            let query = supabase.from('exam_questions_bank').select('*');
+
+            if (search) query = query.ilike('question_text', `%${search}%`);
+            if (type) query = query.eq('question_type', type);
+            if (difficulty) query = query.eq('difficulty', difficulty);
+            if (subject) query = query.eq('subject_id', subject);
+            if (grade) query = query.eq('grade', grade);
+
+            if (currentUser.role === 'teacher') {
+                query = query.eq('created_by', currentUser.id);
+            }
+
+            const { data, error } = await query.order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = '<div class="qb-empty">حدث خطأ في التحميل</div>';
+                return;
+            }
+
+            qbQuestions = data || [];
+
+            if (qbQuestions.length === 0) {
+                container.innerHTML = '<div class="qb-empty">لا توجد أسئلة مطابقة</div>';
+                return;
+            }
+
+            container.innerHTML = qbQuestions.map((q, i) => {
+                const isSelected = selectedQuestions.some(sq => sq.id === q.id);
+                const typeLabels = { mcq: 'MCQ', truefalse: 'ص/خ', essay: 'مقالي', fillblank: 'فراغ' };
+                const diffLabels = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
+
+                return `
+                    <div class="qb-item ${isSelected ? 'selected' : ''}" onclick="toggleQuestion('${q.id}')">
+                        <input type="checkbox" class="qb-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">
+                        <div class="qb-content">
+                            <div class="qb-text">${q.question_text.substring(0, 80)}${q.question_text.length > 80 ? '...' : ''}</div>
+                            <div class="qb-meta">
+                                <span class="qb-badge type">${typeLabels[q.question_type] || q.question_type}</span>
+                                <span class="qb-badge diff">${diffLabels[q.difficulty] || q.difficulty}</span>
+                                <span class="qb-badge marks">${q.marks || 1} درجة</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleQuestion(id) {
+            const index = selectedQuestions.findIndex(sq => sq.id === id);
+            if (index > -1) {
+                selectedQuestions.splice(index, 1);
+            } else {
+                const q = qbQuestions.find(q => q.id === id);
+                if (q) selectedQuestions.push(q);
+            }
+            updateSelectedPanel();
+            loadQuestionBank(); // Refresh to update checkboxes
+        }
+
+        function updateSelectedPanel() {
+            const list = document.getElementById('selectedList');
+            document.getElementById('selectedCount').textContent = selectedQuestions.length;
+
+            if (selectedQuestions.length === 0) {
+                list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--gray);font-size:0.9rem;"><i class="fas fa-hand-pointer" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>اختر أسئلة من البنك</div>`;
+            } else {
+                list.innerHTML = selectedQuestions.map((q, i) => `
+                    <div class="selected-item">
+                        <div class="selected-item-num">${i + 1}</div>
+                        <div class="selected-item-text">${q.question_text.substring(0, 40)}...</div>
+                        <button class="selected-item-remove" onclick="toggleQuestion('${q.id}')"><i class="fas fa-times"></i></button>
+                    </div>
+                `).join('');
+            }
+
+            const totalMarks = selectedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
+            const totalTime = selectedQuestions.reduce((sum, q) => sum + (q.time_limit || 1), 0);
+
+            document.getElementById('summaryCount').textContent = selectedQuestions.length;
+            document.getElementById('summaryMarks').textContent = totalMarks;
+            document.getElementById('summaryTime').textContent = totalTime + ' دقيقة';
+            document.getElementById('summaryTotal').textContent = totalMarks;
+            document.getElementById('examTotalMarks').value = totalMarks;
+        }
+
+        function toggleSetting(el, setting) {
+            el.classList.toggle('active');
+            examSettings[setting] = el.classList.contains('active');
+        }
+
+        function generatePreview() {
+            const title = document.getElementById('examTitle').value;
+            const subject = subjects.find(s => s.id === document.getElementById('examSubject').value);
+            const grade = document.getElementById('examGrade').value;
+            const duration = document.getElementById('examDuration').value;
+            const totalMarks = selectedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
+
+            let html = `
+                <div class="preview-header">
+                    <h2>${title}</h2>
+                    <p>${subject?.name || ''} - الصف ${grade}</p>
+                    <div class="preview-meta">
+                        <span><i class="fas fa-clock"></i> ${duration} دقيقة</span>
+                        <span><i class="fas fa-star"></i> ${totalMarks} درجة</span>
+                        <span><i class="fas fa-question-circle"></i> ${selectedQuestions.length} سؤال</span>
+                    </div>
+                </div>
+            `;
+
+            selectedQuestions.forEach((q, i) => {
+                html += `<div class="preview-question">
+                    <div class="preview-question-num">السؤال ${i + 1} (${q.marks || 1} درجة)</div>
+                    <div class="preview-question-text">${q.question_text}</div>
+                </div>`;
+            });
+
+            document.getElementById('previewContent').innerHTML = html;
+        }
+
+        async function publishExam() {
+            const publishBtn = document.getElementById('publishBtn');
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر...';
+
+            try {
+                const examData = {
+                    title: document.getElementById('examTitle').value.trim(),
+                    description: document.getElementById('examDescription').value.trim(),
+                    subject_id: document.getElementById('examSubject').value,
+                    grade: document.getElementById('examGrade').value,
+                    start_date: document.getElementById('examStartDate').value,
+                    end_date: document.getElementById('examEndDate').value,
+                    duration: parseInt(document.getElementById('examDuration').value),
+                    total_marks: parseFloat(document.getElementById('examTotalMarks').value),
+                    instructions: document.getElementById('examInstructions').value.trim(),
+                    settings: examSettings,
+                    created_by: currentUser.id,
+                    status: 'published',
+                    created_at: new Date().toISOString()
+                };
+
+                const { data: exam, error: examError } = await supabase
+                    .from('exam_exams')
+                    .insert([examData])
+                    .select()
+                    .single();
+
+                if (examError) throw examError;
+
+                createdExamId = exam.id;
+
+                // Insert exam questions
+                const examQuestions = selectedQuestions.map((q, i) => ({
+                    exam_id: exam.id,
+                    question_id: q.id,
+                    question_order: i + 1,
+                    marks: q.marks || 1
+                }));
+
+                const { error: qError } = await supabase.from('exam_exam_questions').insert(examQuestions);
+                if (qError) throw qError;
+
+                showToast('تم نشر الاختبار بنجاح!', 'success');
+
+                document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+                document.getElementById('stepSuccess').classList.add('active');
+
+                const examUrl = `student/take-exam.html?id=${exam.id}`;
+                document.getElementById('examLink').innerHTML = `
+                    <div style="margin-bottom:0.5rem;font-weight:600;">رابط الاختبار:</div>
+                    <a href="${examUrl}" style="color:var(--primary);text-decoration:none;">${examUrl}</a>
+                `;
+
+            } catch (err) {
+                console.error('Error:', err);
+                showToast('حدث خطأ: ' + err.message, 'error');
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = '<i class="fas fa-paper-plane"></i> نشر الاختبار';
+            }
+        }
+
+        function viewExam() {
+            if (createdExamId) {
+                location.href = `student/take-exam.html?id=${createdExamId}`;
+            }
+        }
+
+        function saveDraft() {
+            showToast('تم حفظ المسودة (وضع تجريبي)', 'info');
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function logout() { localStorage.clear(); location.href = 'login.html'; }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

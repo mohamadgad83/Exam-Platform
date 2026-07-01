@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بنك الأسئلة | منصة الاختبارات</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-dark: #4338ca; --primary-light: #818cf8;
+            --secondary: #06b6d4; --accent: #f59e0b; --success: #10b981;
+            --danger: #ef4444; --dark: #0f172a; --gray: #64748b;
+            --gray-light: #e2e8f0; --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --radius: 12px; --radius-lg: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+        .app-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark); color: white; padding: 1.5rem;
+            position: fixed; right: 0; top: 0; bottom: 0; width: 260px;
+            overflow-y: auto; z-index: 100;
+        }
+        .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+        .sidebar-logo-icon {
+            width: 40px; height: 40px; border-radius: var(--radius);
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-size: 1.1rem;
+        }
+        .sidebar-logo-text { font-size: 1.1rem; font-weight: 800; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.25rem; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem; border-radius: var(--radius);
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            font-weight: 500; transition: all 0.3s; font-size: 0.9rem;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1); color: white;
+        }
+        .sidebar-menu a.active { background: var(--gradient-1); }
+        .sidebar-menu a i { width: 20px; text-align: center; }
+        .sidebar-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 1rem 0; }
+        .sidebar-user { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-user-info { display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+        }
+        .sidebar-user-name { font-weight: 700; font-size: 0.9rem; }
+        .sidebar-user-role { font-size: 0.75rem; opacity: 0.6; }
+
+        /* Main Content */
+        .main-content { margin-right: 260px; min-height: 100vh; }
+
+        /* Top Bar */
+        .top-bar {
+            background: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--gray-light); position: sticky; top: 0; z-index: 50;
+        }
+        .top-bar-title { font-size: 1.25rem; font-weight: 800; color: var(--dark); }
+        .top-bar-actions { display: flex; gap: 0.75rem; align-items: center; }
+        .top-bar-btn {
+            padding: 0.6rem 1.25rem; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            transition: all 0.3s; border: none; display: inline-flex;
+            align-items: center; gap: 0.5rem; text-decoration: none;
+        }
+        .top-bar-btn.primary { background: var(--gradient-1); color: white; }
+        .top-bar-btn.primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .top-bar-btn.secondary { background: var(--gray-light); color: var(--dark); }
+
+        /* Page Content */
+        .page-content { padding: 2rem; }
+
+        /* Stats Cards */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white; border-radius: var(--radius); padding: 1.5rem;
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+        }
+        .stat-icon.blue { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .stat-icon.green { background: rgba(16,185,129,0.1); color: var(--success); }
+        .stat-icon.orange { background: rgba(245,158,11,0.1); color: var(--accent); }
+        .stat-icon.cyan { background: rgba(6,182,212,0.1); color: var(--secondary); }
+        .stat-info h3 { font-size: 1.5rem; font-weight: 800; color: var(--dark); }
+        .stat-info p { color: var(--gray); font-size: 0.85rem; }
+
+        /* Filters */
+        .filters-card {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            padding: 1.5rem; margin-bottom: 2rem;
+        }
+        .filters-row {
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 1rem; align-items: end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-label { font-size: 0.8rem; font-weight: 600; color: var(--dark); }
+        .filter-input {
+            padding: 0.625rem 0.875rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); font-family: 'Tajawal'; font-size: 0.9rem;
+            transition: all 0.3s; background: white;
+        }
+        .filter-input:focus { outline: none; border-color: var(--primary); }
+        .filter-btn {
+            padding: 0.625rem 1.25rem; border-radius: var(--radius);
+            background: var(--gradient-1); color: white; border: none;
+            font-weight: 600; cursor: pointer; transition: all 0.3s;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            font-family: 'Tajawal'; font-size: 0.85rem; height: 42px;
+        }
+        .filter-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .filter-btn.clear { background: var(--gray-light); color: var(--dark); }
+        .filter-btn.clear:hover { background: #cbd5e1; }
+
+        /* Questions List */
+        .questions-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem;
+        }
+        .questions-count { color: var(--gray); font-size: 0.9rem; }
+        .questions-count span { font-weight: 700; color: var(--dark); }
+        .view-toggle { display: flex; gap: 0.5rem; }
+        .view-btn {
+            width: 36px; height: 36px; border-radius: var(--radius);
+            border: 1px solid var(--gray-light); background: white;
+            cursor: pointer; transition: all 0.3s; color: var(--gray);
+        }
+        .view-btn:hover, .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .questions-grid { display: grid; gap: 1rem; }
+        .question-card {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            overflow: hidden; transition: all 0.3s;
+        }
+        .question-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .question-card-header {
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9;
+            display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+        }
+        .question-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .question-badge {
+            padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-type { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .badge-subject { background: rgba(6,182,212,0.1); color: var(--secondary); }
+        .badge-grade { background: rgba(245,158,11,0.1); color: var(--accent); }
+        .badge-difficulty.easy { background: rgba(16,185,129,0.1); color: var(--success); }
+        .badge-difficulty.medium { background: rgba(245,158,11,0.1); color: var(--accent); }
+        .badge-difficulty.hard { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .question-actions { display: flex; gap: 0.35rem; }
+        .q-action-btn {
+            width: 32px; height: 32px; border-radius: var(--radius);
+            border: none; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem;
+        }
+        .q-action-btn.edit { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .q-action-btn.edit:hover { background: var(--primary); color: white; }
+        .q-action-btn.delete { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .q-action-btn.delete:hover { background: var(--danger); color: white; }
+        .q-action-btn.view { background: rgba(6,182,212,0.1); color: var(--secondary); }
+        .q-action-btn.view:hover { background: var(--secondary); color: white; }
+
+        .question-card-body { padding: 1.25rem 1.5rem; }
+        .question-text { font-size: 1rem; line-height: 1.8; color: var(--dark); margin-bottom: 1rem; }
+        .question-image { max-width: 100%; border-radius: var(--radius); margin-bottom: 1rem; }
+        .question-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .q-option {
+            padding: 0.75rem 1rem; border-radius: var(--radius);
+            background: #f8fafc; border: 1px solid var(--gray-light);
+            display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem;
+        }
+        .q-option.correct { background: rgba(16,185,129,0.05); border-color: var(--success); color: var(--success); }
+        .q-option-letter {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+        }
+        .q-option.correct .q-option-letter { background: var(--success); }
+
+        .question-card-footer {
+            padding: 1rem 1.5rem; background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .question-info { display: flex; gap: 1.5rem; font-size: 0.8rem; color: var(--gray); }
+        .question-info span { display: flex; align-items: center; gap: 0.35rem; }
+        .question-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .q-tag {
+            padding: 0.2rem 0.6rem; background: rgba(79,70,229,0.08);
+            color: var(--primary); border-radius: 50px;
+            font-size: 0.7rem; font-weight: 600;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 0.5rem; margin-top: 2rem;
+        }
+        .page-btn {
+            padding: 0.5rem 0.875rem; border-radius: var(--radius);
+            border: 1px solid var(--gray-light); background: white;
+            cursor: pointer; transition: all 0.3s; font-family: 'Tajawal';
+            font-weight: 600; color: var(--dark); font-size: 0.85rem;
+        }
+        .page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+        .page-btn.active { background: var(--gradient-1); color: white; border-color: var(--primary); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 4rem 2rem; }
+        .empty-icon {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(79,70,229,0.05); color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; margin: 0 auto 1.5rem;
+        }
+        .empty-state h3 { font-size: 1.25rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+        .empty-state p { color: var(--gray); margin-bottom: 1.5rem; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white; border-radius: var(--radius-lg);
+            max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+            box-shadow: var(--shadow-xl); animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header {
+            padding: 1.5rem; border-bottom: 1px solid var(--gray-light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 1.1rem; font-weight: 800; }
+        .modal-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--gray); }
+        .modal-body { padding: 1.5rem; }
+        .modal-footer {
+            padding: 1rem 1.5rem; border-top: 1px solid var(--gray-light);
+            display: flex; justify-content: flex-end; gap: 0.75rem;
+        }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 1rem; left: 1rem; z-index: 9999; }
+        .toast { padding: 1rem 1.5rem; border-radius: var(--radius); color: white; font-weight: 600; margin-bottom: 0.5rem; animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-lg); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Loading */
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Mobile */
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark); }
+        @media (max-width: 1024px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { transform: translateX(100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-menu-btn { display: block; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .filters-row { grid-template-columns: 1fr; }
+            .page-content { padding: 1rem; }
+        }
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .question-card-header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Delete Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-trash-alt" style="color:var(--danger);"></i> حذف السؤال</h3>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حذف هذا السؤال؟ لا يمكن التراجع عن هذا الإجراء.</p>
+                <p style="color:var(--gray);font-size:0.9rem;margin-top:0.5rem;" id="deleteQuestionText"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="top-bar-btn secondary" onclick="closeModal()">إلغاء</button>
+                <button class="top-bar-btn" style="background:var(--danger);color:white;" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span class="sidebar-logo-text">ExamPlatform</span>
+            </div>
+            <ul class="sidebar-menu" id="sidebarMenu"></ul>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <div class="sidebar-user-name" id="userName">المستخدم</div>
+                        <div class="sidebar-user-role" id="userRole">...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <h1 class="top-bar-title"><i class="fas fa-question-circle" style="color:var(--primary);"></i> بنك الأسئلة</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <a href="add-question.html" class="top-bar-btn primary">
+                        <i class="fas fa-plus"></i> إضافة سؤال
+                    </a>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Stats -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-question-circle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="totalQuestions">0</h3>
+                            <p>إجمالي الأسئلة</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="mcqCount">0</h3>
+                            <p>اختيار من متعدد</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-align-left"></i></div>
+                        <div class="stat-info">
+                            <h3 id="essayCount">0</h3>
+                            <p>أسئلة مقالية</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan"><i class="fas fa-book"></i></div>
+                        <div class="stat-info">
+                            <h3 id="subjectsCount">0</h3>
+                            <p>مواد دراسية</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-card">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label class="filter-label">بحث في الأسئلة</label>
+                            <input type="text" class="filter-input" id="searchInput" placeholder="ابحث بكلمة في السؤال...">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">المادة</label>
+                            <select class="filter-input" id="filterSubject">
+                                <option value="">جميع المواد</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">نوع السؤال</label>
+                            <select class="filter-input" id="filterType">
+                                <option value="">جميع الأنواع</option>
+                                <option value="mcq">اختيار من متعدد</option>
+                                <option value="truefalse">صح / خطأ</option>
+                                <option value="essay">مقالي</option>
+                                <option value="fillblank">أكمل الفراغ</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">الصعوبة</label>
+                            <select class="filter-input" id="filterDifficulty">
+                                <option value="">جميع المستويات</option>
+                                <option value="easy">سهل</option>
+                                <option value="medium">متوسط</option>
+                                <option value="hard">صعب</option>
+                            </select>
+                        </div>
+                        <div class="filter-group" style="display:flex;gap:0.5rem;">
+                            <button class="filter-btn" onclick="applyFilters()">
+                                <i class="fas fa-search"></i> بحث
+                            </button>
+                            <button class="filter-btn clear" onclick="clearFilters()">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions List -->
+                <div class="questions-header">
+                    <div class="questions-count">عرض <span id="showingCount">0</span> من <span id="totalCount">0</span> سؤال</div>
+                    <div class="view-toggle">
+                        <button class="view-btn active" onclick="setView('list')" title="عرض قائمة"><i class="fas fa-list"></i></button>
+                        <button class="view-btn" onclick="setView('grid')" title="عرض شبكة"><i class="fas fa-th-large"></i></button>
+                    </div>
+                </div>
+
+                <div class="questions-grid" id="questionsContainer">
+                    <!-- Questions loaded dynamically -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination"></div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display:none;">
+                    <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                    <h3>لا توجد أسئلة</h3>
+                    <p>لم يتم العثور على أسئلة مطابقة لمعايير البحث</p>
+                    <a href="add-question.html" class="top-bar-btn primary" style="display:inline-flex;">
+                        <i class="fas fa-plus"></i> إضافة سؤال جديد
+                    </a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="shared/supabase-client.js"></script>
+    <script src="shared/app.js"></script>
+    <script>
+        let currentUser = null;
+        let questions = [];
+        let subjects = [];
+        let currentPage = 1;
+        let perPage = 10;
+        let totalPages = 1;
+        let deleteId = null;
+        let currentView = 'list';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = JSON.parse(localStorage.getItem('exam_user') || '{}');
+            if (!currentUser.id) { location.href = 'login.html'; return; }
+
+            setupSidebar();
+            await loadSubjects();
+            await loadQuestions();
+        });
+
+        function setupSidebar() {
+            const menu = document.getElementById('sidebarMenu');
+            const role = currentUser.role;
+
+            document.getElementById('userName').textContent = currentUser.first_name + ' ' + currentUser.last_name;
+            document.getElementById('userRole').textContent = role === 'admin' ? 'مدير النظام' : role === 'teacher' ? 'معلم' : 'طالب';
+            document.getElementById('userAvatar').textContent = (currentUser.first_name?.[0] || 'U');
+
+            let links = '';
+            if (role === 'admin') {
+                links = `
+                    <li><a href="admin/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="admin/users.html"><i class="fas fa-users"></i> المستخدمين</a></li>
+                    <li><a href="admin/subjects.html"><i class="fas fa-book"></i> المواد</a></li>
+                    <li><a href="questions-bank.html" class="active"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="admin/reports.html"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="admin/settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                `;
+            } else if (role === 'teacher') {
+                links = `
+                    <li><a href="teacher/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="questions-bank.html" class="active"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="teacher/students.html"><i class="fas fa-user-graduate"></i> الطلاب</a></li>
+                    <li><a href="teacher/results.html"><i class="fas fa-chart-line"></i> النتائج</a></li>
+                `;
+            }
+            links += `<li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>`;
+            menu.innerHTML = links;
+        }
+
+        async function loadSubjects() {
+            const { data, error } = await supabase.from('exam_subjects').select('*').order('name');
+            if (error) return;
+            subjects = data;
+
+            const select = document.getElementById('filterSubject');
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('subjectsCount').textContent = data.length;
+        }
+
+        async function loadQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '<div style="text-align:center;padding:3rem;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary);"></i></div>';
+
+            let query = supabase.from('exam_questions_bank').select('*', { count: 'exact' });
+
+            // Apply filters
+            const search = document.getElementById('searchInput').value.trim();
+            const subject = document.getElementById('filterSubject').value;
+            const type = document.getElementById('filterType').value;
+            const difficulty = document.getElementById('filterDifficulty').value;
+
+            if (search) query = query.ilike('question_text', `%${search}%`);
+            if (subject) query = query.eq('subject_id', subject);
+            if (type) query = query.eq('question_type', type);
+            if (difficulty) query = query.eq('difficulty', difficulty);
+
+            // Teacher can only see their own questions
+            if (currentUser.role === 'teacher') {
+                query = query.eq('created_by', currentUser.id);
+            }
+
+            query = query.order('created_at', { ascending: false });
+            query = query.range((currentPage - 1) * perPage, currentPage * perPage - 1);
+
+            const { data, error, count } = await query;
+
+            if (error) {
+                showToast('حدث خطأ في تحميل الأسئلة', 'error');
+                return;
+            }
+
+            questions = data || [];
+            totalPages = Math.ceil((count || 0) / perPage);
+
+            // Update stats
+            document.getElementById('totalQuestions').textContent = count || 0;
+            document.getElementById('showingCount').textContent = questions.length;
+            document.getElementById('totalCount').textContent = count || 0;
+
+            // Count by type
+            const typeCounts = { mcq: 0, truefalse: 0, essay: 0, fillblank: 0 };
+            questions.forEach(q => { if (typeCounts[q.question_type] !== undefined) typeCounts[q.question_type]++; });
+            document.getElementById('mcqCount').textContent = typeCounts.mcq;
+            document.getElementById('essayCount').textContent = typeCounts.essay + typeCounts.truefalse + typeCounts.fillblank;
+
+            if (questions.length === 0) {
+                container.innerHTML = '';
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+            renderQuestions();
+            renderPagination();
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = questions.map(q => renderQuestionCard(q)).join('');
+        }
+
+        function renderQuestionCard(q) {
+            const subject = subjects.find(s => s.id === q.subject_id);
+            const typeLabels = { mcq: 'اختيار من متعدد', truefalse: 'صح / خطأ', essay: 'مقالي', fillblank: 'أكمل الفراغ' };
+            const diffLabels = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
+            const diffClass = q.difficulty || 'easy';
+
+            let optionsHtml = '';
+            if (q.question_type === 'mcq' && q.answer_data?.options) {
+                optionsHtml = `<div class="question-options">${q.answer_data.options.map((opt, i) => `
+                    <div class="q-option ${opt.is_correct ? 'correct' : ''}">
+                        <div class="q-option-letter">${['أ','ب','ج','د','ه','و'][i]}</div>
+                        <span>${opt.text}</span>
+                    </div>
+                `).join('')}</div>`;
+            } else if (q.question_type === 'truefalse') {
+                optionsHtml = `<div class="question-options">
+                    <div class="q-option ${q.answer_data?.correct_answer ? 'correct' : ''}"><i class="fas fa-check" style="color:var(--success);"></i> صح</div>
+                    <div class="q-option ${!q.answer_data?.correct_answer ? 'correct' : ''}"><i class="fas fa-times" style="color:var(--danger);"></i> خطأ</div>
+                </div>`;
+            } else if (q.question_type === 'fillblank') {
+                optionsHtml = `<div style="padding:0.75rem;background:rgba(16,185,129,0.05);border-radius:var(--radius);border:1px solid var(--success);color:var(--success);">
+                    <i class="fas fa-check-circle"></i> الإجابة: ${q.answer_data?.correct_answer || 'غير محدد'}
+                </div>`;
+            } else if (q.question_type === 'essay') {
+                optionsHtml = `<div style="padding:0.75rem;background:rgba(6,182,212,0.05);border-radius:var(--radius);border:1px solid var(--secondary);color:var(--secondary);">
+                    <i class="fas fa-align-left"></i> سؤال مقالي - الدرجة القصوى: ${q.answer_data?.max_score || 10}
+                </div>`;
+            }
+
+            const imageHtml = q.image_url ? `<img src="${q.image_url}" class="question-image" alt="صورة السؤال">` : '';
+
+            const tagsHtml = (q.tags || []).map(t => `<span class="q-tag">${t}</span>`).join('');
+
+            return `
+                <div class="question-card">
+                    <div class="question-card-header">
+                        <div class="question-meta">
+                            <span class="question-badge badge-type">${typeLabels[q.question_type] || q.question_type}</span>
+                            ${subject ? `<span class="question-badge badge-subject">${subject.name}</span>` : ''}
+                            ${q.grade ? `<span class="question-badge badge-grade">الصف ${q.grade}</span>` : ''}
+                            <span class="question-badge badge-difficulty ${diffClass}">${diffLabels[diffClass]}</span>
+                        </div>
+                        <div class="question-actions">
+                            <button class="q-action-btn view" onclick="viewQuestion('${q.id}')" title="عرض"><i class="fas fa-eye"></i></button>
+                            <button class="q-action-btn edit" onclick="editQuestion('${q.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
+                            <button class="q-action-btn delete" onclick="showDeleteModal('${q.id}', '${q.question_text.substring(0, 50)}...')" title="حذف"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="question-card-body">
+                        <div class="question-text">${q.question_text}</div>
+                        ${imageHtml}
+                        ${optionsHtml}
+                    </div>
+                    <div class="question-card-footer">
+                        <div class="question-info">
+                            <span><i class="fas fa-star"></i> ${q.marks || 1} درجة</span>
+                            <span><i class="fas fa-clock"></i> ${q.time_limit || 1} دقيقة</span>
+                            <span><i class="fas fa-calendar"></i> ${new Date(q.created_at).toLocaleDateString('ar-SA')}</span>
+                        </div>
+                        <div class="question-tags">${tagsHtml}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+            let html = '';
+            html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span style="color:var(--gray);">...</span>`;
+                }
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadQuestions();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadQuestions();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterSubject').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterDifficulty').value = '';
+            currentPage = 1;
+            loadQuestions();
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            // Grid view implementation can be added
+        }
+
+        function viewQuestion(id) {
+            const q = questions.find(q => q.id === id);
+            if (!q) return;
+            // Can open a modal with full question details
+            showToast('عرض تفاصيل السؤال - يمكن تطوير نافذة منبثقة', 'info');
+        }
+
+        function editQuestion(id) {
+            location.href = `add-question.html?edit=${id}`;
+        }
+
+        function showDeleteModal(id, text) {
+            deleteId = id;
+            document.getElementById('deleteQuestionText').textContent = text;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            deleteId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deleteId) return;
+
+            const { error } = await supabase.from('exam_questions_bank').delete().eq('id', deleteId);
+
+            if (error) {
+                showToast('حدث خطأ أثناء الحذف', 'error');
+                return;
+            }
+
+            showToast('تم حذف السؤال بنجاح', 'success');
+            closeModal();
+            await loadQuestions();
+        }
+
+        // Search on Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyFilters();
+        });
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function logout() { localStorage.clear(); location.href = 'login.html'; }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

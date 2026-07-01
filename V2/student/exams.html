@@ -3,218 +3,513 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الاختبارات | منصة الاختبارات</title>
+    <title>الامتحانات - الطالب</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --dark: #1e293b; --gray: #64748b;
+            --light: #f1f5f9; --white: #ffffff;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08); --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+            --radius: 12px; --radius-lg: 16px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: var(--dark); min-height: 100vh; }
+
+        .sidebar {
+            position: fixed; right: 0; top: 0; width: 260px; height: 100vh;
+            background: var(--dark); color: var(--white); z-index: 1000;
+            display: flex; flex-direction: column; transition: transform 0.3s;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .sidebar-header .user-info { margin-top: 12px; font-size: 0.85rem; opacity: 0.8; }
+        .sidebar-header .user-role { font-size: 0.75rem; color: var(--primary); margin-top: 4px; }
+        .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+            color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.2s;
+            border-right: 3px solid transparent;
+        }
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: var(--white); background: rgba(99,102,241,0.15);
+            border-right-color: var(--primary);
+        }
+        .sidebar-nav a i { width: 24px; text-align: center; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-footer button {
+            width: 100%; padding: 10px; background: rgba(239,68,68,0.2); color: var(--danger);
+            border: 1px solid var(--danger); border-radius: var(--radius); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .sidebar-footer button:hover { background: var(--danger); color: white; }
+
+        .main-content { margin-right: 260px; min-height: 100vh; }
+        .top-bar {
+            background: var(--white); padding: 16px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
+        }
+        .top-bar h1 { font-size: 1.3rem; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex; gap: 8px; padding: 24px 32px 0;
+        }
+        .filter-tab {
+            padding: 10px 24px; border-radius: var(--radius); border: 1px solid var(--light);
+            background: var(--white); cursor: pointer; font-size: 0.9rem; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-tab.active {
+            background: var(--primary); color: white; border-color: var(--primary);
+        }
+        .filter-tab .count {
+            background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+
+        /* Search & Filter Bar */
+        .search-bar {
+            display: flex; gap: 12px; padding: 16px 32px;
+        }
+        .search-input {
+            flex: 1; padding: 12px 16px; border: 1px solid var(--light);
+            border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        .filter-select {
+            padding: 12px 16px; border: 1px solid var(--light);
+            border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;
+            background: var(--white); min-width: 150px;
+        }
+
+        /* Exams Grid */
+        .exams-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px; padding: 0 32px 32px;
+        }
+        .exam-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column;
+        }
+        .exam-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .exam-card-header {
+            padding: 20px 24px; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; position: relative;
+        }
+        .exam-card-header .subject-badge {
+            display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.2);
+            border-radius: 20px; font-size: 0.75rem; margin-bottom: 10px;
+        }
+        .exam-card-header h3 { font-size: 1.1rem; margin-bottom: 6px; }
+        .exam-card-header p { font-size: 0.8rem; opacity: 0.9; }
+        .exam-status-badge {
+            position: absolute; top: 16px; left: 16px;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .status-available { background: var(--success); color: white; }
+        .status-upcoming { background: var(--info); color: white; }
+        .status-completed { background: var(--gray); color: white; }
+        .status-missed { background: var(--danger); color: white; }
+
+        .exam-card-body { padding: 20px 24px; flex: 1; }
+        .exam-meta-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .exam-meta-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: var(--light); border-radius: var(--radius);
+        }
+        .exam-meta-item i { color: var(--primary); width: 20px; text-align: center; }
+        .exam-meta-item div { font-size: 0.8rem; }
+        .exam-meta-item div strong { display: block; font-size: 0.9rem; color: var(--dark); }
+
+        .exam-card-footer {
+            padding: 16px 24px; border-top: 1px solid var(--light);
+            display: flex; gap: 10px;
+        }
+        .btn {
+            flex: 1; padding: 12px; border-radius: var(--radius); border: none;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-outline {
+            background: transparent; color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-gray { background: var(--light); color: var(--gray); cursor: not-allowed; }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--gray);
+        }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; opacity: 0.4; }
+        .empty-state h3 { margin-bottom: 8px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid var(--light);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast-container {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 14px 20px; border-radius: var(--radius); color: white;
+            font-size: 0.9rem; display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease;
+            min-width: 300px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        /* Impersonation Banner */
+        .impersonation-banner {
+            background: linear-gradient(90deg, var(--warning), #fbbf24);
+            color: var(--dark); padding: 10px 32px; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .impersonation-banner button {
+            background: var(--dark); color: white; border: none;
+            padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-toggle { display: block; }
+            .exams-grid { grid-template-columns: 1fr; padding: 0 16px 16px; }
+            .search-bar { flex-direction: column; padding: 16px; }
+            .filter-tabs { padding: 16px 16px 0; overflow-x: auto; }
+            .top-bar { padding: 16px; }
+        }
+    </style>
 </head>
-<body class="dark-mode">
-    <div class="app-layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>🎓 منصة الاختبارات</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="./dashboard.html" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-text">لوحة التحكم</span>
-                </a>
-                <a href="./exams.html" class="nav-item active">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">الاختبارات</span>
-                </a>
-                <a href="./results.html" class="nav-item">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-text">النتائج</span>
-                </a>
-                <a href="./profile.html" class="nav-item">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">الملف الشخصي</span>
-                </a>
-                <a href="../admin/dashboard.html" class="nav-item admin-only" style="display:none;">
-                    <span class="nav-icon">🔧</span>
-                    <span class="nav-text">لوحة الأدمن</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
-            </div>
-        </aside>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    <div class="toast-container" id="toastContainer"></div>
 
-        <main class="main-content">
-            <header class="top-bar">
-                <h1>الاختبارات المتاحة</h1>
-                <div class="filters">
-                    <select id="subjectFilter" class="form-select">
-                        <option value="">جميع المواد</option>
-                    </select>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">جميع الحالات</option>
-                        <option value="available">متاح الآن</option>
-                        <option value="upcoming">قادم</option>
-                        <option value="completed">مكتمل</option>
-                    </select>
-                    <input type="text" id="searchInput" class="form-input" placeholder="بحث...">
-                </div>
-            </header>
-
-            <div class="content-wrapper">
-                <div class="exams-grid" id="examsGrid">
-                    <div class="loading-spinner">جاري التحميل...</div>
-                </div>
-            </div>
-        </main>
+    <div class="impersonation-banner" id="impersonationBanner" style="display:none;">
+        <span><i class="fas fa-user-secret"></i> أنت تتصفح كطالب: <strong id="impersonatedName"></strong></span>
+        <button onclick="exitImpersonation()"><i class="fas fa-sign-out-alt"></i> خروج من وضع الانتحال</button>
     </div>
 
-    <!-- Exam Start Modal -->
-    <div class="modal-overlay" id="startModal" style="display:none;">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>بدء الاختبار</h3>
-                <button class="modal-close" onclick="App.Modal.close('startModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <p id="examConfirmText">هل أنت متأكد من بدء هذا الاختبار؟</p>
-                <ul class="info-list">
-                    <li>⏱️ المدة: <span id="modalDuration">-</span></li>
-                    <li>❓ عدد الأسئلة: <span id="modalQuestions">-</span></li>
-                    <li>📊 الدرجة الكلية: <span id="modalTotal">-</span></li>
-                    <li>⚠️ لا يمكنك إعادة الاختبار بعد البدء</li>
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="App.Modal.close('startModal')">إلغاء</button>
-                <button class="btn btn-primary" id="confirmStartBtn">بدء الاختبار</button>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-graduation-cap"></i> منصة الاختبارات</div>
+            <div class="user-info" id="userName">جاري التحميل...</div>
+            <div class="user-role" id="userRole">طالب</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fas fa-home"></i> لوحة التحكم</a>
+            <a href="exams.html" class="active"><i class="fas fa-file-alt"></i> الامتحانات</a>
+            <a href="results.html"><i class="fas fa-chart-bar"></i> نتائجي</a>
+            <a href="groups.html"><i class="fas fa-users"></i> مجموعاتي</a>
+            <a href="profile.html"><i class="fas fa-user"></i> ملفي الشخصي</a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-file-alt"></i> الامتحانات</h1>
+            <div></div>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">
+                <i class="fas fa-th-large"></i> الكل <span class="count" id="countAll">0</span>
+            </button>
+            <button class="filter-tab" data-filter="available" onclick="setFilter('available')">
+                <i class="fas fa-play-circle"></i> متاحة <span class="count" id="countAvailable">0</span>
+            </button>
+            <button class="filter-tab" data-filter="upcoming" onclick="setFilter('upcoming')">
+                <i class="fas fa-clock"></i> قادمة <span class="count" id="countUpcoming">0</span>
+            </button>
+            <button class="filter-tab" data-filter="completed" onclick="setFilter('completed')">
+                <i class="fas fa-check-circle"></i> مكتملة <span class="count" id="countCompleted">0</span>
+            </button>
+        </div>
+
+        <div class="search-bar">
+            <input type="text" class="search-input" id="searchInput" placeholder="ابحث في الامتحانات..." oninput="filterExams()">
+            <select class="filter-select" id="subjectFilter" onchange="filterExams()">
+                <option value="">كل المواد</option>
+            </select>
+            <select class="filter-select" id="sortFilter" onchange="filterExams()">
+                <option value="newest">الأحدث</option>
+                <option value="oldest">الأقدم</option>
+                <option value="name">الاسم</option>
+            </select>
+        </div>
+
+        <div class="exams-grid" id="examsGrid">
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h3>جاري تحميل الامتحانات...</h3>
             </div>
         </div>
-    </div>
-
-    <div class="toast-container" id="toastContainer"></div>
+    </main>
 
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
+        let currentUser = null;
+        let impersonatedUser = null;
         let allExams = [];
-        let studentId = null;
-        let currentExam = null;
+        let currentFilter = 'all';
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const user = await examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-            
-            const isAdmin = await examAuth.isAdmin();
-            const isStudent = user.role === 'student' || user.user_metadata?.role === 'student';
-            if (!isStudent && !isAdmin) { window.location.href = '../unauthorized.html'; return; }
-            
-            if (isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
-
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                await examAuth.signOut();
-                window.location.href = '../login.html';
-            });
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
-
-            // Get student record
-            const { data: student } = await examDB.students()
-                .select('id')
-                .eq('user_id', user.id)
-                .single();
-            studentId = student?.id;
-
-            await loadSubjects();
-            await loadExams();
-            
-            // Filters
-            document.getElementById('subjectFilter').addEventListener('change', filterExams);
-            document.getElementById('statusFilter').addEventListener('change', filterExams);
-            document.getElementById('searchInput').addEventListener('input', App.debounce(filterExams, 300));
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initSession();
+                await loadExams();
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ في تحميل البيانات', 'error');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
         });
 
-        async function loadSubjects() {
-            const { data } = await examDB.subjects().select('id, name').order('name');
-            const select = document.getElementById('subjectFilter');
-            if (data) {
-                data.forEach(s => {
-                    select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-                });
+        async function initSession() {
+            const impData = localStorage.getItem('impersonation');
+            if (impData) {
+                impersonatedUser = JSON.parse(impData);
+                document.getElementById('impersonationBanner').style.display = 'flex';
+                document.getElementById('impersonatedName').textContent = impersonatedUser.full_name || impersonatedUser.email;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+
+            const targetUserId = impersonatedUser ? impersonatedUser.id : user.id;
+            const { data: profile } = await supabase.from('exam_users').select('*').eq('id', targetUserId).single();
+            currentUser = profile || { id: targetUserId, email: user.email, full_name: user.email };
+            document.getElementById('userName').textContent = currentUser.full_name || currentUser.email;
+
+            const effectiveRole = impersonatedUser ? impersonatedUser.role : currentUser.role;
+            if (effectiveRole !== 'student' && !impersonatedUser) {
+                showToast('غير مصرح بالوصول', 'error');
+                setTimeout(() => logout(), 2000); return;
             }
         }
 
         async function loadExams() {
-            App.Loading.show();
-            try {
-                const { data: exams } = await examDB.exams()
-                    .select('*, exam_subjects(name), exam_exam_questions(count)')
-                    .eq('status', 'published')
-                    .order('start_time', { ascending: false });
+            const userId = impersonatedUser ? impersonatedUser.id : currentUser.id;
+            const now = new Date().toISOString();
 
-                // Get attempts for this student
-                const { data: attempts } = studentId ? await examDB.attempts()
-                    .select('exam_id, status, score')
-                    .eq('student_id', studentId) : { data: [] };
+            // Get all published exams
+            const { data: exams } = await supabase
+                .from('exam_exams')
+                .select('*')
+                .eq('status', 'published')
+                .order('start_time', { ascending: true });
 
-                allExams = (exams || []).map(exam => {
-                    const attempt = attempts?.find(a => a.exam_id === exam.id);
-                    return { ...exam, attempt };
-                });
+            // Get student's attempts
+            const { data: attempts } = await supabase
+                .from('exam_attempts')
+                .select('*, exam:exam_exams(id)')
+                .eq('student_id', userId);
 
-                renderExams(allExams);
-            } catch (err) {
-                App.Toast.error('حدث خطأ في تحميل الاختبارات');
-            } finally {
-                App.Loading.hide();
-            }
+            // Get student's class/group assignments
+            const { data: classStudents } = await supabase
+                .from('exam_class_students')
+                .select('class_id')
+                .eq('student_id', userId);
+
+            const classIds = classStudents?.map(c => c.class_id) || [];
+
+            // Filter exams by class assignment
+            const { data: examClasses } = await supabase
+                .from('exam_exam_classes')
+                .select('exam_id, class_id')
+                .in('class_id', classIds.length > 0 ? classIds : ['none']);
+
+            const allowedExamIds = new Set(examClasses?.map(ec => ec.exam_id) || []);
+
+            // Merge data
+            allExams = (exams || []).map(exam => {
+                const attempt = attempts?.find(a => a.exam_id === exam.id);
+                const isAssigned = allowedExamIds.has(exam.id) || exam.is_public;
+                const startTime = new Date(exam.start_time);
+                const endTime = new Date(exam.end_time);
+                const isAvailable = now >= exam.start_time && now <= exam.end_time;
+                const isUpcoming = now < exam.start_time;
+                const isCompleted = !!attempt && attempt.status === 'completed';
+                const isMissed = now > exam.end_time && !attempt;
+
+                let status = 'upcoming';
+                if (isCompleted) status = 'completed';
+                else if (isMissed) status = 'missed';
+                else if (isAvailable) status = 'available';
+
+                return { ...exam, attempt, status, isAssigned, startTime, endTime };
+            }).filter(e => e.isAssigned);
+
+            // Populate subject filter
+            const subjects = [...new Set(allExams.map(e => e.subject).filter(Boolean))];
+            const subjectSelect = document.getElementById('subjectFilter');
+            subjects.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                subjectSelect.appendChild(opt);
+            });
+
+            updateCounts();
+            filterExams();
+        }
+
+        function updateCounts() {
+            document.getElementById('countAll').textContent = allExams.length;
+            document.getElementById('countAvailable').textContent = allExams.filter(e => e.status === 'available').length;
+            document.getElementById('countUpcoming').textContent = allExams.filter(e => e.status === 'upcoming').length;
+            document.getElementById('countCompleted').textContent = allExams.filter(e => e.status === 'completed').length;
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+            filterExams();
+        }
+
+        function filterExams() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const subject = document.getElementById('subjectFilter').value;
+            const sort = document.getElementById('sortFilter').value;
+
+            let filtered = allExams.filter(exam => {
+                if (currentFilter !== 'all' && exam.status !== currentFilter) return false;
+                if (search && !exam.title.toLowerCase().includes(search)) return false;
+                if (subject && exam.subject !== subject) return false;
+                return true;
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                if (sort === 'newest') return new Date(b.start_time) - new Date(a.start_time);
+                if (sort === 'oldest') return new Date(a.start_time) - new Date(b.start_time);
+                if (sort === 'name') return a.title.localeCompare(b.title);
+                return 0;
+            });
+
+            renderExams(filtered);
         }
 
         function renderExams(exams) {
             const grid = document.getElementById('examsGrid');
-            if (!exams.length) {
-                grid.innerHTML = '<div class="empty-state">لا توجد اختبارات</div>';
+            if (exams.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>لا توجد امتحانات</h3>
+                        <p>لا توجد امتحانات تطابق معايير البحث</p>
+                    </div>`;
                 return;
             }
 
             grid.innerHTML = exams.map(exam => {
+                const statusLabels = {
+                    available: { text: 'متاح الآن', class: 'status-available' },
+                    upcoming: { text: 'قادم', class: 'status-upcoming' },
+                    completed: { text: 'مكتمل', class: 'status-completed' },
+                    missed: { text: 'فائت', class: 'status-missed' }
+                };
+                const status = statusLabels[exam.status];
                 const now = new Date();
-                const start = new Date(exam.start_time);
-                const end = exam.end_time ? new Date(exam.end_time) : null;
-                const isAvailable = start <= now && (!end || now <= end);
-                const isCompleted = exam.attempt?.status === 'completed';
-                const isStarted = exam.attempt?.status === 'in_progress';
+                const timeLeft = exam.status === 'upcoming' 
+                    ? getTimeLeft(exam.startTime) 
+                    : exam.status === 'available' 
+                        ? getTimeLeft(exam.endTime) 
+                        : '';
 
-                let statusClass = 'badge-warning';
-                let statusText = 'قادم';
                 let actionBtn = '';
-
-                if (isCompleted) {
-                    statusClass = 'badge-success';
-                    statusText = 'مكتمل';
-                    actionBtn = `<a href="./exam-review.html?attempt=${exam.attempt.id}" class="btn btn-sm">مراجعة</a>`;
-                } else if (isStarted) {
-                    statusClass = 'badge-info';
-                    statusText = 'مستمر';
-                    actionBtn = `<a href="exam-session.html?exam=${exam.id}" class="btn btn-sm btn-primary">استمرار</a>`;
-                } else if (isAvailable) {
-                    statusClass = 'badge-success';
-                    statusText = 'متاح';
-                    actionBtn = `<button class="btn btn-sm btn-primary" onclick="showStartModal('${exam.id}')">بدء</button>`;
+                if (exam.status === 'available') {
+                    actionBtn = `<a href="exam-attempt.html?id=${exam.id}" class="btn btn-primary"><i class="fas fa-play"></i> بدء الامتحان</a>`;
+                } else if (exam.status === 'completed' && exam.attempt) {
+                    actionBtn = `<a href="exam-review.html?attempt=${exam.attempt.id}" class="btn btn-success"><i class="fas fa-eye"></i> مراجعة</a>`;
+                } else if (exam.status === 'upcoming') {
+                    actionBtn = `<button class="btn btn-gray" disabled><i class="fas fa-clock"></i> غير متاح</button>`;
+                } else {
+                    actionBtn = `<button class="btn btn-gray" disabled><i class="fas fa-times"></i> فائت</button>`;
                 }
 
                 return `
                     <div class="exam-card">
-                        <div class="exam-header">
-                            <span class="badge ${statusClass}">${statusText}</span>
-                            <span class="exam-subject">${exam.exam_subjects?.name || '-'}</span>
+                        <div class="exam-card-header">
+                            <span class="exam-status-badge ${status.class}">${status.text}</span>
+                            <span class="subject-badge">${exam.subject || 'عام'}</span>
+                            <h3>${exam.title}</h3>
+                            <p>${exam.description || 'لا يوجد وصف'}</p>
                         </div>
-                        <h3 class="exam-title">${exam.title}</h3>
-                        <p class="exam-desc">${exam.description || ''}</p>
-                        <div class="exam-meta">
-                            <span>⏱️ ${exam.duration_minutes} دقيقة</span>
-                            <span>❓ ${exam.exam_exam_questions?.count || 0} سؤال</span>
-                            <span>📊 ${exam.total_score} درجة</span>
+                        <div class="exam-card-body">
+                            <div class="exam-meta-grid">
+                                <div class="exam-meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <div>
+                                        <strong>${exam.duration} دقيقة</strong>
+                                        المدة
+                                    </div>
+                                </div>
+                                <div class="exam-meta-item">
+                                    <i class="fas fa-question-circle"></i>
+                                    <div>
+                                        <strong>${exam.total_questions || 0} سؤال</strong>
+                                        عدد الأسئلة
+                                    </div>
+                                </div>
+                                <div class="exam-meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <div>
+                                        <strong>${formatDate(exam.startTime)}</strong>
+                                        تاريخ البدء
+                                    </div>
+                                </div>
+                                <div class="exam-meta-item">
+                                    <i class="fas fa-flag-checkered"></i>
+                                    <div>
+                                        <strong>${formatDate(exam.endTime)}</strong>
+                                        تاريخ الانتهاء
+                                    </div>
+                                </div>
+                            </div>
+                            ${timeLeft ? `<div style="margin-top:12px;padding:10px;background:rgba(99,102,241,0.05);border-radius:8px;text-align:center;font-size:0.85rem;color:var(--primary);"><i class="fas fa-hourglass-half"></i> ${timeLeft}</div>` : ''}
+                            ${exam.attempt?.score !== undefined ? `<div style="margin-top:12px;text-align:center;"><span style="font-size:1.5rem;font-weight:700;color:${getScoreColor(exam.attempt.score)}">${exam.attempt.score}%</span></div>` : ''}
                         </div>
-                        <div class="exam-footer">
-                            <span class="exam-date">${App.DateTime.format(exam.start_time)}</span>
+                        <div class="exam-card-footer">
                             ${actionBtn}
                         </div>
                     </div>
@@ -222,68 +517,40 @@
             }).join('');
         }
 
-        function filterExams() {
-            const subject = document.getElementById('subjectFilter').value;
-            const status = document.getElementById('statusFilter').value;
-            const search = document.getElementById('searchInput').value.toLowerCase();
-
-            let filtered = allExams.filter(exam => {
-                if (subject && exam.subject_id !== subject) return false;
-                if (search && !exam.title.toLowerCase().includes(search) && !exam.description?.toLowerCase().includes(search)) return false;
-                if (status) {
-                    const now = new Date();
-                    const start = new Date(exam.start_time);
-                    const end = exam.end_time ? new Date(exam.end_time) : null;
-                    const isAvailable = start <= now && (!end || now <= end);
-                    const isCompleted = exam.attempt?.status === 'completed';
-                    
-                    if (status === 'available' && !isAvailable) return false;
-                    if (status === 'upcoming' && start > now) return true;
-                    if (status === 'completed' && !isCompleted) return false;
-                    if (status === 'upcoming' && start <= now) return false;
-                }
-                return true;
-            });
-
-            renderExams(filtered);
+        function getTimeLeft(date) {
+            const diff = date - new Date();
+            if (diff <= 0) return 'انتهى';
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            if (days > 0) return `متبقي ${days} يوم و ${hours} ساعة`;
+            if (hours > 0) return `متبقي ${hours} ساعة و ${minutes} دقيقة`;
+            return `متبقي ${minutes} دقيقة`;
         }
 
-        async function showStartModal(examId) {
-            const exam = allExams.find(e => e.id === examId);
-            if (!exam) return;
-            currentExam = exam;
-
-            document.getElementById('examConfirmText').textContent = `هل أنت متأكد من بدء اختبار: ${exam.title}؟`;
-            document.getElementById('modalDuration').textContent = exam.duration_minutes + ' دقيقة';
-            document.getElementById('modalQuestions').textContent = exam.exam_exam_questions?.count || 0;
-            document.getElementById('modalTotal').textContent = exam.total_score;
-
-            document.getElementById('confirmStartBtn').onclick = startExam;
-            App.Modal.open('startModal');
+        function getScoreColor(score) {
+            if (score >= 80) return 'var(--success)';
+            if (score >= 60) return 'var(--warning)';
+            return 'var(--danger)';
         }
 
-        async function startExam() {
-            if (!currentExam || !studentId) return;
-            
-            App.Loading.show();
-            try {
-                // Create attempt
-                const { data: attempt, error } = await examDB.attempts().insert({
-                    exam_id: currentExam.id,
-                    student_id: studentId,
-                    status: 'in_progress',
-                    started_at: new Date().toISOString()
-                }).select().single();
-
-                if (error) throw error;
-
-                App.Toast.success('تم بدء الاختبار');
-                window.location.href = `exam-session.html?exam=${currentExam.id}&attempt=${attempt.id}`;
-            } catch (err) {
-                App.Toast.error('حدث خطأ في بدء الاختبار');
-                App.Loading.hide();
-            }
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('ar-SA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
         }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check', error: 'fa-times', info: 'fa-info' };
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function exitImpersonation() { localStorage.removeItem('impersonation'); window.location.href = '../admin/dashboard.html'; }
+        async function logout() { await supabase.auth.signOut(); localStorage.removeItem('impersonation'); window.location.href = '../login.html'; }
     </script>
 </body>
 </html>

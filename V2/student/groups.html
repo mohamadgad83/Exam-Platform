@@ -1,66 +1,460 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مجموعاتي - الطالب</title>
-  <link rel="stylesheet" href="../shared/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مجموعاتي - الطالب</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --dark: #1e293b; --gray: #64748b;
+            --light: #f1f5f9; --white: #ffffff;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08); --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+            --radius: 12px; --radius-lg: 16px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: var(--dark); min-height: 100vh; }
+
+        .sidebar {
+            position: fixed; right: 0; top: 0; width: 260px; height: 100vh;
+            background: var(--dark); color: var(--white); z-index: 1000;
+            display: flex; flex-direction: column; transition: transform 0.3s;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .sidebar-header .user-info { margin-top: 12px; font-size: 0.85rem; opacity: 0.8; }
+        .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+            color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.2s;
+            border-right: 3px solid transparent;
+        }
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: var(--white); background: rgba(99,102,241,0.15);
+            border-right-color: var(--primary);
+        }
+        .sidebar-nav a i { width: 24px; text-align: center; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-footer button {
+            width: 100%; padding: 10px; background: rgba(239,68,68,0.2); color: var(--danger);
+            border: 1px solid var(--danger); border-radius: var(--radius); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .sidebar-footer button:hover { background: var(--danger); color: white; }
+
+        .main-content { margin-right: 260px; min-height: 100vh; }
+        .top-bar {
+            background: var(--white); padding: 16px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
+        }
+        .top-bar h1 { font-size: 1.3rem; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        /* Groups Grid */
+        .groups-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px; padding: 24px 32px;
+        }
+        .group-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); overflow: hidden; transition: transform 0.2s;
+        }
+        .group-card:hover { transform: translateY(-4px); }
+        .group-header {
+            padding: 24px; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; position: relative;
+        }
+        .group-header h3 { font-size: 1.2rem; margin-bottom: 6px; }
+        .group-header p { font-size: 0.85rem; opacity: 0.9; }
+        .group-icon {
+            position: absolute; top: 20px; left: 20px;
+            width: 48px; height: 48px; background: rgba(255,255,255,0.2);
+            border-radius: var(--radius); display: flex; align-items: center;
+            justify-content: center; font-size: 1.3rem;
+        }
+        .group-body { padding: 20px 24px; }
+        .group-meta {
+            display: flex; gap: 16px; margin-bottom: 16px;
+        }
+        .group-meta-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.85rem; color: var(--gray);
+        }
+        .group-meta-item i { color: var(--primary); }
+
+        /* Members Preview */
+        .members-preview {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+        }
+        .member-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 600; border: 2px solid var(--white);
+            margin-left: -10px;
+        }
+        .member-avatar:first-child { margin-left: 0; }
+        .member-avatar.more {
+            background: var(--light); color: var(--gray);
+            font-size: 0.75rem;
+        }
+
+        /* Exams in group */
+        .group-exams {
+            margin-top: 12px;
+        }
+        .group-exams h4 {
+            font-size: 0.85rem; color: var(--gray); margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .exam-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; background: var(--light);
+            border-radius: 20px; font-size: 0.8rem; margin: 4px;
+            color: var(--dark);
+        }
+        .exam-tag.completed { background: rgba(34,197,94,0.1); color: var(--success); }
+        .exam-tag.upcoming { background: rgba(59,130,246,0.1); color: var(--info); }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1; text-align: center; padding: 80px; color: var(--gray);
+        }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; opacity: 0.4; }
+        .empty-state h3 { margin-bottom: 8px; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid var(--light);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast-container {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 14px 20px; border-radius: var(--radius); color: white;
+            font-size: 0.9rem; display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease;
+            min-width: 300px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        /* Impersonation Banner */
+        .impersonation-banner {
+            background: linear-gradient(90deg, var(--warning), #fbbf24);
+            color: var(--dark); padding: 10px 32px; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .impersonation-banner button {
+            background: var(--dark); color: white; border: none;
+            padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 10001;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--white); border-radius: var(--radius-lg);
+            padding: 0; max-width: 500px; width: 90%; max-height: 80vh;
+            box-shadow: var(--shadow-lg); overflow: hidden;
+        }
+        .modal-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h3 { font-size: 1.1rem; }
+        .modal-close {
+            background: none; border: none; font-size: 1.2rem; cursor: pointer;
+            color: var(--gray); width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: var(--light); }
+        .modal-body { padding: 20px 24px; overflow-y: auto; max-height: 60vh; }
+        .member-list-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: var(--radius); transition: 0.2s;
+        }
+        .member-list-item:hover { background: var(--light); }
+        .member-list-item:not(:last-child) { border-bottom: 1px solid var(--light); }
+        .member-avatar-lg {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; font-weight: 600;
+        }
+        .member-info { flex: 1; }
+        .member-info h4 { font-size: 0.9rem; }
+        .member-info p { font-size: 0.8rem; color: var(--gray); }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-toggle { display: block; }
+            .groups-grid { grid-template-columns: 1fr; padding: 16px; }
+            .top-bar { padding: 16px; }
+        }
+    </style>
 </head>
 <body>
-  <div class="app-layout">
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="impersonation-banner" id="impersonationBanner" style="display:none;">
+        <span><i class="fas fa-user-secret"></i> أنت تتصفح كطالب: <strong id="impersonatedName"></strong></span>
+        <button onclick="exitImpersonation()"><i class="fas fa-sign-out-alt"></i> خروج من وضع الانتحال</button>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-graduation-cap"></i> منصة الاختبارات</div>
+            <div class="user-info" id="userName">جاري التحميل...</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fas fa-home"></i> لوحة التحكم</a>
+            <a href="exams.html"><i class="fas fa-file-alt"></i> الامتحانات</a>
+            <a href="results.html"><i class="fas fa-chart-bar"></i> نتائجي</a>
+            <a href="groups.html" class="active"><i class="fas fa-users"></i> مجموعاتي</a>
+            <a href="profile.html"><i class="fas fa-user"></i> ملفي الشخصي</a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        </div>
+    </aside>
+
     <main class="main-content">
-      <div class="content-area">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">👥 مجموعاتي</h2>
-          </div>
-          <div class="card-body" id="groups-container">
-            <!-- groups loaded here -->
-          </div>
+        <div class="top-bar">
+            <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-users"></i> مجموعاتي</h1>
+            <div></div>
         </div>
-      </div>
+
+        <div class="groups-grid" id="groupsGrid">
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <h3>جاري تحميل المجموعات...</h3>
+            </div>
+        </div>
     </main>
-  </div>
-  <script src="../shared/app.js"></script>
-  <script>
-    if (!requireAuth('student')) throw new Error('Unauthorized');
-    renderLayout('student', 'groups');
 
-    const myGroups = [
-      { id: 1, name: 'الصف الثالث الثانوي - أ', teacher: 'د. سارة علي', subject: 'فيزياء', members: 32, exams: 5 },
-      { id: 2, name: 'مجموعة التحضيرية', teacher: 'د. خالد محمود', subject: 'كيمياء', members: 45, exams: 3 },
-    ];
-
-    function loadGroups() {
-      const container = document.getElementById('groups-container');
-      if (!myGroups.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><h3>لم تنضم لأي مجموعة بعد</h3></div>`;
-        return;
-      }
-      
-      container.innerHTML = myGroups.map(g => `
-        <div class="group-card">
-          <div class="group-header">
-            <div>
-              <div class="group-name">${g.name}</div>
-              <div class="group-teacher">👨‍🏫 ${g.teacher} • ${g.subject}</div>
+    <!-- Members Modal -->
+    <div class="modal-overlay" id="membersModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-users"></i> أعضاء المجموعة</h3>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
-            <div style="text-align:left;">
-              <div style="font-size:1.5rem; font-weight:800; color:var(--primary);">${g.exams}</div>
-              <div style="font-size:0.75rem; color:var(--gray-500);">اختبار</div>
-            </div>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; flex-wrap:wrap; gap:1rem;">
-            <div class="group-members">
-              ${Array(Math.min(g.members, 5)).fill(0).map((_,i) => `<div class="member-avatar">${String.fromCharCode(1632+i)}</div>`).join('')}
-              ${g.members > 5 ? `<div class="member-avatar" style="background:var(--gray-200); color:var(--gray-600);">+${g.members-5}</div>` : ''}
-            </div>
-            <a href="exams.html?group=${g.id}" class="btn btn-sm btn-primary">عرض الاختبارات</a>
-          </div>
+            <div class="modal-body" id="membersList"></div>
         </div>
-      `).join('');
-    }
-    loadGroups();
-  </script>
+    </div>
+
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+    <script>
+        let currentUser = null;
+        let impersonatedUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initSession();
+                await loadGroups();
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ في تحميل البيانات', 'error');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        });
+
+        async function initSession() {
+            const impData = localStorage.getItem('impersonation');
+            if (impData) {
+                impersonatedUser = JSON.parse(impData);
+                document.getElementById('impersonationBanner').style.display = 'flex';
+                document.getElementById('impersonatedName').textContent = impersonatedUser.full_name || impersonatedUser.email;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+
+            const targetUserId = impersonatedUser ? impersonatedUser.id : user.id;
+            const { data: profile } = await supabase.from('exam_users').select('*').eq('id', targetUserId).single();
+            currentUser = profile || { id: targetUserId, email: user.email, full_name: user.email };
+            document.getElementById('userName').textContent = currentUser.full_name || currentUser.email;
+
+            const effectiveRole = impersonatedUser ? impersonatedUser.role : currentUser.role;
+            if (effectiveRole !== 'student' && !impersonatedUser) {
+                showToast('غير مصرح بالوصول', 'error');
+                setTimeout(() => logout(), 2000); return;
+            }
+        }
+
+        async function loadGroups() {
+            const userId = impersonatedUser ? impersonatedUser.id : currentUser.id;
+
+            // Get student's classes/groups
+            const { data: classStudents } = await supabase
+                .from('exam_class_students')
+                .select('class:exam_classes(*)')
+                .eq('student_id', userId);
+
+            const groups = classStudents?.map(cs => cs.class) || [];
+
+            if (groups.length === 0) {
+                document.getElementById('groupsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <h3>لا توجد مجموعات</h3>
+                        <p>لم يتم تعيينك لأي مجموعة بعد</p>
+                    </div>`;
+                return;
+            }
+
+            // For each group, get members and exams
+            const groupsWithData = await Promise.all(groups.map(async (group) => {
+                // Get members
+                const { data: members } = await supabase
+                    .from('exam_class_students')
+                    .select('student:exam_users(id, full_name, email)')
+                    .eq('class_id', group.id);
+
+                // Get exams assigned to this group
+                const { data: examClasses } = await supabase
+                    .from('exam_exam_classes')
+                    .select('exam:exam_exams(id, title, status, start_time, end_time)')
+                    .eq('class_id', group.id);
+
+                return {
+                    ...group,
+                    members: members?.map(m => m.student) || [],
+                    exams: examClasses?.map(ec => ec.exam).filter(e => e) || []
+                };
+            }));
+
+            renderGroups(groupsWithData);
+        }
+
+        function renderGroups(groups) {
+            const grid = document.getElementById('groupsGrid');
+
+            grid.innerHTML = groups.map(group => {
+                const memberCount = group.members.length;
+                const visibleMembers = group.members.slice(0, 5);
+                const hasMore = memberCount > 5;
+
+                // Exam tags
+                const now = new Date();
+                const examTags = group.exams.slice(0, 4).map(exam => {
+                    const start = new Date(exam.start_time);
+                    const end = new Date(exam.end_time);
+                    let statusClass = 'upcoming';
+                    let statusText = 'قادم';
+                    if (now >= start && now <= end) { statusClass = ''; statusText = 'نشط'; }
+                    else if (now > end) { statusClass = 'completed'; statusText = 'منتهي'; }
+                    return `<span class="exam-tag ${statusClass}">${statusText} · ${exam.title.substring(0, 20)}${exam.title.length > 20 ? '...' : ''}</span>`;
+                }).join('');
+
+                return `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <div class="group-icon"><i class="fas fa-users"></i></div>
+                            <h3>${group.name}</h3>
+                            <p>${group.description || 'لا يوجد وصف'}</p>
+                        </div>
+                        <div class="group-body">
+                            <div class="group-meta">
+                                <div class="group-meta-item"><i class="fas fa-users"></i> ${memberCount} طالب</div>
+                                <div class="group-meta-item"><i class="fas fa-file-alt"></i> ${group.exams.length} امتحان</div>
+                                <div class="group-meta-item"><i class="fas fa-chalkboard-teacher"></i> ${group.teacher_name || 'غير معروف'}</div>
+                            </div>
+
+                            <div class="members-preview" onclick="showMembers('${group.id}')" style="cursor:pointer;">
+                                ${visibleMembers.map(m => `
+                                    <div class="member-avatar" title="${m.full_name || m.email}">${(m.full_name || m.email).charAt(0).toUpperCase()}</div>
+                                `).join('')}
+                                ${hasMore ? `<div class="member-avatar more">+${memberCount - 5}</div>` : ''}
+                                <span style="font-size:0.8rem;color:var(--gray);margin-right:8px;">انقر لعرض الكل</span>
+                            </div>
+
+                            ${group.exams.length > 0 ? `
+                            <div class="group-exams">
+                                <h4><i class="fas fa-file-alt"></i> الامتحانات</h4>
+                                ${examTags}
+                                ${group.exams.length > 4 ? `<span style="font-size:0.8rem;color:var(--gray);">و ${group.exams.length - 4} آخر...</span>` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Store groups data for modal
+            window.groupsData = groups;
+        }
+
+        function showMembers(groupId) {
+            const group = window.groupsData.find(g => g.id === groupId);
+            if (!group) return;
+
+            const list = document.getElementById('membersList');
+            list.innerHTML = group.members.map(m => `
+                <div class="member-list-item">
+                    <div class="member-avatar-lg">${(m.full_name || m.email).charAt(0).toUpperCase()}</div>
+                    <div class="member-info">
+                        <h4>${m.full_name || 'مستخدم'}</h4>
+                        <p>${m.email}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('membersModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('membersModal').classList.remove('show');
+        }
+
+        // Close modal on outside click
+        document.getElementById('membersModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('membersModal')) closeModal();
+        });
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check', error: 'fa-times', info: 'fa-info' };
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function exitImpersonation() { localStorage.removeItem('impersonation'); window.location.href = '../admin/dashboard.html'; }
+        async function logout() { await supabase.auth.signOut(); localStorage.removeItem('impersonation'); window.location.href = '../login.html'; }
+    </script>
 </body>
 </html>

@@ -3,482 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الملف الشخصي | منصة الاختبارات</title>
+    <title>ملفي الشخصي - الطالب</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .profile-grid {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 24px;
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --dark: #1e293b; --gray: #64748b;
+            --light: #f1f5f9; --white: #ffffff;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08); --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+            --radius: 12px; --radius-lg: 16px;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: var(--dark); min-height: 100vh; }
 
-        .profile-sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .sidebar {
+            position: fixed; right: 0; top: 0; width: 260px; height: 100vh;
+            background: var(--dark); color: var(--white); z-index: 1000;
+            display: flex; flex-direction: column; transition: transform 0.3s;
         }
-
-        .profile-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            text-align: center;
+        .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .sidebar-header .user-info { margin-top: 12px; font-size: 0.85rem; opacity: 0.8; }
+        .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+            color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.2s;
+            border-right: 3px solid transparent;
         }
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: var(--white); background: rgba(99,102,241,0.15);
+            border-right-color: var(--primary);
+        }
+        .sidebar-nav a i { width: 24px; text-align: center; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-footer button {
+            width: 100%; padding: 10px; background: rgba(239,68,68,0.2); color: var(--danger);
+            border: 1px solid var(--danger); border-radius: var(--radius); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .sidebar-footer button:hover { background: var(--danger); color: white; }
 
+        .main-content { margin-right: 260px; min-height: 100vh; }
+        .top-bar {
+            background: var(--white); padding: 16px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
+        }
+        .top-bar h1 { font-size: 1.3rem; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        /* Profile Header */
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 40px 32px; color: white; position: relative;
+        }
+        .profile-header-content {
+            display: flex; align-items: center; gap: 24px; max-width: 800px;
+        }
         .profile-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            margin: 0 auto 16px;
-            color: white;
-            font-weight: 700;
+            width: 100px; height: 100px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); border: 4px solid rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; font-weight: 700; flex-shrink: 0;
+        }
+        .profile-info h2 { font-size: 1.6rem; margin-bottom: 6px; }
+        .profile-info p { opacity: 0.9; font-size: 0.95rem; }
+        .profile-info .role-badge {
+            display: inline-block; margin-top: 10px;
+            padding: 6px 16px; background: rgba(255,255,255,0.2);
+            border-radius: 20px; font-size: 0.8rem;
         }
 
-        .profile-card h3 {
-            margin-bottom: 4px;
-        }
-
-        .profile-card p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .profile-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .profile-stat {
-            background: var(--bg-primary);
-            border-radius: var(--radius-md);
-            padding: 12px;
-        }
-
-        .profile-stat .value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--primary-light);
-        }
-
-        .profile-stat .label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
+        /* Profile Content */
         .profile-content {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+            max-width: 800px; margin: -30px auto 0; padding: 0 32px 32px;
+            position: relative; z-index: 10;
         }
-
-        .settings-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 24px;
+        .profile-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); padding: 28px; margin-bottom: 24px;
         }
-
-        .settings-card h3 {
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 1.1rem;
+        .profile-card h3 {
+            font-size: 1.1rem; margin-bottom: 24px;
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 16px; border-bottom: 1px solid var(--light);
         }
+        .profile-card h3 i { color: var(--primary); }
 
-        .password-strength {
-            height: 4px;
-            background: var(--bg-tertiary);
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
+        /* Form */
+        .form-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
         }
-
-        .password-strength-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: all var(--transition-fast);
-            width: 0%;
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label {
+            font-size: 0.85rem; font-weight: 600; color: var(--dark);
         }
-
-        .strength-weak { background: var(--danger-color); }
-        .strength-fair { background: var(--warning-color); }
-        .strength-good { background: var(--info-color); }
-        .strength-strong { background: var(--success-color); }
-
-        .strength-text {
-            font-size: 0.8rem;
-            margin-top: 4px;
-            color: var(--text-secondary);
+        .form-group label .required { color: var(--danger); }
+        .form-input {
+            padding: 12px 16px; border: 1px solid var(--light);
+            border-radius: var(--radius); font-size: 0.95rem; font-family: inherit;
+            background: var(--white); transition: 0.2s;
         }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        .form-input:disabled { background: var(--light); cursor: not-allowed; }
+        .form-input[readonly] { background: var(--light); }
 
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .form-actions {
+            display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;
         }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: var(--bg-primary);
-            border-radius: var(--radius-md);
-            border-right: 3px solid var(--border-color);
+        .btn {
+            padding: 12px 28px; border-radius: var(--radius); border: none;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
         }
-
-        .activity-item.success { border-right-color: var(--success-color); }
-        .activity-item.warning { border-right-color: var(--warning-color); }
-
-        .activity-icon {
-            font-size: 1.5rem;
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-outline {
+            background: var(--white); color: var(--dark); border: 1px solid var(--light);
         }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
 
-        .activity-info {
-            flex: 1;
+        /* Stats Row in Profile */
+        .profile-stats {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
         }
-
-        .activity-info .title {
-            font-weight: 600;
-            font-size: 0.9rem;
+        .profile-stat {
+            text-align: center; padding: 20px;
+            background: var(--light); border-radius: var(--radius);
         }
+        .profile-stat .value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+        .profile-stat .label { font-size: 0.85rem; color: var(--gray); margin-top: 4px; }
 
-        .activity-info .time {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        /* Security Section */
+        .security-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 0; border-bottom: 1px solid var(--light);
+        }
+        .security-item:last-child { border-bottom: none; }
+        .security-item-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .security-item-info p { font-size: 0.8rem; color: var(--gray); }
+
+        /* Password Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 10001;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--white); border-radius: var(--radius-lg);
+            padding: 32px; max-width: 450px; width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal h3 { margin-bottom: 20px; }
+        .modal .form-group { margin-bottom: 16px; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid var(--light);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast-container {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 14px 20px; border-radius: var(--radius); color: white;
+            font-size: 0.9rem; display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease;
+            min-width: 300px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--info); }
+
+        /* Impersonation Banner */
+        .impersonation-banner {
+            background: linear-gradient(90deg, var(--warning), #fbbf24);
+            color: var(--dark); padding: 10px 32px; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .impersonation-banner button {
+            background: var(--dark); color: white; border: none;
+            padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem;
         }
 
         @media (max-width: 768px) {
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-toggle { display: block; }
+            .profile-header-content { flex-direction: column; text-align: center; }
+            .form-grid { grid-template-columns: 1fr; }
+            .profile-stats { grid-template-columns: 1fr; }
+            .profile-content { padding: 0 16px 16px; }
+            .top-bar { padding: 16px; }
         }
     </style>
 </head>
-<body class="dark-mode">
-    <div class="app-layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>🎓 منصة الاختبارات</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="./dashboard.html" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-text">لوحة التحكم</span>
-                </a>
-                <a href="./exams.html" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">الاختبارات</span>
-                </a>
-                <a href="./results.html" class="nav-item">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-text">النتائج</span>
-                </a>
-                <a href="./profile.html" class="nav-item active">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">الملف الشخصي</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <header class="top-bar">
-                <h1>الملف الشخصي</h1>
-                <div class="user-info">
-                    <span id="userName">...</span>
-                    <span class="badge badge-primary" id="userRole">طالب</span>
-                </div>
-            </header>
-
-            <div class="content-wrapper">
-                <div class="profile-grid">
-                    <!-- Sidebar -->
-                    <div class="profile-sidebar">
-                        <div class="profile-card">
-                            <div class="profile-avatar" id="profileAvatar">👤</div>
-                            <h3 id="profileName">—</h3>
-                            <p id="profileEmail">—</p>
-                            <span class="badge badge-primary" id="profileRole">طالب</span>
-                            
-                            <div class="profile-stats">
-                                <div class="profile-stat">
-                                    <div class="value" id="statExams">0</div>
-                                    <div class="label">اختبار</div>
-                                </div>
-                                <div class="profile-stat">
-                                    <div class="value" id="statAvg">0%</div>
-                                    <div class="label">متوسط</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Content -->
-                    <div class="profile-content">
-                        <!-- Personal Info -->
-                        <div class="settings-card">
-                            <h3>👤 المعلومات الشخصية</h3>
-                            <form id="profileForm">
-                                <div class="form-group">
-                                    <label>الاسم الكامل</label>
-                                    <input type="text" class="form-input" id="editName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>البريد الإلكتروني</label>
-                                    <input type="email" class="form-input" id="editEmail" disabled style="opacity: 0.6;">
-                                    <small style="color: var(--text-muted);">لا يمكن تغيير البريد الإلكتروني</small>
-                                </div>
-                                <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
-                            </form>
-                        </div>
-
-                        <!-- Change Password -->
-                        <div class="settings-card">
-                            <h3>🔐 تغيير كلمة المرور</h3>
-                            <form id="passwordForm">
-                                <div class="form-group">
-                                    <label>كلمة المرور الحالية</label>
-                                    <input type="password" class="form-input" id="currentPassword" required placeholder="••••••••">
-                                </div>
-                                <div class="form-group">
-                                    <label>كلمة المرور الجديدة</label>
-                                    <input type="password" class="form-input" id="newPassword" required minlength="8" placeholder="••••••••">
-                                    <div class="password-strength">
-                                        <div class="password-strength-fill" id="strengthFill"></div>
-                                    </div>
-                                    <div class="strength-text" id="strengthText">أدخل كلمة مرور جديدة</div>
-                                </div>
-                                <div class="form-group">
-                                    <label>تأكيد كلمة المرور الجديدة</label>
-                                    <input type="password" class="form-input" id="confirmPassword" required placeholder="••••••••">
-                                </div>
-                                <button type="submit" class="btn btn-primary">تحديث كلمة المرور</button>
-                            </form>
-                        </div>
-
-                        <!-- Recent Activity -->
-                        <div class="settings-card">
-                            <h3>📋 النشاط الأخير</h3>
-                            <div class="activity-list" id="activityList">
-                                <div class="text-center" style="padding: 40px; color: var(--text-muted);">جاري التحميل...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
     </div>
-
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="impersonation-banner" id="impersonationBanner" style="display:none;">
+        <span><i class="fas fa-user-secret"></i> أنت تتصفح كطالب: <strong id="impersonatedName"></strong></span>
+        <button onclick="exitImpersonation()"><i class="fas fa-sign-out-alt"></i> خروج من وضع الانتحال</button>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-graduation-cap"></i> منصة الاختبارات</div>
+            <div class="user-info" id="userName">جاري التحميل...</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fas fa-home"></i> لوحة التحكم</a>
+            <a href="exams.html"><i class="fas fa-file-alt"></i> الامتحانات</a>
+            <a href="results.html"><i class="fas fa-chart-bar"></i> نتائجي</a>
+            <a href="groups.html"><i class="fas fa-users"></i> مجموعاتي</a>
+            <a href="profile.html" class="active"><i class="fas fa-user"></i> ملفي الشخصي</a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-user"></i> ملفي الشخصي</h1>
+            <div></div>
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-header-content">
+                <div class="profile-avatar" id="profileAvatar">U</div>
+                <div class="profile-info">
+                    <h2 id="profileName">جاري التحميل...</h2>
+                    <p id="profileEmail">--</p>
+                    <span class="role-badge"><i class="fas fa-user-graduate"></i> طالب</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-content">
+            <!-- Quick Stats -->
+            <div class="profile-card">
+                <h3><i class="fas fa-chart-bar"></i> إحصائيات سريعة</h3>
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="value" id="statExams">0</div>
+                        <div class="label">امتحانات مكتملة</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="value" id="statAvg">0%</div>
+                        <div class="label">متوسط الدرجات</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="value" id="statGroups">0</div>
+                        <div class="label">المجموعات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Info -->
+            <div class="profile-card">
+                <h3><i class="fas fa-user-edit"></i> المعلومات الشخصية</h3>
+                <form id="profileForm" onsubmit="updateProfile(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>الاسم الكامل <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="fullName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>البريد الإلكتروني</label>
+                            <input type="email" class="form-input" id="email" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>رقم الهاتف</label>
+                            <input type="tel" class="form-input" id="phone">
+                        </div>
+                        <div class="form-group">
+                            <label>تاريخ الميلاد</label>
+                            <input type="date" class="form-input" id="birthDate">
+                        </div>
+                        <div class="form-group full">
+                            <label>نبذة عني</label>
+                            <textarea class="form-input" id="bio" rows="3" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="resetForm()">إلغاء</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ التغييرات</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security -->
+            <div class="profile-card">
+                <h3><i class="fas fa-shield-alt"></i> الأمان</h3>
+                <div class="security-item">
+                    <div class="security-item-info">
+                        <h4><i class="fas fa-key"></i> كلمة المرور</h4>
+                        <p>آخر تغيير: <span id="lastPasswordChange">غير معروف</span></p>
+                    </div>
+                    <button class="btn btn-outline" onclick="showPasswordModal()">
+                        <i class="fas fa-edit"></i> تغيير
+                    </button>
+                </div>
+                <div class="security-item">
+                    <div class="security-item-info">
+                        <h4><i class="fas fa-envelope"></i> تأكيد البريد الإلكتروني</h4>
+                        <p id="emailStatus">--</p>
+                    </div>
+                    <button class="btn btn-outline" id="verifyEmailBtn" onclick="verifyEmail()" style="display:none;">
+                        <i class="fas fa-check-circle"></i> تأكيد
+                    </button>
+                </div>
+                <div class="security-item">
+                    <div class="security-item-info">
+                        <h4><i class="fas fa-clock"></i> آخر تسجيل دخول</h4>
+                        <p id="lastLogin">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <h3><i class="fas fa-key"></i> تغيير كلمة المرور</h3>
+            <form onsubmit="changePassword(event)">
+                <div class="form-group">
+                    <label>كلمة المرور الحالية <span class="required">*</span></label>
+                    <input type="password" class="form-input" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور الجديدة <span class="required">*</span></label>
+                    <input type="password" class="form-input" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>تأكيد كلمة المرور الجديدة <span class="required">*</span></label>
+                    <input type="password" class="form-input" id="confirmPassword" required minlength="6">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
         let currentUser = null;
-        let studentId = null;
+        let impersonatedUser = null;
+        let originalProfile = null;
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            currentUser = await examAuth.getUser();
-            if (!currentUser) { window.location.href = '../login.html'; return; }
-
-            document.getElementById('userName').textContent = currentUser.user_metadata?.full_name || currentUser.email || 'طالب';
-            document.getElementById('profileName').textContent = currentUser.user_metadata?.full_name || '—';
-            document.getElementById('profileEmail').textContent = currentUser.email || '—';
-            document.getElementById('editName').value = currentUser.user_metadata?.full_name || '';
-            document.getElementById('editEmail').value = currentUser.email || '';
-            
-            // Avatar initial
-            const name = currentUser.user_metadata?.full_name || currentUser.email || 'U';
-            document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
-
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
-
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                await examAuth.signOut();
-                window.location.href = '../login.html';
-            });
-
-            // Get student
-            const { data: student } = await examDB.students()
-                .select('id')
-                .eq('user_id', currentUser.id)
-                .single();
-            studentId = student?.id;
-
-            await loadStats();
-            await loadActivity();
-
-            // Forms
-            document.getElementById('profileForm').addEventListener('submit', updateProfile);
-            document.getElementById('passwordForm').addEventListener('submit', updatePassword);
-            document.getElementById('newPassword').addEventListener('input', checkPasswordStrength);
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initSession();
+                await loadProfile();
+                await loadStats();
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ في تحميل البيانات', 'error');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
         });
 
+        async function initSession() {
+            const impData = localStorage.getItem('impersonation');
+            if (impData) {
+                impersonatedUser = JSON.parse(impData);
+                document.getElementById('impersonationBanner').style.display = 'flex';
+                document.getElementById('impersonatedName').textContent = impersonatedUser.full_name || impersonatedUser.email;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+
+            const targetUserId = impersonatedUser ? impersonatedUser.id : user.id;
+            const { data: profile } = await supabase.from('exam_users').select('*').eq('id', targetUserId).single();
+            currentUser = profile || { id: targetUserId, email: user.email, full_name: user.email };
+            document.getElementById('userName').textContent = currentUser.full_name || currentUser.email;
+
+            const effectiveRole = impersonatedUser ? impersonatedUser.role : currentUser.role;
+            if (effectiveRole !== 'student' && !impersonatedUser) {
+                showToast('غير مصرح بالوصول', 'error');
+                setTimeout(() => logout(), 2000); return;
+            }
+        }
+
+        async function loadProfile() {
+            const userId = impersonatedUser ? impersonatedUser.id : currentUser.id;
+
+            // Get auth user for email
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+
+            // Get profile
+            const { data: profile } = await supabase
+                .from('exam_users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            originalProfile = profile || {};
+
+            // Update UI
+            const name = profile?.full_name || authUser?.email || 'مستخدم';
+            document.getElementById('profileName').textContent = name;
+            document.getElementById('profileEmail').textContent = authUser?.email || profile?.email || '--';
+            document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+
+            // Fill form
+            document.getElementById('fullName').value = profile?.full_name || '';
+            document.getElementById('email').value = authUser?.email || profile?.email || '';
+            document.getElementById('phone').value = profile?.phone || '';
+            document.getElementById('birthDate').value = profile?.birth_date || '';
+            document.getElementById('bio').value = profile?.bio || '';
+
+            // Email status
+            if (authUser?.email_confirmed_at) {
+                document.getElementById('emailStatus').innerHTML = '<span style="color:var(--success)"><i class="fas fa-check-circle"></i> مؤكد</span>';
+            } else {
+                document.getElementById('emailStatus').innerHTML = '<span style="color:var(--warning)"><i class="fas fa-exclamation-circle"></i> غير مؤكد</span>';
+                if (!impersonatedUser) document.getElementById('verifyEmailBtn').style.display = 'inline-flex';
+            }
+
+            // Last login
+            const lastSignIn = authUser?.last_sign_in_at;
+            document.getElementById('lastLogin').textContent = lastSignIn 
+                ? new Date(lastSignIn).toLocaleString('ar-SA') 
+                : 'غير معروف';
+        }
+
         async function loadStats() {
-            if (!studentId) return;
-            
-            const { data: attempts } = await examDB.attempts()
-                .select('score, exam_exams(total_score)')
-                .eq('student_id', studentId)
+            const userId = impersonatedUser ? impersonatedUser.id : currentUser.id;
+
+            // Completed exams
+            const { data: attempts } = await supabase
+                .from('exam_attempts')
+                .select('score')
+                .eq('student_id', userId)
                 .eq('status', 'completed');
 
             const total = attempts?.length || 0;
-            const scores = attempts?.map(a => ((a.score || 0) / (a.exam_exams?.total_score || 1)) * 100) || [];
-            const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) : 0;
+            const avg = total > 0 
+                ? Math.round(attempts.reduce((s, a) => s + (a.score || 0), 0) / total) 
+                : 0;
+
+            // Groups count
+            const { data: groups } = await supabase
+                .from('exam_class_students')
+                .select('id', { count: 'exact' })
+                .eq('student_id', userId);
 
             document.getElementById('statExams').textContent = total;
             document.getElementById('statAvg').textContent = avg + '%';
-        }
-
-        async function loadActivity() {
-            if (!studentId) return;
-
-            const { data: attempts } = await examDB.attempts()
-                .select('*, exam_exams(title)')
-                .eq('student_id', studentId)
-                .order('ended_at', { ascending: false })
-                .limit(5);
-
-            const list = document.getElementById('activityList');
-            
-            if (!attempts?.length) {
-                list.innerHTML = '<div class="text-center" style="padding: 40px; color: var(--text-muted);">لا يوجد نشاط حديث</div>';
-                return;
-            }
-
-            list.innerHTML = attempts.map(a => {
-                const exam = a.exam_exams;
-                const isSuccess = a.status === 'completed' && ((a.score || 0) / (exam?.total_score || 1)) >= 0.6;
-                const icon = isSuccess ? '🎉' : a.status === 'time_expired' ? '⏰' : '📝';
-                const title = isSuccess ? `أكمل ${exam?.title || 'اختبار'}` : 
-                              a.status === 'time_expired' ? `انتهى وقت ${exam?.title || 'اختبار'}` :
-                              `شارك في ${exam?.title || 'اختبار'}`;
-                
-                return `
-                    <div class="activity-item ${isSuccess ? 'success' : 'warning'}">
-                        <div class="activity-icon">${icon}</div>
-                        <div class="activity-info">
-                            <div class="title">${title}</div>
-                            <div class="time">${App.DateTime.relative(a.ended_at || a.created_at)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            document.getElementById('statGroups').textContent = groups?.length || 0;
         }
 
         async function updateProfile(e) {
             e.preventDefault();
-            App.Loading.show('جاري الحفظ...');
+            if (impersonatedUser) {
+                showToast('لا يمكن تعديل الملف أثناء وضع الانتحال', 'warning');
+                return;
+            }
 
-            const newName = document.getElementById('editName').value.trim();
-            
-            try {
-                // Update auth metadata
-                const { error: authError } = await examDB.client().auth.updateUser({
-                    data: { full_name: newName }
-                });
+            const updates = {
+                full_name: document.getElementById('fullName').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                birth_date: document.getElementById('birthDate').value,
+                bio: document.getElementById('bio').value.trim(),
+                updated_at: new Date().toISOString()
+            };
 
-                if (authError) throw authError;
+            const { error } = await supabase
+                .from('exam_users')
+                .update(updates)
+                .eq('id', currentUser.id);
 
-                // Update profiles
-                await examDB.profiles()
-                    .update({ full_name: newName, updated_at: new Date().toISOString() })
-                    .eq('id', currentUser.id);
-
-                // Update students
-                if (studentId) {
-                    await examDB.students()
-                        .update({ full_name: newName, updated_at: new Date().toISOString() })
-                        .eq('id', studentId);
-                }
-
-                document.getElementById('profileName').textContent = newName;
-                document.getElementById('userName').textContent = newName;
-                App.Toast.success('تم تحديث الملف الشخصي');
-
-            } catch (err) {
-                console.error(err);
-                App.Toast.error('حدث خطأ في التحديث');
-            } finally {
-                App.Loading.hide();
+            if (error) {
+                showToast('فشل تحديث الملف: ' + error.message, 'error');
+            } else {
+                showToast('تم تحديث الملف الشخصي بنجاح', 'success');
+                originalProfile = { ...originalProfile, ...updates };
+                document.getElementById('profileName').textContent = updates.full_name;
+                document.getElementById('profileAvatar').textContent = updates.full_name.charAt(0).toUpperCase();
+                document.getElementById('userName').textContent = updates.full_name;
             }
         }
 
-        function checkPasswordStrength() {
-            const password = document.getElementById('newPassword').value;
-            const result = App.Validator.password(password);
-            const fill = document.getElementById('strengthFill');
-            const text = document.getElementById('strengthText');
-
-            const widths = ['0%', '25%', '50%', '75%', '100%'];
-            const classes = ['', 'strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
-            const labels = ['أدخل كلمة مرور', 'ضعيفة', 'متوسطة', 'جيدة', 'قوية'];
-
-            fill.style.width = widths[result.score];
-            fill.className = 'password-strength-fill ' + classes[result.score];
-            text.textContent = labels[result.score];
-            text.style.color = result.score >= 3 ? 'var(--success-color)' : result.score >= 2 ? 'var(--warning-color)' : 'var(--danger-color)';
+        function resetForm() {
+            document.getElementById('fullName').value = originalProfile?.full_name || '';
+            document.getElementById('phone').value = originalProfile?.phone || '';
+            document.getElementById('birthDate').value = originalProfile?.birth_date || '';
+            document.getElementById('bio').value = originalProfile?.bio || '';
         }
 
-        async function updatePassword(e) {
+        // Password
+        function showPasswordModal() {
+            if (impersonatedUser) {
+                showToast('لا يمكن تغيير كلمة المرور أثناء وضع الانتحال', 'warning');
+                return;
+            }
+            document.getElementById('passwordModal').classList.add('show');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('show');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        async function changePassword(e) {
             e.preventDefault();
-            
+
             const current = document.getElementById('currentPassword').value;
             const newPass = document.getElementById('newPassword').value;
             const confirm = document.getElementById('confirmPassword').value;
 
             if (newPass !== confirm) {
-                App.Toast.error('كلمات المرور الجديدة غير متطابقة');
+                showToast('كلمتا المرور غير متطابقتين', 'error');
                 return;
             }
 
-            const validation = App.Validator.password(newPass);
-            if (!validation.valid) {
-                App.Toast.error('كلمة المرور ضعيفة جداً');
-                return;
-            }
+            // Update password via Supabase Auth
+            const { error } = await supabase.auth.updateUser({ password: newPass });
 
-            App.Loading.show('جاري التحديث...');
-
-            try {
-                // Verify current password by signing in
-                const { error: verifyError } = await examAuth.signIn(currentUser.email, current);
-                if (verifyError) {
-                    App.Toast.error('كلمة المرور الحالية غير صحيحة');
-                    return;
-                }
-
-                // Update password
-                const { error } = await examAuth.updatePassword(newPass);
-                if (error) throw error;
-
-                App.Toast.success('تم تحديث كلمة المرور بنجاح');
-                document.getElementById('passwordForm').reset();
-                document.getElementById('strengthFill').style.width = '0%';
-                document.getElementById('strengthText').textContent = 'أدخل كلمة مرور جديدة';
-
-            } catch (err) {
-                console.error(err);
-                App.Toast.error('حدث خطأ في تحديث كلمة المرور');
-            } finally {
-                App.Loading.hide();
+            if (error) {
+                showToast('فشل تغيير كلمة المرور: ' + error.message, 'error');
+            } else {
+                showToast('تم تغيير كلمة المرور بنجاح', 'success');
+                closePasswordModal();
+                document.getElementById('lastPasswordChange').textContent = new Date().toLocaleDateString('ar-SA');
             }
         }
+
+        async function verifyEmail() {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: document.getElementById('email').value
+            });
+
+            if (error) {
+                showToast('فشل إرسال بريد التأكيد', 'error');
+            } else {
+                showToast('تم إرسال بريد التأكيد. يرجى التحقق من صندوق الوارد.', 'success');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check', error: 'fa-times', info: 'fa-info', warning: 'fa-exclamation' };
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function exitImpersonation() { localStorage.removeItem('impersonation'); window.location.href = '../admin/dashboard.html'; }
+        async function logout() { await supabase.auth.signOut(); localStorage.removeItem('impersonation'); window.location.href = '../login.html'; }
+
+        // Close modal on outside click
+        document.getElementById('passwordModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('passwordModal')) closePasswordModal();
+        });
     </script>
 </body>
 </html>

@@ -3,406 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معاينة الاختبار | منصة الاختبارات</title>
+    <title>معاينة الامتحان - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .preview-header { background: linear-gradient(135deg, var(--primary-600), var(--primary-700)); color: white; padding: 32px; border-radius: var(--radius-lg); margin-bottom: 24px; text-align: center; }
+        .preview-header h2 { font-size: 1.75rem; margin-bottom: 12px; }
+        .preview-header p { opacity: 0.9; }
+        .preview-meta { display: flex; justify-content: center; gap: 32px; margin-top: 20px; flex-wrap: wrap; }
+        .preview-meta-item { text-align: center; }
+        .preview-meta-item .value { font-size: 1.5rem; font-weight: 800; }
+        .preview-meta-item .label { font-size: 0.875rem; opacity: 0.8; }
+        .question-preview { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+        .question-preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
+        .question-number { background: var(--primary-500); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; }
+        .question-points { background: var(--warning); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .question-text-preview { font-size: 1.125rem; font-weight: 600; line-height: 1.8; margin-bottom: 16px; color: var(--text-main); }
+        .options-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .option-preview { padding: 14px 18px; background: var(--bg-body); border: 2px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); font-size: 0.9375rem; }
+        .option-preview:hover { border-color: var(--primary-300); background: var(--primary-50); }
+        .option-preview.correct { border-color: var(--success); background: #d1fae5; color: #065f46; font-weight: 700; }
+        .option-letter { display: inline-block; width: 28px; height: 28px; background: var(--primary-500); color: white; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.75rem; margin-left: 10px; }
+        .essay-answer-preview { background: var(--bg-body); border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 40px 20px; text-align: center; color: var(--text-muted); }
+        .fill-blank-preview { background: var(--bg-body); border-radius: var(--radius-md); padding: 16px; }
+        .blank-input { display: inline-block; min-width: 120px; border-bottom: 2px solid var(--primary-500); margin: 0 4px; }
+        .true-false-options { display: flex; gap: 16px; }
+        .tf-option { flex: 1; padding: 16px; background: var(--bg-body); border: 2px solid var(--border-color); border-radius: var(--radius-md); text-align: center; font-weight: 600; cursor: pointer; transition: var(--transition); }
+        .tf-option:hover { border-color: var(--primary-300); }
+        .tf-option.correct { border-color: var(--success); background: #d1fae5; color: #065f46; }
+        .preview-actions { display: flex; gap: 12px; justify-content: center; margin-top: 32px; padding: 24px; background: var(--bg-body); border-radius: var(--radius-lg); border: 1px solid var(--border-color); position: sticky; bottom: 24px; }
+        .badge-preview { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.625rem; font-weight: 700; margin-left: 8px; }
+        .badge-mcq { background: #dbeafe; color: #1e40af; }
+        .badge-essay { background: #fef3c7; color: #92400e; }
+        .badge-true_false { background: #d1fae5; color: #065f46; }
+        .badge-fill_blank { background: #fce7f3; color: #be185d; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+    <div class="app-layout">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>منصة الاختبارات</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>الرئيسية</span>
-                </a>
-                <a href="create-exam.html" class="nav-item">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>إنشاء اختبار</span>
-                </a>
-                <a href="questions.html" class="nav-item">
-                    <i class="fas fa-database"></i>
-                    <span>بنك الأسئلة</span>
-                </a>
-                <a href="submissions.html" class="nav-item">
-                    <i class="fas fa-check-double"></i>
-                    <span>التسليمات</span>
-                </a>
-                <a href="students.html" class="nav-item">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>الطلاب</span>
-                </a>
-                <a href="groups.html" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>المجموعات</span>
-                </a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="create-exam.html" class="nav-item"><span class="nav-icon">➕</span><span>إنشاء امتحان</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span><span>الطلاب</span></a>
+                <a href="submissions.html" class="nav-item"><span class="nav-icon">📋</span><span>التسليمات</span></a>
+                <a href="monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span>المراقبة</span></a>
             </nav>
             <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
-                    <div class="user-details">
-                        <div class="user-name" id="userName">جاري التحميل...</div>
-                        <div class="user-role">معلم</div>
-                    </div>
-                </div>
-                <button class="btn btn-outline btn-sm" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>تسجيل الخروج</span>
-                </button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <header class="main-header">
-                <h1 class="page-title">معاينة الاختبار</h1>
-                <div class="header-actions">
-                    <button class="btn btn-icon" id="themeToggle"><i class="fas fa-moon"></i></button>
-                    <a href="dashboard.html" class="btn btn-outline btn-sm">
-                        <i class="fas fa-arrow-right"></i> العودة
-                    </a>
-                </div>
-            </header>
-
-            <!-- Exam Info Header -->
-            <div class="exam-preview-header" id="examHeader">
-                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
-            </div>
-
-            <!-- Exam Stats -->
-            <div class="stats-grid" id="examStats">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="fas fa-question-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="questionCount">0</div>
-                        <div class="stat-label">عدد الأسئلة</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fas fa-star"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="totalMarks">0</div>
-                        <div class="stat-label">إجمالي الدرجات</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-info"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="duration">0</div>
-                        <div class="stat-label">المدة (دقيقة)</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fas fa-user-check"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="enrolledCount">0</div>
-                        <div class="stat-label">المسجلون</div>
-                    </div>
+            <div class="top-bar">
+                <h1 class="page-title">👁️ معاينة الامتحان</h1>
+                <div class="user-menu">
+                    <button class="btn btn-secondary" onclick="window.close()">❌ إغلاق</button>
                 </div>
             </div>
 
-            <!-- Questions Preview -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-list-ol"></i> الأسئلة</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-outline btn-sm" onclick="toggleAnswers()">
-                            <i class="fas fa-eye"></i> <span id="toggleAnsText">إظهار الإجابات</span>
-                        </button>
+            <div class="content-wrapper">
+                <!-- Exam Header -->
+                <div class="preview-header" id="examHeader">
+                    <h2 id="previewTitle">جاري التحميل...</h2>
+                    <p id="previewDesc"></p>
+                    <div class="preview-meta">
+                        <div class="preview-meta-item">
+                            <div class="value" id="previewDuration">-</div>
+                            <div class="label">دقيقة</div>
+                        </div>
+                        <div class="preview-meta-item">
+                            <div class="value" id="previewPoints">-</div>
+                            <div class="label">نقطة</div>
+                        </div>
+                        <div class="preview-meta-item">
+                            <div class="value" id="previewQuestions">-</div>
+                            <div class="label">سؤال</div>
+                        </div>
                     </div>
                 </div>
-                <div id="questionsPreview" class="questions-preview">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>
-                </div>
-            </div>
 
-            <!-- Enrolled Students -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-users"></i> الطلاب المسجلون</h2>
+                <!-- Questions -->
+                <div id="questionsPreview">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>جاري تحميل الأسئلة...</p>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>الطالب</th>
-                                <th>البريد</th>
-                                <th>تاريخ التسجيل</th>
-                                <th>الحالة</th>
-                                <th>المحاولات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="enrolledTable">
-                            <tr><td colspan="5" class="text-center"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Actions -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-cogs"></i> إجراءات</h2>
-                </div>
-                <div class="action-cards">
-                    <button class="action-card" onclick="editExam()">
-                        <i class="fas fa-edit text-primary"></i>
-                        <span>تعديل الاختبار</span>
-                    </button>
-                    <button class="action-card" onclick="duplicateExam()">
-                        <i class="fas fa-copy text-info"></i>
-                        <span>نسخ الاختبار</span>
-                    </button>
-                    <button class="action-card" onclick="exportExam()">
-                        <i class="fas fa-file-export text-success"></i>
-                        <span>تصدير PDF</span>
-                    </button>
-                    <button class="action-card text-error" onclick="deleteExam()">
-                        <i class="fas fa-trash text-error"></i>
-                        <span>حذف الاختبار</span>
-                    </button>
+                <!-- Preview Actions -->
+                <div class="preview-actions">
+                    <span style="color: var(--text-muted);">هذه معاينة فقط - الطالب سيرى الامتحان بهذا الشكل</span>
+                    <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
+                    <button class="btn btn-secondary" onclick="location.href='exams.html'">↩️ رجوع للامتحانات</button>
                 </div>
             </div>
         </main>
     </div>
 
     <script src="../shared/supabase-client.js"></script>
-    <script src="../shared/security.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-    (function() {
-        'use strict';
+        const currentUser = getUser();
+        if (!currentUser || (currentUser.role !== 'teacher' && currentUser.role !== 'admin')) {
+            window.location.href = '../login.html';
+        }
 
-        let examId = null;
-        let examData = null;
-        let showAnswers = false;
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('id');
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            await App.init();
-            const user = examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-            const role = user.role || user.user_metadata?.role;
-            if (role !== 'teacher' && role !== 'admin') {
-                window.location.href = '../student/dashboard.html'; return;
-            }
-            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
+        if (!examId) {
+            App.Toast.error('معرف الامتحان غير موجود');
+            setTimeout(() => location.href = 'exams.html', 1500);
+        }
 
-            const params = new URLSearchParams(window.location.search);
-            examId = params.get('id');
-            if (!examId) { window.location.href = 'dashboard.html'; return; }
-
-            await loadExam();
-            await loadQuestions();
-            await loadEnrolledStudents();
-        });
-
-        async function loadExam() {
+        async function loadExamPreview() {
+            App.Loading.show('جاري تحميل الامتحان...');
             try {
-                const { data: exam, error } = await examDB.from('exam_exams')
-                    .select(`*, exam_subjects(name), exam_grades(name)`)
+                // Load exam
+                const { data: exam, error: examError } = await sb.from(TABLES.exams)
+                    .select('*')
                     .eq('id', examId)
                     .single();
-                if (error) throw error;
-                examData = exam;
 
-                const statusClass = exam.status === 'active' ? 'badge-success' : 
-                                   exam.status === 'draft' ? 'badge-warning' : 'badge-secondary';
-                const statusText = exam.status === 'active' ? 'نشط' : 
-                                  exam.status === 'draft' ? 'مسودة' : 'منتهي';
+                if (examError || !exam) throw new Error('الامتحان غير موجود');
 
-                document.getElementById('examHeader').innerHTML = `
-                    <div class="exam-preview-title">
-                        <h2>${exam.title}</h2>
-                        <span class="badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="exam-preview-meta">
-                        <span><i class="fas fa-book"></i> ${exam.exam_subjects?.name || '-'}</span>
-                        <span><i class="fas fa-graduation-cap"></i> ${exam.exam_grades?.name || '-'}</span>
-                        <span><i class="fas fa-calendar"></i> ${exam.academic_year || '-'}</span>
-                        <span><i class="fas fa-clock"></i> ${App.formatDate(exam.start_date)} - ${App.formatDate(exam.end_date)}</span>
-                    </div>
-                    <p class="exam-preview-desc">${exam.description || ''}</p>
-                `;
+                document.getElementById('previewTitle').textContent = exam.title;
+                document.getElementById('previewDesc').textContent = exam.description || 'لا يوجد وصف';
+                document.getElementById('previewDuration').textContent = exam.duration;
+                document.getElementById('previewPoints').textContent = exam.total_points;
 
-                document.getElementById('duration').textContent = exam.duration || 0;
-            } catch (error) {
-                console.error('Error loading exam:', error);
-                App.toast('حدث خطأ أثناء تحميل الاختبار', 'error');
-            }
-        }
-
-        async function loadQuestions() {
-            try {
-                const { data: questions, error } = await examDB.from('exam_exam_questions')
+                // Load exam questions with question details
+                const { data: examQuestions, error: eqError } = await sb.from(TABLES.exam_questions)
                     .select('*')
                     .eq('exam_id', examId)
-                    .order('order_index', { ascending: true });
-                if (error) throw error;
+                    .order('question_order', { ascending: true });
 
-                document.getElementById('questionCount').textContent = questions?.length || 0;
-                document.getElementById('totalMarks').textContent = questions?.reduce((s, q) => s + (q.marks || 0), 0) || 0;
+                if (eqError) throw eqError;
 
+                document.getElementById('previewQuestions').textContent = examQuestions?.length || 0;
+
+                if (!examQuestions || examQuestions.length === 0) {
+                    document.getElementById('questionsPreview').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❓</div>
+                            <p>لا توجد أسئلة في هذا الامتحان</p>
+                        </div>
+                    `;
+                    App.Loading.hide();
+                    return;
+                }
+
+                // Load question details
+                const questionIds = examQuestions.map(eq => eq.question_id);
+                const { data: questions } = await sb.from(TABLES.questions)
+                    .select('*')
+                    .in('id', questionIds);
+
+                const questionMap = {};
+                questions?.forEach(q => { questionMap[q.id] = q; });
+
+                // Render questions
                 const container = document.getElementById('questionsPreview');
-                if (!questions || questions.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد أسئلة</p></div>';
-                    return;
-                }
+                container.innerHTML = examQuestions.map((eq, idx) => {
+                    const q = questionMap[eq.question_id];
+                    if (!q) return '';
 
-                container.innerHTML = questions.map((q, i) => renderQuestionPreview(q, i)).join('');
-            } catch (error) {
-                console.error('Error loading questions:', error);
-            }
-        }
+                    const typeText = q.type === 'mcq' ? 'اختيار من متعدد' : 
+                                    q.type === 'true_false' ? 'صح/خطأ' : 
+                                    q.type === 'essay' ? 'مقالي' : 'ملء فراغ';
+                    const badgeClass = `badge-${q.type}`;
 
-        function renderQuestionPreview(q, index) {
-            const typeLabels = { mcq: 'اختيار متعدد', true_false: 'صح/خطأ', essay: 'مقالي', fill_blank: 'اكمل الفراغ', matching: 'توصيل' };
-            let optionsHtml = '';
+                    let optionsHtml = '';
 
-            if (q.question_type === 'mcq' && q.options) {
-                optionsHtml = `<div class="preview-options">
-                    ${q.options.map((o, j) => `<div class="preview-option ${showAnswers && j === q.correct_answer ? 'correct-answer' : ''}">
-                        <span class="option-letter">${String.fromCharCode(65 + j)}</span>
-                        <span>${o}</span>
-                        ${showAnswers && j === q.correct_answer ? '<i class="fas fa-check-circle"></i>' : ''}
-                    </div>`).join('')}
-                </div>`;
-            } else if (q.question_type === 'true_false') {
-                optionsHtml = `<div class="preview-options">
-                    <div class="preview-option ${showAnswers && q.correct_answer === true ? 'correct-answer' : ''}">
-                        <span>صح</span>${showAnswers && q.correct_answer === true ? '<i class="fas fa-check-circle"></i>' : ''}
-                    </div>
-                    <div class="preview-option ${showAnswers && q.correct_answer === false ? 'correct-answer' : ''}">
-                        <span>خطأ</span>${showAnswers && q.correct_answer === false ? '<i class="fas fa-check-circle"></i>' : ''}
-                    </div>
-                </div>`;
-            } else {
-                optionsHtml = `<div class="preview-answer-box">
-                    <span class="text-muted">مساحة الإجابة...</span>
-                    ${showAnswers && q.correct_answer ? `<div class="model-answer"><strong>الإجابة النموذجية:</strong> ${q.correct_answer}</div>` : ''}
-                </div>`;
-            }
-
-            return `
-                <div class="preview-question-card">
-                    <div class="preview-question-header">
-                        <span class="question-number">س ${index + 1}</span>
-                        <span class="question-type badge">${typeLabels[q.question_type] || q.question_type}</span>
-                        <span class="question-marks">${q.marks || 1} درجة</span>
-                    </div>
-                    <div class="preview-question-text">${q.question_text}</div>
-                    ${q.hint ? `<div class="question-hint"><i class="fas fa-lightbulb"></i> ${q.hint}</div>` : ''}
-                    ${optionsHtml}
-                </div>
-            `;
-        }
-
-        window.toggleAnswers = function() {
-            showAnswers = !showAnswers;
-            document.getElementById('toggleAnsText').textContent = showAnswers ? 'إخفاء الإجابات' : 'إظهار الإجابات';
-            loadQuestions();
-        };
-
-        async function loadEnrolledStudents() {
-            try {
-                const { data: enrollments, error } = await examDB.from('exam_enrollments')
-                    .select(`*, exam_students(name, email)`)
-                    .eq('exam_id', examId);
-                if (error) throw error;
-
-                document.getElementById('enrolledCount').textContent = enrollments?.length || 0;
-
-                const tbody = document.getElementById('enrolledTable');
-                if (!enrollments || enrollments.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="empty-state"><p>لا يوجد طلاب مسجلون</p></div></td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = enrollments.map(e => `
-                    <tr>
-                        <td>
-                            <div class="student-info">
-                                <div class="student-avatar">${e.exam_students?.name?.charAt(0) || '?'}</div>
-                                <div class="student-name">${e.exam_students?.name || 'Unknown'}</div>
-                            </div>
-                        </td>
-                        <td>${e.exam_students?.email || '-'}</td>
-                        <td>${App.formatDate(e.created_at)}</td>
-                        <td><span class="badge ${e.status === 'active' ? 'badge-success' : 'badge-secondary'}">${e.status === 'active' ? 'نشط' : 'منتهي'}</span></td>
-                        <td>${e.attempts_count || 0}</td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading enrolled students:', error);
-            }
-        }
-
-        window.editExam = function() {
-            window.location.href = `create-exam.html?edit=${examId}`;
-        };
-
-        window.duplicateExam = async function() {
-            App.confirm('هل تريد نسخ هذا الاختبار؟', async () => {
-                try {
-                    const { data: newExam } = await examDB.from('exam_exams')
-                        .insert({ ...examData, id: undefined, title: examData.title + ' (نسخة)', created_at: new Date().toISOString() })
-                        .select()
-                        .single();
-
-                    const { data: questions } = await examDB.from('exam_exam_questions')
-                        .select('*')
-                        .eq('exam_id', examId);
-
-                    for (const q of (questions || [])) {
-                        await examDB.from('exam_exam_questions').insert({
-                            ...q, id: undefined, exam_id: newExam.id
-                        });
+                    if (q.type === 'mcq' && q.options) {
+                        try {
+                            const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                            optionsHtml = `<div class="options-preview">${opts.map((opt, i) => 
+                                `<div class="option-preview ${i === q.correct_answer ? 'correct' : ''}">
+                                    <span class="option-letter">${String.fromCharCode(65 + i)}</span>
+                                    ${App.sanitizeHtml(opt)}
+                                </div>`
+                            ).join('')}</div>`;
+                        } catch (e) {}
+                    } else if (q.type === 'true_false') {
+                        optionsHtml = `<div class="true-false-options">
+                            <div class="tf-option ${q.correct_answer === 0 ? 'correct' : ''}">✅ صحيح</div>
+                            <div class="tf-option ${q.correct_answer === 1 ? 'correct' : ''}">❌ خطأ</div>
+                        </div>`;
+                    } else if (q.type === 'essay') {
+                        optionsHtml = `<div class="essay-answer-preview">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">✏️</div>
+                            <div>مساحة إجابة مقالية (الطالب يكتب إجابته هنا)</div>
+                        </div>`;
+                    } else if (q.type === 'fill_blank') {
+                        const text = q.question_text || '';
+                        const filled = text.replace(/_{2,}/g, '<span class="blank-input"></span>');
+                        optionsHtml = `<div class="fill-blank-preview">${App.sanitizeHtml(filled)}</div>`;
                     }
 
-                    App.toast('تم نسخ الاختبار بنجاح');
-                    window.location.href = `exam-preview.html?id=${newExam.id}`;
-                } catch (e) {
-                    console.error('Error duplicating exam:', e);
-                    App.toast('حدث خطأ', 'error');
-                }
-            });
-        };
+                    return `
+                        <div class="question-preview">
+                            <div class="question-preview-header">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="question-number">${idx + 1}</div>
+                                    <span class="badge-preview ${badgeClass}">${typeText}</span>
+                                </div>
+                                <div class="question-points">${eq.points || q.points || 1} نقطة</div>
+                            </div>
+                            <div class="question-text-preview">${App.sanitizeHtml(q.question_text || '')}</div>
+                            ${optionsHtml}
+                            ${q.type === 'mcq' || q.type === 'true_false' ? `
+                                <div style="margin-top: 12px; padding: 8px 12px; background: #d1fae5; border-radius: var(--radius-sm); color: #065f46; font-size: 0.875rem; font-weight: 600;">
+                                    ✅ الإجابة الصحيحة: ${q.type === 'mcq' ? String.fromCharCode(65 + (q.correct_answer || 0)) : (q.correct_answer === 0 ? 'صحيح' : 'خطأ')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
 
-        window.exportExam = function() {
-            App.toast('جاري إنشاء PDF...');
-            // PDF export logic would go here
-            setTimeout(() => App.toast('تم تصدير الاختبار'), 1500);
-        };
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ في تحميل الامتحان');
+            }
+            App.Loading.hide();
+        }
 
-        window.deleteExam = function() {
-            App.confirm('هل أنت متأكد من حذف هذا الاختبار؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
-                try {
-                    await examDB.from('exam_exam_questions').delete().eq('exam_id', examId);
-                    await examDB.from('exam_enrollments').delete().eq('exam_id', examId);
-                    await examDB.from('exam_attempts').delete().eq('exam_id', examId);
-                    await examDB.from('exam_exams').delete().eq('id', examId);
-                    App.toast('تم حذف الاختبار');
-                    window.location.href = 'dashboard.html';
-                } catch (e) {
-                    console.error('Error deleting exam:', e);
-                    App.toast('حدث خطأ', 'error');
-                }
-            });
-        };
-
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await examAuth.logout();
-            window.location.href = '../login.html';
-        });
-    })();
+        loadExamPreview();
     </script>
 </body>
 </html>

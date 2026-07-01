@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة سؤال جديد | منصة الاختبارات</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-dark: #4338ca; --primary-light: #818cf8;
+            --secondary: #06b6d4; --accent: #f59e0b; --success: #10b981;
+            --danger: #ef4444; --dark: #0f172a; --gray: #64748b;
+            --gray-light: #e2e8f0; --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --radius: 12px; --radius-lg: 20px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+        /* Layout */
+        .app-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark); color: white; padding: 1.5rem;
+            position: fixed; right: 0; top: 0; bottom: 0; width: 260px;
+            overflow-y: auto; z-index: 100;
+        }
+        .sidebar-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+        .sidebar-logo-icon {
+            width: 40px; height: 40px; border-radius: var(--radius);
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-size: 1.1rem;
+        }
+        .sidebar-logo-text { font-size: 1.1rem; font-weight: 800; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 0.25rem; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem; border-radius: var(--radius);
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            font-weight: 500; transition: all 0.3s; font-size: 0.9rem;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1); color: white;
+        }
+        .sidebar-menu a.active { background: var(--gradient-1); }
+        .sidebar-menu a i { width: 20px; text-align: center; }
+        .sidebar-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 1rem 0; }
+        .sidebar-user { margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-user-info { display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem;
+        }
+        .sidebar-user-name { font-weight: 700; font-size: 0.9rem; }
+        .sidebar-user-role { font-size: 0.75rem; opacity: 0.6; }
+
+        /* Main Content */
+        .main-content { margin-right: 260px; min-height: 100vh; }
+
+        /* Top Bar */
+        .top-bar {
+            background: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--gray-light); position: sticky; top: 0; z-index: 50;
+        }
+        .top-bar-title { font-size: 1.25rem; font-weight: 800; color: var(--dark); }
+        .top-bar-actions { display: flex; gap: 0.75rem; align-items: center; }
+        .top-bar-btn {
+            padding: 0.6rem 1.25rem; border-radius: var(--radius);
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            transition: all 0.3s; border: none; display: inline-flex;
+            align-items: center; gap: 0.5rem; text-decoration: none;
+        }
+        .top-bar-btn.primary { background: var(--gradient-1); color: white; }
+        .top-bar-btn.primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .top-bar-btn.secondary { background: var(--gray-light); color: var(--dark); }
+        .top-bar-btn.secondary:hover { background: #cbd5e1; }
+
+        /* Page Content */
+        .page-content { padding: 2rem; max-width: 1000px; }
+
+        /* Question Type Selector */
+        .type-selector {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+        }
+        .type-card {
+            background: white; border: 2px solid var(--gray-light); border-radius: var(--radius);
+            padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .type-card:hover { border-color: var(--primary-light); transform: translateY(-2px); box-shadow: var(--shadow); }
+        .type-card.active { border-color: var(--primary); background: rgba(79,70,229,0.05); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+        .type-card i { font-size: 1.75rem; margin-bottom: 0.75rem; display: block; }
+        .type-card.mcq i { color: var(--primary); }
+        .type-card.truefalse i { color: var(--success); }
+        .type-card.essay i { color: var(--secondary); }
+        .type-card.fillblank i { color: var(--accent); }
+        .type-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .type-card span { font-size: 0.75rem; color: var(--gray); }
+
+        /* Form Card */
+        .form-card {
+            background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+            overflow: hidden;
+        }
+        .form-card-header {
+            padding: 1.5rem 2rem; border-bottom: 1px solid var(--gray-light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .form-card-header h2 { font-size: 1.1rem; font-weight: 800; color: var(--dark); }
+        .form-card-body { padding: 2rem; }
+
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; font-weight: 600; color: var(--dark); margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .form-label .required { color: var(--danger); }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); font-family: 'Tajawal', sans-serif;
+            font-size: 0.95rem; transition: all 0.3s; background: white;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        .form-textarea { min-height: 120px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+        /* Options for MCQ */
+        .options-container { display: flex; flex-direction: column; gap: 0.75rem; }
+        .option-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem; background: #f8fafc; border-radius: var(--radius);
+            border: 2px solid transparent; transition: all 0.3s;
+        }
+        .option-row:hover { border-color: var(--gray-light); }
+        .option-row.correct { border-color: var(--success); background: rgba(16,185,129,0.05); }
+        .option-letter {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .option-input { flex: 1; border: none; background: transparent; font-family: 'Tajawal'; font-size: 0.95rem; }
+        .option-input:focus { outline: none; }
+        .option-actions { display: flex; gap: 0.5rem; }
+        .option-btn {
+            width: 32px; height: 32px; border-radius: var(--radius);
+            border: none; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+        }
+        .option-btn.correct-btn { background: rgba(16,185,129,0.1); color: var(--success); }
+        .option-btn.correct-btn:hover, .option-btn.correct-btn.active { background: var(--success); color: white; }
+        .option-btn.delete-btn { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .option-btn.delete-btn:hover { background: var(--danger); color: white; }
+        .add-option-btn {
+            padding: 0.75rem; border: 2px dashed var(--gray-light); border-radius: var(--radius);
+            background: transparent; color: var(--primary); font-weight: 600;
+            cursor: pointer; transition: all 0.3s; font-family: 'Tajawal';
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .add-option-btn:hover { border-color: var(--primary); background: rgba(79,70,229,0.05); }
+
+        /* True/False */
+        .tf-options { display: flex; gap: 1rem; }
+        .tf-option {
+            flex: 1; padding: 1.25rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); text-align: center; cursor: pointer;
+            transition: all 0.3s; background: white;
+        }
+        .tf-option:hover { border-color: var(--primary-light); }
+        .tf-option.selected { border-color: var(--primary); background: rgba(79,70,229,0.05); }
+        .tf-option i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .tf-option.true i { color: var(--success); }
+        .tf-option.false i { color: var(--danger); }
+        .tf-option h4 { font-weight: 700; }
+
+        /* Fill Blank */
+        .blank-input {
+            display: inline-block; padding: 0.35rem 0.75rem;
+            background: var(--primary-light); color: white;
+            border-radius: 4px; font-weight: 600; min-width: 80px;
+            text-align: center; border: none; font-family: 'Tajawal';
+        }
+        .blank-input:focus { outline: none; background: var(--primary); }
+        .blank-hint { color: var(--gray); font-size: 0.85rem; margin-top: 0.5rem; }
+
+        /* Essay */
+        .essay-hint { 
+            background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.2);
+            border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;
+        }
+        .essay-hint p { color: var(--secondary); font-size: 0.85rem; }
+
+        /* Difficulty */
+        .difficulty-selector { display: flex; gap: 0.75rem; }
+        .difficulty-btn {
+            flex: 1; padding: 0.75rem; border: 2px solid var(--gray-light);
+            border-radius: var(--radius); background: white; cursor: pointer;
+            transition: all 0.3s; font-family: 'Tajawal'; font-weight: 600;
+        }
+        .difficulty-btn:hover { transform: translateY(-2px); }
+        .difficulty-btn.easy { color: var(--success); }
+        .difficulty-btn.medium { color: var(--accent); }
+        .difficulty-btn.hard { color: var(--danger); }
+        .difficulty-btn.selected.easy { background: rgba(16,185,129,0.1); border-color: var(--success); }
+        .difficulty-btn.selected.medium { background: rgba(245,158,11,0.1); border-color: var(--accent); }
+        .difficulty-btn.selected.hard { background: rgba(239,68,68,0.1); border-color: var(--danger); }
+
+        /* Image Upload */
+        .image-upload {
+            border: 2px dashed var(--gray-light); border-radius: var(--radius);
+            padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s;
+            background: #f8fafc;
+        }
+        .image-upload:hover { border-color: var(--primary); background: rgba(79,70,229,0.02); }
+        .image-upload i { font-size: 2rem; color: var(--gray); margin-bottom: 0.75rem; }
+        .image-upload p { color: var(--gray); font-size: 0.9rem; }
+        .image-upload span { color: var(--primary); font-weight: 600; }
+        .image-preview { max-width: 100%; border-radius: var(--radius); margin-top: 1rem; }
+
+        /* Form Actions */
+        .form-actions { 
+            display: flex; gap: 1rem; justify-content: flex-end;
+            padding: 1.5rem 2rem; border-top: 1px solid var(--gray-light);
+            background: #f8fafc;
+        }
+        .btn {
+            padding: 0.875rem 2rem; border-radius: var(--radius); font-weight: 700;
+            font-size: 0.9rem; cursor: pointer; transition: all 0.3s; border: none;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--gradient-1); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79,70,229,0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: var(--gray-light); color: var(--dark); }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 1rem; left: 1rem; z-index: 9999; }
+        .toast { padding: 1rem 1.5rem; border-radius: var(--radius); color: white; font-weight: 600; margin-bottom: 0.5rem; animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-lg); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--primary); }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Tags */
+        .tags-input { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem; border: 2px solid var(--gray-light); border-radius: var(--radius); min-height: 48px; }
+        .tags-input:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+        .tag {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.35rem 0.75rem; background: rgba(79,70,229,0.1);
+            color: var(--primary); border-radius: 50px; font-size: 0.8rem; font-weight: 600;
+        }
+        .tag button { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.75rem; }
+        .tags-input input { border: none; background: transparent; flex: 1; min-width: 100px; font-family: 'Tajawal'; font-size: 0.9rem; }
+        .tags-input input:focus { outline: none; }
+
+        /* Mobile */
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--dark); }
+        @media (max-width: 1024px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { transform: translateX(100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-menu-btn { display: block; }
+            .type-selector { grid-template-columns: repeat(2, 1fr); }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .tf-options { flex-direction: column; }
+            .difficulty-selector { flex-direction: column; }
+            .page-content { padding: 1rem; }
+            .form-card-body { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span class="sidebar-logo-text">ExamPlatform</span>
+            </div>
+            <ul class="sidebar-menu" id="sidebarMenu">
+                <!-- Dynamic based on role -->
+            </ul>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar" id="userAvatar">U</div>
+                    <div>
+                        <div class="sidebar-user-name" id="userName">المستخدم</div>
+                        <div class="sidebar-user-role" id="userRole">...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <h1 class="top-bar-title"><i class="fas fa-plus-circle" style="color:var(--primary);"></i> إضافة سؤال جديد</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <a href="questions-bank.html" class="top-bar-btn secondary">
+                        <i class="fas fa-book"></i> بنك الأسئلة
+                    </a>
+                    <button class="top-bar-btn primary" onclick="saveQuestion()">
+                        <i class="fas fa-save"></i> حفظ السؤال
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Question Type Selector -->
+                <div class="type-selector">
+                    <div class="type-card mcq active" onclick="selectType('mcq')">
+                        <i class="fas fa-list-ul"></i>
+                        <h4>اختيار من متعدد</h4>
+                        <span>MCQ</span>
+                    </div>
+                    <div class="type-card truefalse" onclick="selectType('truefalse')">
+                        <i class="fas fa-check-double"></i>
+                        <h4>صح / خطأ</h4>
+                        <span>True/False</span>
+                    </div>
+                    <div class="type-card essay" onclick="selectType('essay')">
+                        <i class="fas fa-align-left"></i>
+                        <h4>مقالي</h4>
+                        <span>Essay</span>
+                    </div>
+                    <div class="type-card fillblank" onclick="selectType('fillblank')">
+                        <i class="fas fa-pen"></i>
+                        <h4>أكمل الفراغ</h4>
+                        <span>Fill Blank</span>
+                    </div>
+                </div>
+
+                <!-- Form Card -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h2><i class="fas fa-edit"></i> محتوى السؤال</h2>
+                        <span style="color:var(--gray);font-size:0.85rem;" id="typeLabel">اختيار من متعدد</span>
+                    </div>
+
+                    <div class="form-card-body">
+                        <!-- Question Text -->
+                        <div class="form-group">
+                            <label class="form-label">نص السؤال <span class="required">*</span></label>
+                            <textarea class="form-textarea" id="questionText" placeholder="اكتب نص السؤال هنا..."></textarea>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="form-group">
+                            <label class="form-label">صورة توضيحية (اختياري)</label>
+                            <div class="image-upload" onclick="document.getElementById('questionImage').click()">
+                                <i class="fas fa-image"></i>
+                                <p>اسحب الصورة هنا أو <span>اختر ملف</span></p>
+                                <input type="file" id="questionImage" accept="image/*" style="display:none;" onchange="previewImage(event)">
+                            </div>
+                            <img id="imagePreview" class="image-preview" style="display:none;">
+                        </div>
+
+                        <!-- MCQ Options -->
+                        <div id="mcqSection">
+                            <div class="form-group">
+                                <label class="form-label">الخيارات <span class="required">*</span> <small style="color:var(--gray);font-weight:400;">(حدد الإجابة الصحيحة)</small></label>
+                                <div class="options-container" id="optionsContainer">
+                                    <div class="option-row" data-index="0">
+                                        <div class="option-letter">أ</div>
+                                        <input type="text" class="option-input" placeholder="الخيار الأول" data-option="0">
+                                        <div class="option-actions">
+                                            <button type="button" class="option-btn correct-btn" onclick="setCorrect(0)" title="الإجابة الصحيحة"><i class="fas fa-check"></i></button>
+                                            <button type="button" class="option-btn delete-btn" onclick="removeOption(0)" title="حذف"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="option-row" data-index="1">
+                                        <div class="option-letter">ب</div>
+                                        <input type="text" class="option-input" placeholder="الخيار الثاني" data-option="1">
+                                        <div class="option-actions">
+                                            <button type="button" class="option-btn correct-btn" onclick="setCorrect(1)" title="الإجابة الصحيحة"><i class="fas fa-check"></i></button>
+                                            <button type="button" class="option-btn delete-btn" onclick="removeOption(1)" title="حذف"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="add-option-btn" onclick="addOption()">
+                                    <i class="fas fa-plus"></i> إضافة خيار
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- True/False Section -->
+                        <div id="truefalseSection" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">الإجابة الصحيحة <span class="required">*</span></label>
+                                <div class="tf-options">
+                                    <div class="tf-option true" onclick="selectTF(true)">
+                                        <i class="fas fa-check-circle"></i>
+                                        <h4>صح</h4>
+                                    </div>
+                                    <div class="tf-option false" onclick="selectTF(false)">
+                                        <i class="fas fa-times-circle"></i>
+                                        <h4>خطأ</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Essay Section -->
+                        <div id="essaySection" style="display:none;">
+                            <div class="essay-hint">
+                                <p><i class="fas fa-info-circle"></i> السؤال المقالي يتطلب من الطالب كتابة إجابة نصية. يمكنك إضافة دليل تصحيح أو نموذج إجابة.</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">نموذج إجابة / دليل التصحيح</label>
+                                <textarea class="form-textarea" id="essayAnswer" placeholder="اكتب نموذج الإجابة أو دليل التصحيح هنا..." style="min-height:80px;"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">الدرجة القصوى</label>
+                                <input type="number" class="form-input" id="essayMaxScore" placeholder="مثال: 10" min="1" max="100">
+                            </div>
+                        </div>
+
+                        <!-- Fill Blank Section -->
+                        <div id="fillblankSection" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">نص السؤال مع الفراغات <span class="required">*</span></label>
+                                <textarea class="form-textarea" id="fillblankText" placeholder="اكتب النص واستخدم [فراغ] لتحديد مكان الإجابة... مثال: عاصمة مصر هي [فراغ]"></textarea>
+                                <p class="blank-hint"><i class="fas fa-lightbulb"></i> استخدم الكلمة [فراغ] (بما فيها الأقواس) لتحديد مكان الإجابة في النص</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">الإجابة الصحيحة <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="fillblankAnswer" placeholder="اكتب الإجابة الصحيحة">
+                            </div>
+                        </div>
+
+                        <div class="sidebar-divider" style="margin:2rem 0;"></div>
+
+                        <!-- Metadata -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">المادة الدراسية <span class="required">*</span></label>
+                                <select class="form-select" id="subject">
+                                    <option value="">اختر المادة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">الصف الدراسي</label>
+                                <select class="form-select" id="grade">
+                                    <option value="">اختر الصف</option>
+                                    <option value="1">الصف الأول</option>
+                                    <option value="2">الصف الثاني</option>
+                                    <option value="3">الصف الثالث</option>
+                                    <option value="4">الصف الرابع</option>
+                                    <option value="5">الصف الخامس</option>
+                                    <option value="6">الصف السادس</option>
+                                    <option value="7">الصف السابع</option>
+                                    <option value="8">الصف الثامن</option>
+                                    <option value="9">الصف التاسع</option>
+                                    <option value="10">الصف العاشر</option>
+                                    <option value="11">الصف الحادي عشر</option>
+                                    <option value="12">الصف الثاني عشر</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row-3">
+                            <div class="form-group">
+                                <label class="form-label">درجة السؤال</label>
+                                <input type="number" class="form-input" id="marks" value="1" min="0.5" max="100" step="0.5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">الوقت المتوقع (دقيقة)</label>
+                                <input type="number" class="form-input" id="timeLimit" value="1" min="0.5" max="60" step="0.5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">الصعوبة</label>
+                                <div class="difficulty-selector">
+                                    <button type="button" class="difficulty-btn easy selected" onclick="selectDifficulty('easy')">سهل</button>
+                                    <button type="button" class="difficulty-btn medium" onclick="selectDifficulty('medium')">متوسط</button>
+                                    <button type="button" class="difficulty-btn hard" onclick="selectDifficulty('hard')">صعب</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">الوسوم (Tags)</label>
+                            <div class="tags-input" id="tagsInput" onclick="document.getElementById('tagInput').focus()">
+                                <input type="text" id="tagInput" placeholder="اكتب وسماً واضغط Enter">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">تلميح / شرح إضافي (اختياري)</label>
+                            <textarea class="form-textarea" id="hint" placeholder="اكتب تلميحاً أو شرحاً إضافياً يظهر للطالب بعد الإجابة..." style="min-height:80px;"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-success" onclick="saveQuestion(true)">
+                            <i class="fas fa-plus"></i> حفظ وإضافة جديد
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="location.href='questions-bank.html'">
+                            <i class="fas fa-times"></i> إلغاء
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveQuestion()">
+                            <i class="fas fa-save"></i> حفظ السؤال
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="shared/supabase-client.js"></script>
+    <script src="shared/app.js"></script>
+    <script>
+        let currentType = 'mcq';
+        let correctOption = -1;
+        let selectedTF = null;
+        let difficulty = 'easy';
+        let tags = [];
+        let optionCount = 2;
+        const arabicLetters = ['أ', 'ب', 'ج', 'د', 'ه', 'و', 'ز', 'ح', 'ط'];
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = JSON.parse(localStorage.getItem('exam_user') || '{}');
+            if (!currentUser.id) { location.href = 'login.html'; return; }
+
+            setupSidebar();
+            setupTags();
+            await loadSubjects();
+        });
+
+        function setupSidebar() {
+            const menu = document.getElementById('sidebarMenu');
+            const role = currentUser.role;
+
+            document.getElementById('userName').textContent = currentUser.first_name + ' ' + currentUser.last_name;
+            document.getElementById('userRole').textContent = role === 'admin' ? 'مدير النظام' : role === 'teacher' ? 'معلم' : 'طالب';
+            document.getElementById('userAvatar').textContent = (currentUser.first_name?.[0] || 'U');
+
+            let links = '';
+            if (role === 'admin') {
+                links = `
+                    <li><a href="admin/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="admin/users.html"><i class="fas fa-users"></i> المستخدمين</a></li>
+                    <li><a href="admin/subjects.html"><i class="fas fa-book"></i> المواد</a></li>
+                    <li><a href="questions-bank.html"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="admin/reports.html"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="admin/settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                `;
+            } else if (role === 'teacher') {
+                links = `
+                    <li><a href="teacher/dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="questions-bank.html"><i class="fas fa-question-circle"></i> بنك الأسئلة</a></li>
+                    <li><a href="create-exam.html"><i class="fas fa-file-alt"></i> الاختبارات</a></li>
+                    <li><a href="teacher/students.html"><i class="fas fa-user-graduate"></i> الطلاب</a></li>
+                    <li><a href="teacher/results.html"><i class="fas fa-chart-line"></i> النتائج</a></li>
+                `;
+            }
+            links += `<li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>`;
+            menu.innerHTML = links;
+        }
+
+        async function loadSubjects() {
+            const { data, error } = await supabase.from('exam_subjects').select('*').order('name');
+            if (error) return;
+            const select = document.getElementById('subject');
+            data.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function selectType(type) {
+            currentType = type;
+            document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.type-card.${type}`).classList.add('active');
+
+            document.getElementById('mcqSection').style.display = type === 'mcq' ? 'block' : 'none';
+            document.getElementById('truefalseSection').style.display = type === 'truefalse' ? 'block' : 'none';
+            document.getElementById('essaySection').style.display = type === 'essay' ? 'block' : 'none';
+            document.getElementById('fillblankSection').style.display = type === 'fillblank' ? 'block' : 'none';
+
+            const labels = { mcq: 'اختيار من متعدد', truefalse: 'صح / خطأ', essay: 'مقالي', fillblank: 'أكمل الفراغ' };
+            document.getElementById('typeLabel').textContent = labels[type];
+        }
+
+        function addOption() {
+            if (optionCount >= 6) { showToast('الحد الأقصى 6 خيارات', 'error'); return; }
+            const container = document.getElementById('optionsContainer');
+            const idx = optionCount;
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.setAttribute('data-index', idx);
+            row.innerHTML = `
+                <div class="option-letter">${arabicLetters[idx]}</div>
+                <input type="text" class="option-input" placeholder="الخيار ${arabicLetters[idx]}" data-option="${idx}">
+                <div class="option-actions">
+                    <button type="button" class="option-btn correct-btn" onclick="setCorrect(${idx})" title="الإجابة الصحيحة"><i class="fas fa-check"></i></button>
+                    <button type="button" class="option-btn delete-btn" onclick="removeOption(${idx})" title="حذف"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(row);
+            optionCount++;
+        }
+
+        function removeOption(idx) {
+            if (optionCount <= 2) { showToast('يجب وجود خيارين على الأقل', 'error'); return; }
+            const row = document.querySelector(`.option-row[data-index="${idx}"]`);
+            if (row) { row.remove(); optionCount--; reindexOptions(); }
+        }
+
+        function reindexOptions() {
+            const rows = document.querySelectorAll('.option-row');
+            rows.forEach((row, i) => {
+                row.setAttribute('data-index', i);
+                row.querySelector('.option-letter').textContent = arabicLetters[i];
+                row.querySelector('.option-input').setAttribute('data-option', i);
+                row.querySelector('.option-input').placeholder = `الخيار ${arabicLetters[i]}`;
+                const btns = row.querySelectorAll('.option-btn');
+                btns[0].setAttribute('onclick', `setCorrect(${i})`);
+                btns[1].setAttribute('onclick', `removeOption(${i})`);
+            });
+        }
+
+        function setCorrect(idx) {
+            correctOption = idx;
+            document.querySelectorAll('.option-row').forEach((row, i) => {
+                row.classList.toggle('correct', i === idx);
+                row.querySelector('.correct-btn').classList.toggle('active', i === idx);
+            });
+        }
+
+        function selectTF(val) {
+            selectedTF = val;
+            document.querySelectorAll('.tf-option').forEach(el => el.classList.remove('selected'));
+            document.querySelector(val ? '.tf-option.true' : '.tf-option.false').classList.add('selected');
+        }
+
+        function selectDifficulty(d) {
+            difficulty = d;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelector(`.difficulty-btn.${d}`).classList.add('selected');
+        }
+
+        function setupTags() {
+            const input = document.getElementById('tagInput');
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = input.value.trim();
+                    if (val && !tags.includes(val)) {
+                        tags.push(val);
+                        renderTags();
+                        input.value = '';
+                    }
+                }
+                if (e.key === 'Backspace' && !input.value && tags.length) {
+                    tags.pop();
+                    renderTags();
+                }
+            });
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tagsInput');
+            const input = document.getElementById('tagInput');
+            container.innerHTML = '';
+            tags.forEach((tag, i) => {
+                const span = document.createElement('span');
+                span.className = 'tag';
+                span.innerHTML = `${tag} <button onclick="removeTag(${i})"><i class="fas fa-times"></i></button>`;
+                container.appendChild(span);
+            });
+            container.appendChild(input);
+            input.focus();
+        }
+
+        function removeTag(i) { tags.splice(i, 1); renderTags(); }
+
+        function previewImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('imagePreview');
+                img.src = ev.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveQuestion(addNew = false) {
+            const questionText = document.getElementById('questionText').value.trim();
+            const subject = document.getElementById('subject').value;
+
+            if (!questionText) { showToast('نص السؤال مطلوب', 'error'); return; }
+            if (!subject) { showToast('المادة الدراسية مطلوبة', 'error'); return; }
+
+            let answerData = {};
+
+            if (currentType === 'mcq') {
+                const options = [];
+                document.querySelectorAll('.option-input').forEach((input, i) => {
+                    options.push({ text: input.value.trim(), is_correct: i === correctOption });
+                });
+                if (options.some(o => !o.text)) { showToast('جميع الخيارات مطلوبة', 'error'); return; }
+                if (correctOption === -1) { showToast('حدد الإجابة الصحيحة', 'error'); return; }
+                answerData = { options };
+            } else if (currentType === 'truefalse') {
+                if (selectedTF === null) { showToast('حدد الإجابة الصحيحة', 'error'); return; }
+                answerData = { correct_answer: selectedTF };
+            } else if (currentType === 'essay') {
+                answerData = { 
+                    model_answer: document.getElementById('essayAnswer').value.trim(),
+                    max_score: parseFloat(document.getElementById('essayMaxScore').value) || 10
+                };
+            } else if (currentType === 'fillblank') {
+                const fbText = document.getElementById('fillblankText').value.trim();
+                const fbAnswer = document.getElementById('fillblankAnswer').value.trim();
+                if (!fbText.includes('[فراغ]')) { showToast('يجب إدراج [فراغ] في النص', 'error'); return; }
+                if (!fbAnswer) { showToast('الإجابة الصحيحة مطلوبة', 'error'); return; }
+                answerData = { correct_answer: fbAnswer };
+            }
+
+            const questionData = {
+                question_text: questionText,
+                question_type: currentType,
+                subject_id: subject,
+                grade: document.getElementById('grade').value || null,
+                marks: parseFloat(document.getElementById('marks').value) || 1,
+                time_limit: parseFloat(document.getElementById('timeLimit').value) || 1,
+                difficulty: difficulty,
+                tags: tags,
+                hint: document.getElementById('hint').value.trim() || null,
+                answer_data: answerData,
+                created_by: currentUser.id,
+                status: 'active',
+                created_at: new Date().toISOString()
+            };
+
+            // Handle image
+            const imageFile = document.getElementById('questionImage').files[0];
+            if (imageFile) {
+                const fileName = `question_${Date.now()}_${imageFile.name}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('question-images')
+                    .upload(fileName, imageFile);
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('question-images').getPublicUrl(fileName);
+                    questionData.image_url = urlData.publicUrl;
+                }
+            }
+
+            const { data, error } = await supabase.from('exam_questions_bank').insert([questionData]).select().single();
+
+            if (error) {
+                showToast('حدث خطأ: ' + error.message, 'error');
+                return;
+            }
+
+            showToast('تم حفظ السؤال بنجاح!', 'success');
+
+            if (addNew) {
+                resetForm();
+            } else {
+                setTimeout(() => location.href = 'questions-bank.html', 1000);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('questionText').value = '';
+            document.getElementById('questionImage').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('essayAnswer').value = '';
+            document.getElementById('essayMaxScore').value = '';
+            document.getElementById('fillblankText').value = '';
+            document.getElementById('fillblankAnswer').value = '';
+            document.getElementById('hint').value = '';
+            document.getElementById('marks').value = '1';
+            document.getElementById('timeLimit').value = '1';
+            tags = []; renderTags();
+            correctOption = -1; selectedTF = null;
+            document.querySelectorAll('.option-row').forEach(r => r.classList.remove('correct'));
+            document.querySelectorAll('.correct-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tf-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.option-input').forEach(i => i.value = '');
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function logout() { localStorage.clear(); location.href = 'login.html'; }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 /**
  * ============================================
- * App Utilities Module
- * Exam Platform V2
+ * App Utilities Module - V2 Style
+ * Exam Platform - Merged V1+V2
  * ============================================
  */
 
@@ -11,7 +11,7 @@ const App = {
     // ============================================
     Toast: {
         container: null,
-        
+
         init() {
             if (!this.container) {
                 this.container = document.getElementById('toastContainer');
@@ -26,53 +26,30 @@ const App = {
 
         show(message, type = 'info', duration = 4000) {
             this.init();
-            
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            
-            const icons = {
-                success: '✓',
-                error: '✗',
-                warning: '⚠',
-                info: 'ℹ'
-            };
-            
+            const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
             toast.innerHTML = `
-                <span style="font-size:1.2rem">${icons[type] || 'ℹ'}</span>
-                <span>${message}</span>
+                <span class="toast-icon">${icons[type] || 'ℹ'}</span>
+                <span class="toast-message">${message}</span>
             `;
-            
             this.container.appendChild(toast);
-            
-            // Auto remove
+
             setTimeout(() => {
                 toast.style.animation = 'toastSlide 0.3s ease reverse';
                 setTimeout(() => toast.remove(), 300);
             }, duration);
-            
-            // Limit to 5 toasts
+
             while (this.container.children.length > 5) {
                 this.container.firstChild.remove();
             }
-            
             return toast;
         },
 
-        success(message, duration) {
-            return this.show(message, 'success', duration);
-        },
-
-        error(message, duration) {
-            return this.show(message, 'error', duration);
-        },
-
-        warning(message, duration) {
-            return this.show(message, 'warning', duration);
-        },
-
-        info(message, duration) {
-            return this.show(message, 'info', duration);
-        }
+        success(message, duration) { return this.show(message, 'success', duration); },
+        error(message, duration) { return this.show(message, 'error', duration); },
+        warning(message, duration) { return this.show(message, 'warning', duration); },
+        info(message, duration) { return this.show(message, 'info', duration); }
     },
 
     // ============================================
@@ -80,14 +57,14 @@ const App = {
     // ============================================
     Loading: {
         overlay: null,
-        
+
         init() {
             if (!this.overlay) {
                 this.overlay = document.createElement('div');
                 this.overlay.className = 'loading-overlay';
                 this.overlay.innerHTML = `
                     <div class="loading-spinner"></div>
-                    <div class="loading-text">جاري التحميل...</div>
+                    <p class="loading-text">جاري التحميل...</p>
                 `;
                 document.body.appendChild(this.overlay);
             }
@@ -116,8 +93,7 @@ const App = {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
-                // Force reflow
-                modal.offsetHeight;
+                modal.offsetHeight; // Force reflow
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
@@ -137,9 +113,7 @@ const App = {
         closeAll() {
             document.querySelectorAll('.modal-overlay.active').forEach(modal => {
                 modal.classList.remove('active');
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 300);
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
             });
             document.body.style.overflow = '';
         }
@@ -149,44 +123,25 @@ const App = {
     // Date & Time Formatter
     // ============================================
     DateTime: {
-        /**
-         * Format date to Arabic locale
-         */
         format(dateString, options = {}) {
             if (!dateString) return '-';
-            
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return '-';
-            
             const defaultOptions = {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                ...options
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', ...options
             };
-            
             return date.toLocaleDateString('ar-SA', defaultOptions);
         },
 
-        /**
-         * Format date only
-         */
         dateOnly(dateString) {
             return this.format(dateString, { hour: undefined, minute: undefined });
         },
 
-        /**
-         * Format time only
-         */
         timeOnly(dateString) {
             return this.format(dateString, { year: undefined, month: undefined, day: undefined });
         },
 
-        /**
-         * Relative time (e.g., "منذ 5 دقائق")
-         */
         relative(dateString) {
             const date = new Date(dateString);
             const now = new Date();
@@ -203,9 +158,6 @@ const App = {
             return this.format(dateString);
         },
 
-        /**
-         * Format duration in minutes to readable string
-         */
         duration(minutes) {
             if (minutes < 60) return `${minutes} دقيقة`;
             const hours = Math.floor(minutes / 60);
@@ -214,28 +166,17 @@ const App = {
             return `${hours} ساعة و ${mins} دقيقة`;
         },
 
-        /**
-         * Countdown timer
-         */
         countdown(targetDate, onTick, onComplete) {
             const target = new Date(targetDate).getTime();
-            
             const update = () => {
                 const now = Date.now();
                 const diff = target - now;
-                
-                if (diff <= 0) {
-                    onComplete?.();
-                    return;
-                }
-                
+                if (diff <= 0) { onComplete?.(); return; }
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
                 onTick?.({ hours, minutes, seconds, totalMs: diff });
             };
-            
             update();
             return setInterval(update, 1000);
         }
@@ -258,7 +199,6 @@ const App = {
                 hasNumber: /[0-9]/.test(password),
                 hasSpecial: /[^A-Za-z0-9]/.test(password)
             };
-            
             const score = Object.values(checks).filter(Boolean).length;
             return { valid: score >= 3, score, checks };
         },
@@ -282,18 +222,14 @@ const App = {
             try {
                 localStorage.setItem(this.prefix + key, JSON.stringify(value));
                 return true;
-            } catch (e) {
-                return false;
-            }
+            } catch (e) { return false; }
         },
 
         get(key, defaultValue = null) {
             try {
                 const item = localStorage.getItem(this.prefix + key);
                 return item ? JSON.parse(item) : defaultValue;
-            } catch (e) {
-                return defaultValue;
-            }
+            } catch (e) { return defaultValue; }
         },
 
         remove(key) {
@@ -317,30 +253,30 @@ const App = {
             modal.id = modalId;
             modal.className = 'modal-overlay';
             modal.innerHTML = `
-                <div class="modal">
-                    <div class="modal-header">
-                        <h3>${title}</h3>
-                        <button class="modal-close" onclick="App.Modal.close('${modalId}')">×</button>
-                    </div>
-                    <div class="modal-body">
-                        <p>${message}</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="App.Modal.close('${modalId}')">إلغاء</button>
-                        <button class="btn btn-danger" id="confirmBtn_${modalId}">تأكيد</button>
+                <div class="modal-content confirm-content">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <div class="confirm-buttons">
+                        <button class="btn btn-success" id="confirmBtn_${modalId}">نعم</button>
+                        <button class="btn btn-secondary" id="cancelBtn_${modalId}">لا</button>
                     </div>
                 </div>
             `;
-            
             document.body.appendChild(modal);
             App.Modal.open(modalId);
-            
+
             document.getElementById(`confirmBtn_${modalId}`).addEventListener('click', () => {
                 App.Modal.close(modalId);
                 setTimeout(() => modal.remove(), 400);
                 resolve(true);
             });
-            
+
+            document.getElementById(`cancelBtn_${modalId}`).addEventListener('click', () => {
+                App.Modal.close(modalId);
+                setTimeout(() => modal.remove(), 400);
+                resolve(false);
+            });
+
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     App.Modal.close(modalId);
@@ -370,7 +306,6 @@ const App = {
     // ============================================
     exportCSV(data, filename) {
         if (!data || !data.length) return;
-        
         const headers = Object.keys(data[0]);
         const csvContent = [
             headers.join(','),
@@ -379,13 +314,80 @@ const App = {
                 return `"${String(val).replace(/"/g, '""')}"`;
             }).join(','))
         ].join('\n');
-        
+
         const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = filename + '.csv';
         link.click();
         URL.revokeObjectURL(link.href);
+    },
+
+    // ============================================
+    // Export to Excel (using SheetJS if available)
+    // ============================================
+    exportExcel(data, filename, sheetName = 'Sheet1') {
+        if (typeof XLSX === 'undefined') {
+            App.Toast.error('مكتبة XLSX غير متوفرة');
+            return;
+        }
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, filename + '.xlsx');
+    },
+
+    // ============================================
+    // Sanitize HTML (prevent XSS)
+    // ============================================
+    sanitizeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    },
+
+    // ============================================
+    // Format Number (Arabic numerals)
+    // ============================================
+    formatNumber(num) {
+        return new Intl.NumberFormat('ar-SA').format(num);
+    },
+
+    // ============================================
+    // Debounce
+    // ============================================
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+
+    // ============================================
+    // Throttle
+    // ============================================
+    throttle(func, limit) {
+        let inThrottle;
+        return function(...args) {
+            if (!inThrottle) {
+                func.apply(this, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    },
+
+    // ============================================
+    // Generate Random ID
+    // ============================================
+    generateId(length = 12) {
+        return Math.random().toString(36).substring(2, 2 + length);
     }
 };
 
@@ -393,24 +395,15 @@ const App = {
 // Global Helpers
 // ============================================
 
-/**
- * Debounce function
- */
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+        const later = () => { clearTimeout(timeout); func(...args); };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
 }
 
-/**
- * Throttle function
- */
 function throttle(func, limit) {
     let inThrottle;
     return function(...args) {
@@ -422,16 +415,10 @@ function throttle(func, limit) {
     };
 }
 
-/**
- * Generate random ID
- */
 function generateId(length = 12) {
     return Math.random().toString(36).substring(2, 2 + length);
 }
 
-/**
- * Format number with Arabic numerals
- */
 function formatNumber(num) {
     return new Intl.NumberFormat('ar-SA').format(num);
 }
@@ -441,114 +428,89 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         App.Modal.closeAll();
     }
-    // ============================================
+});
+
+// ============================================
 // Demo Mode Handler
 // ============================================
 const DemoMode = {
-  isActive() {
-    return App.Storage.get('demo_user') !== null;
-  },
+    isActive() {
+        return App.Storage.get('demo_user') !== null;
+    },
 
-  getUser() {
-    return App.Storage.get('demo_user');
-  },
+    getUser() {
+        return App.Storage.get('demo_user');
+    },
 
-  getRole() {
-    return App.Storage.get('demo_role');
-  },
+    getRole() {
+        return App.Storage.get('demo_role');
+    },
 
-  // Mock data for demo
-  getMockData(type) {
-    const mocks = {
-      admin: {
-        stats: { users: 1240, students: 980, teachers: 45, exams: 156, attempts: 8934 },
-        recentActivity: [
-          { user: 'أحمد محمد', action: 'أنشأ اختبار جديد', time: 'منذ 5 دقائق' },
-          { user: 'سارة علي', action: 'أكملت اختبار الرياضيات', time: 'منذ 12 دقيقة' }
-        ]
-      },
-      teacher: {
-        stats: { exams: 12, questions: 340, students: 85, avgScore: 78 },
-        performance: [65, 72, 80, 85, 78, 90, 88]
-      },
-      student: {
-        stats: { available: 5, completed: 12, average: 82, best: 96 },
-        upcoming: [
-          { title: 'اختبار الفيزياء', subject: 'الفيزياء', date: '2025-07-01', duration: 60 },
-          { title: 'اختبار اللغة العربية', subject: 'العربية', date: '2025-07-03', duration: 90 }
-        ],
-        results: [
-          { exam: 'اختبار الرياضيات', score: 85, total: 100, date: '2025-06-20' },
-          { exam: 'اختبار الكيمياء', score: 92, total: 100, date: '2025-06-15' }
-        ]
-      }
-    };
-    return mocks[this.getRole()]?.[type] || null;
-  },
+    getMockData(type) {
+        const mocks = {
+            admin: {
+                stats: { users: 1240, students: 980, teachers: 45, exams: 156, attempts: 8934 },
+                recentActivity: [
+                    { user: 'أحمد محمد', action: 'أنشأ اختبار جديد', time: 'منذ 5 دقائق' },
+                    { user: 'سارة علي', action: 'أكملت اختبار الرياضيات', time: 'منذ 12 دقيقة' }
+                ]
+            },
+            teacher: {
+                stats: { exams: 12, questions: 340, students: 85, avgScore: 78 },
+                performance: [65, 72, 80, 85, 78, 90, 88]
+            },
+            student: {
+                stats: { available: 5, completed: 12, average: 82, best: 96 },
+                upcoming: [
+                    { title: 'اختبار الفيزياء', subject: 'الفيزياء', date: '2025-07-01', duration: 60 },
+                    { title: 'اختبار اللغة العربية', subject: 'العربية', date: '2025-07-03', duration: 90 }
+                ],
+                results: [
+                    { exam: 'اختبار الرياضيات', score: 85, total: 100, date: '2025-06-20' },
+                    { exam: 'اختبار الكيمياء', score: 92, total: 100, date: '2025-06-15' }
+                ]
+            }
+        };
+        return mocks[this.getRole()]?.[type] || null;
+    },
 
-  init() {
-    if (!this.isActive()) return;
-    
-    // Override auth functions for demo
-    window.examAuth = {
-      ...window.examAuth,
-      getUser: async () => this.getUser(),
-      isAdmin: async () => this.getRole() === 'admin',
-      isTeacher: async () => this.getRole() === 'teacher',
-      getSession: async () => ({ data: { session: { user: this.getUser() } }, error: null })
-    };
+    init() {
+        if (!this.isActive()) return;
 
-    // Show demo badge
-    const badge = document.createElement('div');
-    badge.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 9999;
-        background: linear-gradient(135deg, #f59e0b, #fbbf24);
-        color: #78350f;
-        padding: 8px 16px;
-        border-radius: 50px;
-        font-weight: 800;
-        font-size: 0.875rem;
-        box-shadow: 0 10px 15px rgba(245, 158, 11, 0.3);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        animation: pulse 2s infinite;
-      ">
-        <span>⚡</span>
-        <span>وضع المعاينة — ${this.getRole() === 'admin' ? 'مدير' : this.getRole() === 'teacher' ? 'معلم' : 'طالب'}</span>
-        <button onclick="DemoMode.exit()" style="
-          background: rgba(255,255,255,0.3);
-          border: none;
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          cursor: pointer;
-          margin-right: 8px;
-          font-weight: 700;
-        ">×</button>
-      </div>
-      <style>
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      </style>
-    `;
-    document.body.appendChild(badge);
-  },
+        window.examAuth = {
+            ...window.examAuth,
+            getUser: async () => this.getUser(),
+            isAdmin: async () => this.getRole() === 'admin',
+            isTeacher: async () => this.getRole() === 'teacher',
+            getSession: async () => ({ data: { session: { user: this.getUser() } }, error: null })
+        };
 
-  exit() {
-    App.Storage.clear();
-    window.location.href = '../login.html';
-  }
+        const badge = document.createElement('div');
+        badge.className = 'demo-badge';
+        badge.innerHTML = `⚡ وضع المعاينة — ${this.getRole() === 'admin' ? 'مدير' : this.getRole() === 'teacher' ? 'معلم' : 'طالب'}`;
+        document.body.appendChild(badge);
+    },
+
+    exit() {
+        App.Storage.clear();
+        window.location.href = '../login.html';
+    }
 };
 
 // Auto-init demo on dashboard pages
 if (document.querySelector('.app-layout') || document.querySelector('.sidebar')) {
-  DemoMode.init();
+    DemoMode.init();
 }
-});
+
+// ============================================
+// V1 Compatibility: Map old functions to App
+// ============================================
+window.showToast = (message, type = 'success') => App.Toast.show(message, type);
+window.showConfirm = (message, title) => App.confirm(message, title);
+window.escapeHtml = (str) => App.sanitizeHtml(str);
+window.formatDate = (date) => App.DateTime.dateOnly(date);
+window.formatDateTime = (date) => App.DateTime.format(date);
+window.showLoading = (text) => App.Loading.show(text);
+window.hideLoading = () => App.Loading.hide();
+
+console.log('✅ app.js loaded successfully');

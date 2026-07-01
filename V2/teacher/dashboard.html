@@ -3,159 +3,487 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم المدرس | منصة الاختبارات</title>
+    <title>لوحة تحكم المعلم - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <link rel="stylesheet" href="../shared/styles.css">
     <style>
-        .teacher-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 32px; }
-        .teacher-stat { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; text-align: center; }
-        .teacher-stat .icon { font-size: 2.5rem; margin-bottom: 12px; }
-        .teacher-stat .value { font-size: 2rem; font-weight: 900; color: var(--primary-light); }
-        .teacher-stat .label { color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px; }
-        .quick-actions { display: flex; gap: 12px; margin-bottom: 32px; flex-wrap: wrap; }
-        .quick-actions .btn { flex: 1; min-width: 160px; justify-content: center; }
-        .monitor-preview { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; }
-        .monitor-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-        .monitor-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--bg-primary); border-radius: var(--radius-md); border-right: 3px solid var(--success-color); }
-        .monitor-item.suspended { border-right-color: var(--danger-color); }
-        .monitor-item.warning { border-right-color: var(--warning-color); }
-        .monitor-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0; }
-        .monitor-info { flex: 1; }
-        .monitor-info .name { font-weight: 600; }
-        .monitor-info .exam { font-size: 0.85rem; color: var(--text-secondary); }
-        .monitor-time { font-size: 0.85rem; color: var(--text-muted); font-family: monospace; }
-        .monitor-status { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .status-active { background: rgba(34,197,94,0.15); color: var(--success-color); }
-        .status-warning { background: rgba(245,158,11,0.15); color: var(--warning-color); }
-        .chart-placeholder { height: 200px; background: var(--bg-primary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-muted); margin-top: 16px; }
+        .impersonation-bar {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            padding: 10px 24px;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+        }
+        .impersonation-bar.active { display: flex; }
+        .impersonation-bar button {
+            background: white;
+            color: var(--danger);
+            border: none;
+            padding: 6px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .impersonation-bar + .app-layout { margin-top: 48px; }
+        .chart-container { position: relative; height: 250px; margin-top: 16px; }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.875rem; flex-shrink: 0;
+        }
+        .activity-content { flex: 1; }
+        .activity-title { font-weight: 600; color: var(--text-main); font-size: 0.875rem; }
+        .activity-time { font-size: 0.75rem; color: var(--text-muted); }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .quick-action-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            padding: 20px; border-radius: var(--radius-lg);
+            background: var(--bg-body); border: 1px solid var(--border-color);
+            cursor: pointer; transition: var(--transition); font-family: inherit;
+            color: var(--text-main); font-weight: 600; font-size: 0.875rem; text-decoration: none;
+        }
+        .quick-action-btn:hover {
+            background: var(--primary-50); border-color: var(--primary-200); transform: translateY(-2px);
+        }
+        .quick-action-icon { font-size: 1.75rem; }
+        .upcoming-exam-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px; background: var(--bg-body); border-radius: var(--radius-md);
+            margin-bottom: 10px; border-right: 4px solid var(--primary-500);
+        }
+        .upcoming-exam-item .exam-title { font-weight: 700; color: var(--text-main); }
+        .upcoming-exam-item .exam-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .upcoming-exam-item .exam-status {
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+        }
     </style>
 </head>
-<body class="dark-mode">
+<body>
+    <!-- Impersonation Bar -->
+    <div class="impersonation-bar" id="impersonationBar">
+        <span>👤 أنت الآن تتصفح كـ: <strong id="impersonatedName"></strong></span>
+        <button onclick="stopImpersonation(); location.reload();">⬅️ العودة للأدمن</button>
+    </div>
+
     <div class="app-layout">
-        <aside class="sidebar" id="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>🎓 منصة الاختبارات</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="./dashboard.html" class="nav-item active"><span class="nav-icon">📊</span><span class="nav-text">لوحة التحكم</span></a>
-                <a href="./exams.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-text">الاختبارات</span></a>
-                <a href="./questions.html" class="nav-item"><span class="nav-icon">❓</span><span class="nav-text">بنك الأسئلة</span></a>
-                <a href="./monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span class="nav-text">المراقبة</span></a>
-                <a href="./results.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">النتائج</span></a>
+                <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="create-exam.html" class="nav-item"><span class="nav-icon">➕</span><span>إنشاء امتحان</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span><span>الطلاب</span></a>
+                <a href="submissions.html" class="nav-item"><span class="nav-icon">📋</span><span>التسليمات</span></a>
+                <a href="monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span>المراقبة</span></a>
             </nav>
-            <div class="sidebar-footer"><button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button></div>
+            <div class="sidebar-footer">
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
+            </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="top-bar">
-                <h1>لوحة تحكم المدرس</h1>
-                <div class="user-info"><span id="userName">...</span><span class="badge badge-primary">مدرس</span></div>
-            </header>
+            <div class="top-bar">
+                <h1 class="page-title">👨‍🏫 لوحة تحكم المعلم</h1>
+                <div class="user-menu">
+                    <span id="teacherName">المعلم</span>
+                    <div class="user-avatar" id="teacherAvatar">👨‍🏫</div>
+                </div>
+            </div>
 
             <div class="content-wrapper">
-                <div class="teacher-stats">
-                    <div class="teacher-stat"><div class="icon">📝</div><div class="value" id="statExams">0</div><div class="label">اختباراتي</div></div>
-                    <div class="teacher-stat"><div class="icon">❓</div><div class="value" id="statQuestions">0</div><div class="label">أسئلة</div></div>
-                    <div class="teacher-stat"><div class="icon">👨‍🎓</div><div class="value" id="statStudents">0</div><div class="label">طلاب</div></div>
-                    <div class="teacher-stat"><div class="icon">📊</div><div class="value" id="statAvg">0%</div><div class="label">متوسط النجاح</div></div>
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
                 </div>
 
-                <div class="quick-actions">
-                    <a href="./exams.html?action=create" class="btn btn-primary">➕ اختبار جديد</a>
-                    <a href="./questions.html?action=create" class="btn btn-secondary">➕ سؤال جديد</a>
-                    <a href="./monitor.html" class="btn btn-success">👁️ مراقبة لحظية</a>
-                    <a href="./results.html" class="btn btn-info">📋 تصحيح يدوي</a>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <!-- Charts Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">📈 أداء طلابك</h3>
+                                <p class="card-subtitle">نظرة عامة على أداء الطلاب في امتحاناتك</p>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">⚡ إجراءات سريعة</h3>
+                                <p class="card-subtitle">وصول سريع للمهام الشائعة</p>
+                            </div>
+                        </div>
+                        <div class="quick-actions">
+                            <a href="create-exam.html" class="quick-action-btn">
+                                <span class="quick-action-icon">📝</span>
+                                <span>امتحان جديد</span>
+                            </a>
+                            <a href="questions.html" class="quick-action-btn">
+                                <span class="quick-action-icon">❓</span>
+                                <span>سؤال جديد</span>
+                            </a>
+                            <a href="groups.html" class="quick-action-btn">
+                                <span class="quick-action-icon">👥</span>
+                                <span>مجموعة جديدة</span>
+                            </a>
+                            <a href="submissions.html" class="quick-action-btn">
+                                <span class="quick-action-icon">📋</span>
+                                <span>تصحيح</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="section-card">
-                    <div class="section-header"><h2>⏰ اختبارات نشطة الآن</h2><a href="./monitor.html" class="btn btn-sm">عرض الكل</a></div>
-                    <div class="monitor-list" id="activeList"><div class="text-center" style="padding:40px;color:var(--text-muted)">جاري التحميل...</div></div>
-                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                    <!-- Upcoming Exams -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">📅 امتحانات قادمة</h3>
+                                <p class="card-subtitle">الامتحانات المجدولة قريباً</p>
+                            </div>
+                            <a href="exams.html" class="btn btn-sm btn-ghost">عرض الكل</a>
+                        </div>
+                        <div id="upcomingExams">
+                            <div class="empty-state" style="padding: 40px;">
+                                <div class="empty-state-icon">📅</div>
+                                <p>لا توجد امتحانات قادمة</p>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="section-card">
-                    <div class="section-header"><h2>📈 أداء الطلاب (آخر 7 أيام)</h2></div>
-                    <div class="chart-placeholder">📊 الرسم البياني يتطلب مكتبة Chart.js — يمكنك إضافتها لاحقاً</div>
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">🔄 آخر النشاطات</h3>
+                                <p class="card-subtitle">آخر الأحداث على منصتك</p>
+                            </div>
+                        </div>
+                        <div id="recentActivity">
+                            <div class="activity-item">
+                                <div class="activity-avatar">📚</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">تم تحميل لوحة التحكم</div>
+                                    <div class="activity-time">الآن</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const user = await examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-            if (!await examAuth.isTeacher() && !await examAuth.isAdmin()) { window.location.href = '../unauthorized.html'; return; }
+        // Auth check
+        const user = getUser();
+        if (!user || (user.role !== 'teacher' && user.role !== 'admin' && !user._impersonatedBy)) {
+            window.location.href = '../login.html';
+        }
 
-            document.getElementById('userName').textContent = user.user_metadata?.full_name || user.email || 'مدرس';
-            document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
-            document.getElementById('logoutBtn').addEventListener('click', async () => { await examAuth.signOut(); window.location.href = '../login.html'; });
+        // Show impersonation bar if active
+        if (isAdminViewingAs()) {
+            const bar = document.getElementById('impersonationBar');
+            const name = document.getElementById('impersonatedName');
+            bar.classList.add('active');
+            name.textContent = user.name + ' (معلم)';
+        }
 
-            await loadTeacherStats(user.id);
-            await loadActiveAttempts();
-        });
+        // Update teacher name
+        const originalUser = getOriginalUser();
+        if (originalUser) {
+            document.getElementById('teacherName').textContent = originalUser.name;
+        } else if (user) {
+            document.getElementById('teacherName').textContent = user.name;
+        }
 
-        async function loadTeacherStats(userId) {
-            App.Loading.show();
+        const teacherId = user.id;
+
+        // Load stats
+        async function loadStats() {
             try {
-                const { data: exams } = await examDB.exams().select('id').eq('created_by', userId);
-                const { data: questions } = await examDB.questionsBank().select('id').eq('created_by', userId);
+                const stats = await fetchTeacherStats(teacherId);
+
+                // Get students count from groups
+                const { data: groups } = await sb.from(TABLES.groups).select('id').eq('teacher_id', teacherId);
+                const groupIds = groups?.map(g => g.id) || [];
+                let totalStudents = 0;
+                if (groupIds.length > 0) {
+                    const { data: members } = await sb.from(TABLES.group_members)
+                        .select('student_id').in('group_id', groupIds);
+                    const uniqueStudents = new Set(members?.map(m => m.student_id) || []);
+                    totalStudents = uniqueStudents.size;
+                }
+
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-icon primary">📝</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalExams)}</h3>
+                            <p>الامتحانات</p>
+                            <span class="stat-trend up">↑ إجمالي</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">❓</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalQuestions)}</h3>
+                            <p>الأسئلة</p>
+                            <span class="stat-trend up">↑ في بنك الأسئلة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">👥</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalGroups)}</h3>
+                            <p>المجموعات</p>
+                            <span class="stat-trend up">↑ نشطة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon danger">👨‍🎓</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(totalStudents)}</h3>
+                            <p>الطلاب</p>
+                            <span class="stat-trend up">↑ في مجموعاتك</span>
+                        </div>
+                    </div>
+                `;
+
+                // Init chart
+                initChart();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function initChart() {
+            try {
+                // Get attempts for teacher's exams
+                const { data: exams } = await sb.from(TABLES.exams).select('id').eq('teacher_id', teacherId);
                 const examIds = exams?.map(e => e.id) || [];
-                
-                let studentCount = 0, avgScore = 0;
-                if (examIds.length) {
-                    const { data: attempts } = await examDB.attempts()
-                        .select('score, exam_exams(total_score)')
+
+                if (examIds.length === 0) {
+                    document.getElementById('performanceChart').parentElement.innerHTML = 
+                        '<div class="empty-state" style="padding: 40px;"><div class="empty-state-icon">📊</div><p>لا توجد بيانات كافية</p></div>';
+                    return;
+                }
+
+                const { data: attempts } = await sb.from(TABLES.attempts)
+                    .select('score, total_points, created_at')
+                    .in('exam_id', examIds)
+                    .order('created_at', { ascending: true })
+                    .limit(30);
+
+                const labels = (attempts || []).map((_, i) => `محاولة ${i + 1}`);
+                const scores = (attempts || []).map(a => Math.round((a.score / a.total_points) * 100));
+
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels.length > 0 ? labels : ['لا يوجد'],
+                        datasets: [{
+                            label: 'نسبة النجاح (%)',
+                            data: scores.length > 0 ? scores : [0],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#6366f1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Chart error:', error);
+            }
+        }
+
+        // Load upcoming exams
+        async function loadUpcomingExams() {
+            try {
+                const now = new Date().toISOString();
+                const { data: exams } = await sb.from(TABLES.exams)
+                    .select('*')
+                    .eq('teacher_id', teacherId)
+                    .gte('start_time', now)
+                    .order('start_time', { ascending: true })
+                    .limit(5);
+
+                const container = document.getElementById('upcomingExams');
+                if (!exams || exams.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="padding: 40px;">
+                            <div class="empty-state-icon">📅</div>
+                            <p>لا توجد امتحانات قادمة</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = exams.map(e => {
+                    const statusClass = e.status === 'published' ? 'status-published' : e.status === 'draft' ? 'status-draft' : 'status-closed';
+                    const statusText = e.status === 'published' ? 'منشور' : e.status === 'draft' ? 'مسودة' : 'مغلق';
+                    return `
+                        <div class="upcoming-exam-item">
+                            <div>
+                                <div class="exam-title">${App.sanitizeHtml(e.title)}</div>
+                                <div class="exam-meta">
+                                    ⏱️ ${e.duration} دقيقة | 🎯 ${e.total_points} نقطة | 📅 ${App.DateTime.dateOnly(e.start_time)}
+                                </div>
+                            </div>
+                            <span class="exam-status ${statusClass}">${statusText}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading upcoming exams:', error);
+            }
+        }
+
+        // Load recent activity
+        async function loadRecentActivity() {
+            try {
+                const activities = [];
+
+                // Recent exam creations
+                const { data: recentExams } = await sb.from(TABLES.exams)
+                    .select('title, created_at')
+                    .eq('teacher_id', teacherId)
+                    .order('created_at', { ascending: false })
+                    .limit(3);
+
+                if (recentExams) {
+                    recentExams.forEach(e => {
+                        activities.push({
+                            icon: '📝',
+                            title: `إنشاء امتحان: ${e.title}`,
+                            time: App.DateTime.relative(e.created_at)
+                        });
+                    });
+                }
+
+                // Recent questions
+                const { data: recentQuestions } = await sb.from(TABLES.questions)
+                    .select('question_text, created_at')
+                    .eq('teacher_id', teacherId)
+                    .order('created_at', { ascending: false })
+                    .limit(3);
+
+                if (recentQuestions) {
+                    recentQuestions.forEach(q => {
+                        activities.push({
+                            icon: '❓',
+                            title: `إضافة سؤال جديد`,
+                            time: App.DateTime.relative(q.created_at)
+                        });
+                    });
+                }
+
+                // Recent submissions
+                const { data: teacherExams } = await sb.from(TABLES.exams).select('id').eq('teacher_id', teacherId);
+                const examIds = teacherExams?.map(e => e.id) || [];
+                if (examIds.length > 0) {
+                    const { data: recentAttempts } = await sb.from(TABLES.attempts)
+                        .select('created_at, score, total_points')
                         .in('exam_id', examIds)
-                        .eq('status', 'completed');
-                    
-                    studentCount = attempts?.length || 0;
-                    if (attempts?.length) {
-                        const scores = attempts.map(a => ((a.score || 0) / (a.exam_exams?.total_score || 1)) * 100);
-                        avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                        .order('created_at', { ascending: false })
+                        .limit(3);
+
+                    if (recentAttempts) {
+                        recentAttempts.forEach(a => {
+                            const pct = Math.round((a.score / a.total_points) * 100);
+                            activities.push({
+                                icon: '✅',
+                                title: `تسليم جديد - النتيجة: ${pct}%`,
+                                time: App.DateTime.relative(a.created_at)
+                            });
+                        });
                     }
                 }
 
-                document.getElementById('statExams').textContent = exams?.length || 0;
-                document.getElementById('statQuestions').textContent = questions?.length || 0;
-                document.getElementById('statStudents').textContent = studentCount;
-                document.getElementById('statAvg').textContent = avgScore + '%';
-            } catch (e) { console.error(e); }
-            finally { App.Loading.hide(); }
+                activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+                const container = document.getElementById('recentActivity');
+                if (activities.length === 0) {
+                    container.innerHTML = '<div class="activity-item"><div class="activity-content"><div class="activity-title">لا توجد نشاطات حديثة</div></div></div>';
+                    return;
+                }
+
+                container.innerHTML = activities.slice(0, 6).map(a => `
+                    <div class="activity-item">
+                        <div class="activity-avatar">${a.icon}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${a.title}</div>
+                            <div class="activity-time">${a.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
         }
 
-        async function loadActiveAttempts() {
-            try {
-                const { data: active } = await examDB.attempts()
-                    .select('*, exam_students(full_name, user_id), exam_exams(title, duration_minutes)')
-                    .eq('status', 'in_progress')
-                    .order('started_at', { ascending: false })
-                    .limit(5);
-
-                const list = document.getElementById('activeList');
-                if (!active?.length) { list.innerHTML = '<div class="text-center" style="padding:40px;color:var(--text-muted)">لا توجد اختبارات نشطة حالياً</div>'; return; }
-
-                list.innerHTML = active.map(a => {
-                    const elapsed = Math.floor((Date.now() - new Date(a.started_at).getTime()) / 60000);
-                    const total = a.exam_exams?.duration_minutes || 60;
-                    const remaining = Math.max(0, total - elapsed);
-                    const isWarning = remaining < 5;
-                    return `
-                        <div class="monitor-item ${isWarning ? 'warning' : ''}">
-                            <div class="monitor-avatar">${(a.exam_students?.full_name || 'ط').charAt(0)}</div>
-                            <div class="monitor-info">
-                                <div class="name">${a.exam_students?.full_name || 'طالب'}</div>
-                                <div class="exam">${a.exam_exams?.title || '—'}</div>
-                            </div>
-                            <div class="monitor-time">⏱️ ${remaining} دقيقة</div>
-                            <span class="monitor-status ${isWarning ? 'status-warning' : 'status-active'}">${isWarning ? '⚠️ وقت قليل' : '✅ نشط'}</span>
-                        </div>`;
-                }).join('');
-            } catch (e) { console.error(e); }
-        }
+        // Init
+        loadStats();
+        loadUpcomingExams();
+        loadRecentActivity();
     </script>
 </body>
 </html>

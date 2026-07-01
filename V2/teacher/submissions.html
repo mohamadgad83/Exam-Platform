@@ -3,504 +3,469 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التسليمات والتصحيح | منصة الاختبارات</title>
+    <title>التسليمات والتصحيح - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; }
+        .search-box .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .submission-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 10px; transition: var(--transition); border-right: 4px solid var(--border-color); }
+        .submission-row:hover { background: var(--primary-50); border-right-color: var(--primary-500); }
+        .submission-row.graded { border-right-color: var(--success); }
+        .submission-row.pending { border-right-color: var(--warning); }
+        .submission-info h4 { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .submission-info p { font-size: 0.875rem; color: var(--text-muted); }
+        .submission-meta { display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+        .score-display { font-size: 1.5rem; font-weight: 800; color: var(--primary-600); }
+        .score-display.pending { color: var(--warning); }
+        .grading-section { background: var(--bg-body); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
+        .grading-question { background: var(--bg-surface); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border-color); }
+        .grading-question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-light); }
+        .grading-question-text { font-weight: 600; color: var(--text-main); line-height: 1.8; margin-bottom: 12px; }
+        .student-answer { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; }
+        .student-answer.wrong { background: #fef2f2; border-color: #fecaca; }
+        .student-answer.pending { background: #fffbeb; border-color: #fde68a; }
+        .correct-answer { background: #ecfdf5; border: 2px solid var(--success); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; color: #065f46; font-weight: 600; }
+        .grade-input { width: 100px; padding: 8px 12px; border: 2px solid var(--border-color); border-radius: var(--radius-md); text-align: center; font-weight: 700; font-size: 1rem; }
+        .grade-input:focus { outline: none; border-color: var(--primary-500); }
+        .feedback-textarea { width: 100%; min-height: 80px; padding: 12px; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; resize: vertical; }
+        .auto-grade-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #dbeafe; color: #1e40af; }
+        .manual-grade-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; }
+        .tabs-row { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
+        .tab-item { padding: 10px 24px; border-radius: var(--radius-md) var(--radius-md) 0 0; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; font-family: inherit; transition: var(--transition); border-bottom: 3px solid transparent; margin-bottom: -11px; }
+        .tab-item:hover { color: var(--primary-600); background: var(--primary-50); }
+        .tab-item.active { color: var(--primary-700); border-bottom-color: var(--primary-600); background: var(--primary-50); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+    <div class="app-layout">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>منصة الاختبارات</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>الرئيسية</span>
-                </a>
-                <a href="create-exam.html" class="nav-item">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>إنشاء اختبار</span>
-                </a>
-                <a href="questions.html" class="nav-item">
-                    <i class="fas fa-database"></i>
-                    <span>بنك الأسئلة</span>
-                </a>
-                <a href="submissions.html" class="nav-item active">
-                    <i class="fas fa-check-double"></i>
-                    <span>التسليمات</span>
-                </a>
-                <a href="students.html" class="nav-item">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>الطلاب</span>
-                </a>
-                <a href="groups.html" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>المجموعات</span>
-                </a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="create-exam.html" class="nav-item"><span class="nav-icon">➕</span><span>إنشاء امتحان</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span><span>الطلاب</span></a>
+                <a href="submissions.html" class="nav-item active"><span class="nav-icon">📋</span><span>التسليمات</span></a>
+                <a href="monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span>المراقبة</span></a>
             </nav>
             <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
-                    <div class="user-details">
-                        <div class="user-name" id="userName">جاري التحميل...</div>
-                        <div class="user-role">معلم</div>
-                    </div>
-                </div>
-                <button class="btn btn-outline btn-sm" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>تسجيل الخروج</span>
-                </button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <header class="main-header">
-                <h1 class="page-title">التسليمات والتصحيح</h1>
-                <div class="header-actions">
-                    <button class="btn btn-icon" id="themeToggle"><i class="fas fa-moon"></i></button>
-                </div>
-            </header>
-
-            <!-- Filters -->
-            <div class="card filter-card">
-                <div class="card-body">
-                    <div class="filter-row">
-                        <div class="form-group">
-                            <label class="form-label">الاختبار</label>
-                            <select class="form-select" id="filterExam" onchange="loadSubmissions()">
-                                <option value="">كل الاختبارات</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">الحالة</label>
-                            <select class="form-select" id="filterStatus" onchange="loadSubmissions()">
-                                <option value="">الكل</option>
-                                <option value="submitted">بانتظار التصحيح</option>
-                                <option value="graded">مصحح</option>
-                                <option value="in_progress">قيد التنفيذ</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">الطالب</label>
-                            <input type="text" class="form-input" id="filterStudent" placeholder="ابحث بالاسم..." oninput="debounceLoad()">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">التاريخ</label>
-                            <input type="date" class="form-input" id="filterDate" onchange="loadSubmissions()">
-                        </div>
-                    </div>
+            <div class="top-bar">
+                <h1 class="page-title">📋 التسليمات والتصحيح</h1>
+                <div class="user-menu">
+                    <button class="btn btn-secondary" onclick="exportSubmissions()">📥 تصدير</button>
                 </div>
             </div>
 
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="pendingCount">0</div>
-                        <div class="stat-label">بانتظار التصحيح</div>
-                    </div>
+            <div class="content-wrapper">
+                <!-- Tabs -->
+                <div class="tabs-row">
+                    <button class="tab-item active" onclick="showTab('pending', this)">⏳ بانتظار التصحيح</button>
+                    <button class="tab-item" onclick="showTab('graded', this)">✅ تم التصحيح</button>
+                    <button class="tab-item" onclick="showTab('all', this)">الكل</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="gradedCount">0</div>
-                        <div class="stat-label">مصحح</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-info"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="avgScoreAll">0%</div>
-                        <div class="stat-label">متوسط الدرجات</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Submissions Table -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-clipboard-list"></i> قائمة التسليمات</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-outline btn-sm" onclick="exportSubmissions()">
-                            <i class="fas fa-file-export"></i> تصدير
-                        </button>
+                <!-- Filters -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input" id="searchInput" placeholder="ابحث باسم الطالب أو الامتحان..." oninput="debounceSearch()">
+                    </div>
+                    <select class="form-select" id="examFilter" onchange="loadSubmissions()" style="min-width: 180px;">
+                        <option value="all">كل الامتحانات</option>
+                    </select>
+                </div>
+
+                <!-- Submissions List -->
+                <div id="submissionsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>جاري تحميل التسليمات...</p>
                     </div>
                 </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>الطالب</th>
-                                <th>الاختبار</th>
-                                <th>تاريخ التسليم</th>
-                                <th>الحالة</th>
-                                <th>الدرجة</th>
-                                <th>النسبة</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="submissionsTable">
-                            <tr><td colspan="7" class="text-center"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="pagination" id="pagination"></div>
             </div>
         </main>
     </div>
 
-    <!-- Grading Modal -->
-    <div class="modal" id="gradingModal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content modal-xl">
-            <div class="modal-header">
-                <h3>تصحيح الاختبار</h3>
-                <button class="btn btn-icon" onclick="closeGradingModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="grading-info" id="gradingInfo"></div>
-                <div id="gradingQuestions"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeGradingModal()">إلغاء</button>
-                <button class="btn btn-success" onclick="saveGrades()">
-                    <i class="fas fa-save"></i> حفظ التصحيح
-                </button>
+    <!-- Grade Modal -->
+    <div class="modal-overlay" id="gradeModal">
+        <div class="modal-content" style="width: 800px; max-width: 95%; max-height: 85vh; overflow-y: auto;">
+            <h3>📋 تصحيح التسليم</h3>
+            <div id="gradeContent"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--border-color);">
+                <button type="button" class="btn btn-secondary" onclick="App.Modal.close('gradeModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="saveGrading()">💾 حفظ التصحيح</button>
             </div>
         </div>
     </div>
 
     <script src="../shared/supabase-client.js"></script>
-    <script src="../shared/security.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-    (function() {
-        'use strict';
-
-        let currentAttempt = null;
-        let currentAnswers = [];
-        let debounceTimer = null;
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            await App.init();
-            const user = examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-            const role = user.role || user.user_metadata?.role;
-            if (role !== 'teacher' && role !== 'admin') {
-                window.location.href = '../student/dashboard.html'; return;
-            }
-            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
-            await loadExamsFilter();
-            await loadSubmissions();
-        });
-
-        async function loadExamsFilter() {
-            try {
-                const user = examAuth.getUser();
-                const { data: exams } = await examDB.from('exam_exams')
-                    .select('id, title')
-                    .eq('teacher_id', user.id)
-                    .order('created_at', { ascending: false });
-                const select = document.getElementById('filterExam');
-                exams?.forEach(e => {
-                    select.innerHTML += `<option value="${e.id}">${e.title}</option>`;
-                });
-            } catch (e) { console.error('Error loading exams:', e); }
+        const currentUser = getUser();
+        if (!currentUser || (currentUser.role !== 'teacher' && currentUser.role !== 'admin')) {
+            window.location.href = '../login.html';
         }
 
-        window.debounceLoad = function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(loadSubmissions, 500);
-        };
+        const teacherId = currentUser.id;
+        let allSubmissions = [];
+        let currentTab = 'pending';
+        let currentAttemptId = null;
+        let currentExamQuestions = [];
+        let manualGrades = {}; // questionId -> {score, feedback}
 
-        window.loadSubmissions = async function() {
+        async function loadSubmissions() {
+            App.Loading.show('جاري تحميل التسليمات...');
             try {
-                const user = examAuth.getUser();
-                let query = examDB.from('exam_attempts')
-                    .select(`*, exam_students(name, email), exam_exams(title, total_marks)`)
-                    .eq('teacher_id', user.id)
-                    .order('submitted_at', { ascending: false });
+                // Get teacher's exams
+                const { data: exams } = await sb.from(TABLES.exams).select('id, title').eq('teacher_id', teacherId);
+                const examIds = exams?.map(e => e.id) || [];
+                const examMap = {};
+                exams?.forEach(e => examMap[e.id] = e.title);
 
-                const examFilter = document.getElementById('filterExam').value;
-                const statusFilter = document.getElementById('filterStatus').value;
-                const studentFilter = document.getElementById('filterStudent').value;
-                const dateFilter = document.getElementById('filterDate').value;
+                // Update exam filter
+                const examFilter = document.getElementById('examFilter');
+                examFilter.innerHTML = '<option value="all">كل الامتحانات</option>' + 
+                    exams?.map(e => `<option value="${e.id}">${e.title}</option>`).join('') || '';
 
-                if (examFilter) query = query.eq('exam_id', examFilter);
-                if (statusFilter) query = query.eq('status', statusFilter);
-                if (dateFilter) {
-                    const start = new Date(dateFilter);
-                    const end = new Date(start);
-                    end.setDate(end.getDate() + 1);
-                    query = query.gte('submitted_at', start.toISOString()).lt('submitted_at', end.toISOString());
+                if (examIds.length === 0) {
+                    document.getElementById('submissionsList').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p>لا توجد تسليمات</p>
+                        </div>
+                    `;
+                    App.Loading.hide();
+                    return;
                 }
 
-                const { data: submissions, error } = await query;
-                if (error) throw error;
+                // Filter by exam if selected
+                const selectedExam = examFilter.value;
+                let query = sb.from(TABLES.attempts).select('*').in('exam_id', examIds);
+                if (selectedExam !== 'all') query = query.eq('exam_id', selectedExam);
 
-                let filtered = submissions || [];
-                if (studentFilter) {
-                    filtered = filtered.filter(s => 
-                        s.exam_students?.name?.toLowerCase().includes(studentFilter.toLowerCase()) ||
-                        s.exam_students?.email?.toLowerCase().includes(studentFilter.toLowerCase())
-                    );
-                }
+                const { data: attempts } = await query.order('created_at', { ascending: false });
 
-                // Update stats
-                const pending = filtered.filter(s => s.status === 'submitted').length;
-                const graded = filtered.filter(s => s.status === 'graded').length;
-                const gradedScores = filtered.filter(s => s.status === 'graded' && s.total_score > 0)
-                    .map(s => (s.score / s.total_score) * 100);
-                const avg = gradedScores.length ? Math.round(gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length) : 0;
+                // Get student names
+                const studentIds = [...new Set(attempts?.map(a => a.student_id) || [])];
+                const { data: students } = studentIds.length > 0
+                    ? await sb.from(TABLES.users).select('id, name').in('id', studentIds)
+                    : { data: [] };
+                const studentMap = {};
+                students?.forEach(s => studentMap[s.id] = s.name);
 
-                document.getElementById('pendingCount').textContent = pending;
-                document.getElementById('gradedCount').textContent = graded;
-                document.getElementById('avgScoreAll').textContent = avg + '%';
+                allSubmissions = (attempts || []).map(a => ({
+                    ...a,
+                    examName: examMap[a.exam_id] || 'غير معروف',
+                    studentName: studentMap[a.student_id] || 'غير معروف',
+                    isGraded: a.status === 'graded' || a.status === 'completed',
+                    needsManual: a.needs_manual_review === true
+                }));
 
-                renderSubmissionsTable(filtered);
+                renderSubmissions();
             } catch (error) {
-                console.error('Error loading submissions:', error);
-                document.getElementById('submissionsTable').innerHTML = '<tr><td colspan="7" class="text-center text-error">حدث خطأ</td></tr>';
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
             }
-        };
+            App.Loading.hide();
+        }
 
-        function renderSubmissionsTable(submissions) {
-            const tbody = document.getElementById('submissionsTable');
-            if (!submissions.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد تسليمات</p></div></td></tr>';
+        function renderSubmissions() {
+            const container = document.getElementById('submissionsList');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allSubmissions.filter(s => {
+                const matchSearch = !search || s.studentName?.toLowerCase().includes(search) || s.examName?.toLowerCase().includes(search);
+                const matchTab = currentTab === 'all' ? true : currentTab === 'pending' ? !s.isGraded : s.isGraded;
+                return matchSearch && matchTab;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>لا توجد تسليمات ${currentTab === 'pending' ? 'بانتظار التصحيح' : currentTab === 'graded' ? 'تم تصحيحها' : ''}</p>
+                    </div>
+                `;
                 return;
             }
 
-            tbody.innerHTML = submissions.map(s => {
-                const statusClass = s.status === 'graded' ? 'badge-success' : 
-                                   s.status === 'submitted' ? 'badge-warning' : 'badge-info';
-                const statusText = s.status === 'graded' ? 'مصحح' : 
-                                  s.status === 'submitted' ? 'بانتظار التصحيح' : 'قيد التنفيذ';
-                const percent = s.total_score > 0 ? Math.round((s.score / s.total_score) * 100) : 0;
-                const percentClass = percent >= 60 ? 'text-success' : percent >= 40 ? 'text-warning' : 'text-error';
+            container.innerHTML = filtered.map(s => {
+                const pct = s.total_points > 0 ? Math.round((s.score / s.total_points) * 100) : 0;
+                const rowClass = s.isGraded ? 'graded' : s.needsManual ? 'pending' : '';
+                const scoreClass = s.isGraded ? '' : 'pending';
+                const statusBadge = s.isGraded 
+                    ? '<span class="badge badge-success">✅ تم التصحيح</span>' 
+                    : s.needsManual 
+                        ? '<span class="badge badge-warning">⏳ يحتاج تصحيح يدوي</span>'
+                        : '<span class="badge badge-info">🤖 تصحيح تلقائي</span>';
 
                 return `
-                    <tr>
-                        <td>
-                            <div class="student-info">
-                                <div class="student-avatar">${s.exam_students?.name?.charAt(0) || '?'}</div>
-                                <div>
-                                    <div class="student-name">${s.exam_students?.name || 'Unknown'}</div>
-                                    <div class="student-email">${s.exam_students?.email || ''}</div>
-                                </div>
+                    <div class="submission-row ${rowClass}">
+                        <div class="submission-info">
+                            <h4>${App.sanitizeHtml(s.examName)}</h4>
+                            <p>👨‍🎓 ${App.sanitizeHtml(s.studentName)}</p>
+                            <div class="submission-meta">
+                                <span>📅 ${App.DateTime.relative(s.created_at)}</span>
+                                <span>⏱️ ${s.duration ? Math.round(s.duration / 60) + ' دقيقة' : 'غير محدد'}</span>
+                                ${statusBadge}
                             </div>
-                        </td>
-                        <td>${s.exam_exams?.title || '-'}</td>
-                        <td>${s.submitted_at ? App.formatDate(s.submitted_at) : '-'}</td>
-                        <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        <td>${s.status === 'graded' ? `${s.score}/${s.total_score}` : '-'}</td>
-                        <td class="${percentClass}">${s.status === 'graded' ? percent + '%' : '-'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                ${s.status === 'submitted' ? `
-                                    <button class="btn btn-primary btn-sm" onclick="openGrading('${s.id}')">
-                                        <i class="fas fa-pen"></i> تصحيح
-                                    </button>
-                                ` : s.status === 'graded' ? `
-                                    <button class="btn btn-outline btn-sm" onclick="openGrading('${s.id}')">
-                                        <i class="fas fa-eye"></i> مراجعة
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-outline btn-sm" onclick="viewProgress('${s.id}')">
-                                        <i class="fas fa-eye"></i> متابعة
-                                    </button>
-                                `}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="text-align: center;">
+                                <div class="score-display ${scoreClass}">${s.score}/${s.total_points}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${pct}%</div>
                             </div>
-                        </td>
-                    </tr>
+                            <button class="btn btn-sm btn-primary" onclick="gradeSubmission(${s.id})">✏️ تصحيح</button>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
 
-        window.openGrading = async function(attemptId) {
+        function showTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderSubmissions();
+        }
+
+        const debounceSearch = App.debounce(() => renderSubmissions(), 300);
+
+        async function gradeSubmission(attemptId) {
+            currentAttemptId = attemptId;
+            manualGrades = {};
+            App.Loading.show('جاري تحميل التفاصيل...');
+
             try {
-                const { data: attempt, error } = await examDB.from('exam_attempts')
-                    .select(`*, exam_students(name, email), exam_exams(title, total_marks)`)
-                    .eq('id', attemptId)
-                    .single();
-                if (error) throw error;
-                currentAttempt = attempt;
+                const submission = allSubmissions.find(s => s.id === attemptId);
+                if (!submission) return;
 
-                document.getElementById('gradingInfo').innerHTML = `
-                    <div class="grading-student">
-                        <div class="student-avatar lg">${attempt.exam_students?.name?.charAt(0) || '?'}</div>
-                        <div>
-                            <h4>${attempt.exam_students?.name || 'Unknown'}</h4>
-                            <p>${attempt.exam_exams?.title || ''}</p>
-                            <p class="text-muted">تاريخ التسليم: ${App.formatDate(attempt.submitted_at)}</p>
-                        </div>
-                    </div>
-                `;
-
-                const { data: answers } = await examDB.from('exam_attempt_answers')
-                    .select(`*, exam_exam_questions(*)`)
-                    .eq('attempt_id', attemptId)
+                // Get exam questions
+                const { data: examQuestions } = await sb.from(TABLES.exam_questions)
+                    .select('*')
+                    .eq('exam_id', submission.exam_id)
                     .order('question_order', { ascending: true });
 
-                currentAnswers = answers || [];
-                renderGradingQuestions();
-                document.getElementById('gradingModal').classList.add('active');
-            } catch (error) {
-                console.error('Error opening grading:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
+                const questionIds = examQuestions?.map(eq => eq.question_id) || [];
 
-        function renderGradingQuestions() {
-            const container = document.getElementById('gradingQuestions');
-            container.innerHTML = currentAnswers.map((ans, i) => {
-                const q = ans.exam_exam_questions;
-                const isGraded = ans.score !== null;
-                const typeLabels = { mcq: 'اختيار متعدد', true_false: 'صح/خطأ', essay: 'مقالي', fill_blank: 'اكمل الفراغ', matching: 'توصيل' };
+                // Get question details
+                const { data: questions } = questionIds.length > 0
+                    ? await sb.from(TABLES.questions).select('*').in('id', questionIds)
+                    : { data: [] };
+                const questionMap = {};
+                questions?.forEach(q => questionMap[q.id] = q);
 
-                let answerDisplay = '';
-                if (q.question_type === 'mcq') {
-                    const correctLabel = q.correct_answer !== null ? String.fromCharCode(65 + q.correct_answer) : '-';
-                    const studentLabel = ans.answer !== null ? String.fromCharCode(65 + parseInt(ans.answer)) : '-';
-                    const isCorrect = ans.answer == q.correct_answer;
-                    answerDisplay = `
-                        <div class="answer-comparison">
-                            <div class="student-answer ${isCorrect ? 'correct' : 'incorrect'}">
-                                <strong>إجابة الطالب:</strong> ${studentLabel}
-                            </div>
-                            <div class="correct-answer">
-                                <strong>الإجابة الصحيحة:</strong> ${correctLabel}
-                            </div>
-                        </div>
-                    `;
-                } else if (q.question_type === 'true_false') {
-                    const studentAns = ans.answer === 'true' ? 'صح' : ans.answer === 'false' ? 'خطأ' : '-';
-                    const correctAns = q.correct_answer === true ? 'صح' : 'خطأ';
-                    const isCorrect = ans.answer === String(q.correct_answer);
-                    answerDisplay = `
-                        <div class="answer-comparison">
-                            <div class="student-answer ${isCorrect ? 'correct' : 'incorrect'}">
-                                <strong>إجابة الطالب:</strong> ${studentAns}
-                            </div>
-                            <div class="correct-answer">
-                                <strong>الإجابة الصحيحة:</strong> ${correctAns}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    answerDisplay = `
-                        <div class="essay-answer">
-                            <strong>إجابة الطالب:</strong>
-                            <div class="essay-text">${ans.answer_text || 'لا توجد إجابة'}</div>
-                            ${q.correct_answer ? `<div class="model-answer"><strong>الإجابة النموذجية:</strong> ${q.correct_answer}</div>` : ''}
-                        </div>
-                    `;
-                }
+                // Get student answers (from exam_attempts or answers table)
+                const { data: answers } = await sb.from('exam_answers')
+                    .select('*')
+                    .eq('attempt_id', attemptId);
+                const answerMap = {};
+                answers?.forEach(a => answerMap[a.question_id] = a);
 
-                const autoScore = q.question_type === 'mcq' || q.question_type === 'true_false' 
-                    ? (ans.answer == q.correct_answer ? q.marks : 0) : null;
+                currentExamQuestions = examQuestions || [];
 
-                return `
-                    <div class="grading-question-card">
-                        <div class="grading-q-header">
-                            <span class="question-number">س ${i + 1}</span>
-                            <span class="badge">${typeLabels[q.question_type]}</span>
-                            <span class="q-marks">${q.marks} درجة</span>
-                        </div>
-                        <div class="grading-q-text">${q.question_text}</div>
-                        ${q.hint ? `<div class="question-hint"><i class="fas fa-lightbulb"></i> ${q.hint}</div>` : ''}
-                        ${answerDisplay}
-                        <div class="grading-input">
-                            <label>الدرجة:</label>
-                            <input type="number" class="form-input score-input" 
-                                value="${isGraded ? ans.score : (autoScore !== null ? autoScore : '')}" 
-                                min="0" max="${q.marks}" 
-                                data-index="${i}"
-                                ${autoScore !== null ? 'readonly' : ''}>
-                            <span class="text-muted">/ ${q.marks}</span>
-                        </div>
-                        <div class="grading-input">
-                            <label>ملاحظة:</label>
-                            <input type="text" class="form-input" id="feedback-${i}" 
-                                value="${ans.feedback || ''}" placeholder="ملاحظة للطالب...">
+                // Build grading content
+                let content = `
+                    <div style="background: var(--primary-50); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 1.125rem;">${App.sanitizeHtml(submission.examName)}</div>
+                                <div style="color: var(--text-muted); font-size: 0.875rem;">👨‍🎓 ${App.sanitizeHtml(submission.studentName)}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">${submission.score}/${submission.total_points}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">النتيجة الحالية</div>
+                            </div>
                         </div>
                     </div>
                 `;
-            }).join('');
+
+                content += (examQuestions || []).map((eq, idx) => {
+                    const q = questionMap[eq.question_id];
+                    if (!q) return '';
+
+                    const answer = answerMap[eq.question_id];
+                    const isAutoGraded = q.type === 'mcq' || q.type === 'true_false';
+                    const isCorrect = answer?.is_correct === true;
+                    const earnedPoints = answer?.score || 0;
+                    const maxPoints = eq.points || q.points || 1;
+
+                    let answerDisplay = '';
+                    let correctDisplay = '';
+
+                    if (q.type === 'mcq') {
+                        try {
+                            const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                            const studentAnswer = answer?.answer_text;
+                            const correctIdx = q.correct_answer;
+                            answerDisplay = `<div class="student-answer ${isCorrect ? '' : 'wrong'}">
+                                <strong>إجابة الطالب:</strong> ${studentAnswer ? String.fromCharCode(65 + parseInt(studentAnswer)) + '. ' + App.sanitizeHtml(opts[parseInt(studentAnswer)] || '') : 'لم يجب'}
+                            </div>`;
+                            correctDisplay = `<div class="correct-answer">الإجابة الصحيحة: ${String.fromCharCode(65 + correctIdx)}. ${App.sanitizeHtml(opts[correctIdx] || '')}</div>`;
+                        } catch (e) {}
+                    } else if (q.type === 'true_false') {
+                        const studentAnswer = answer?.answer_text;
+                        const correctAnswer = q.correct_answer === 0 ? 'صحيح' : 'خطأ';
+                        answerDisplay = `<div class="student-answer ${isCorrect ? '' : 'wrong'}">
+                            <strong>إجابة الطالب:</strong> ${studentAnswer === '0' ? '✅ صحيح' : studentAnswer === '1' ? '❌ خطأ' : 'لم يجب'}
+                        </div>`;
+                        correctDisplay = `<div class="correct-answer">الإجابة الصحيحة: ${correctAnswer === 'صحيح' ? '✅ صحيح' : '❌ خطأ'}</div>`;
+                    } else if (q.type === 'essay') {
+                        answerDisplay = `<div class="student-answer pending">
+                            <strong>إجابة الطالب:</strong>
+                            <div style="margin-top: 8px; line-height: 1.8;">${App.sanitizeHtml(answer?.answer_text || 'لم يجب')}</div>
+                        </div>`;
+                    } else if (q.type === 'fill_blank') {
+                        answerDisplay = `<div class="student-answer ${isCorrect ? '' : 'wrong'}">
+                            <strong>إجابة الطالب:</strong> ${App.sanitizeHtml(answer?.answer_text || 'لم يجب')}
+                        </div>`;
+                        correctDisplay = `<div class="correct-answer">الإجابة الصحيحة: ${App.sanitizeHtml(q.correct_answer_text || '')}</div>`;
+                    }
+
+                    return `
+                        <div class="grading-question">
+                            <div class="grading-question-header">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: var(--primary-500); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">${idx + 1}</div>
+                                    <div>
+                                        <span class="${isAutoGraded ? 'auto-grade-badge' : 'manual-grade-badge'}">${isAutoGraded ? '🤖 تلقائي' : '✏️ يدوي'}</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 8px;">${q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : q.type === 'essay' ? 'مقالي' : 'ملء فراغ'}</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 0.875rem; color: var(--text-muted);">الدرجة:</span>
+                                    <input type="number" class="grade-input" id="grade_${q.id}" value="${earnedPoints}" min="0" max="${maxPoints}" step="0.5"
+                                        onchange="updateManualGrade(${q.id}, this.value, ${maxPoints})">
+                                    <span style="font-weight: 700;">/ ${maxPoints}</span>
+                                </div>
+                            </div>
+                            <div class="grading-question-text">${App.sanitizeHtml(q.question_text || '')}</div>
+                            ${answerDisplay}
+                            ${correctDisplay}
+                            <div class="form-group" style="margin-top: 12px; margin-bottom: 0;">
+                                <label style="font-size: 0.875rem; color: var(--text-muted);">تعليق المعلم (اختياري)</label>
+                                <textarea class="feedback-textarea" id="feedback_${q.id}" placeholder="اكتب تعليقك على إجابة الطالب...">${answer?.feedback || ''}</textarea>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Overall feedback
+                content += `
+                    <div class="grading-section">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">تعليق عام على الامتحان (اختياري)</label>
+                            <textarea class="feedback-textarea" id="overallFeedback" placeholder="اكتب تعليقك العام على أداء الطالب...">${submission.feedback || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('gradeContent').innerHTML = content;
+                App.Modal.open('gradeModal');
+
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
         }
 
-        window.saveGrades = async function() {
-            try {
-                let totalScore = 0;
-                for (let i = 0; i < currentAnswers.length; i++) {
-                    const scoreInput = document.querySelector(`input[data-index="${i}"]`);
-                    const feedbackInput = document.getElementById(`feedback-${i}`);
-                    const score = parseFloat(scoreInput?.value) || 0;
-                    const feedback = feedbackInput?.value || '';
-                    totalScore += score;
+        function updateManualGrade(questionId, score, maxPoints) {
+            const val = parseFloat(score);
+            if (val > maxPoints) {
+                App.Toast.warning(`الدرجة لا يمكن أن تتجاوز ${maxPoints}`);
+                document.getElementById(`grade_${questionId}`).value = maxPoints;
+                return;
+            }
+            manualGrades[questionId] = { score: val };
+        }
 
-                    await examDB.from('exam_attempt_answers')
-                        .update({ score, feedback, graded_at: new Date().toISOString() })
-                        .eq('id', currentAnswers[i].id);
+        async function saveGrading() {
+            if (!currentAttemptId) return;
+
+            App.Loading.show('جاري حفظ التصحيح...');
+            try {
+                const submission = allSubmissions.find(s => s.id === currentAttemptId);
+
+                // Calculate new total score
+                let totalScore = 0;
+                for (const eq of currentExamQuestions) {
+                    const qId = eq.question_id;
+                    const gradeInput = document.getElementById(`grade_${qId}`);
+                    const feedbackInput = document.getElementById(`feedback_${qId}`);
+
+                    if (gradeInput) {
+                        const score = parseFloat(gradeInput.value) || 0;
+                        totalScore += score;
+
+                        // Update answer record
+                        const { error } = await sb.from('exam_answers')
+                            .update({ 
+                                score: score, 
+                                feedback: feedbackInput?.value || '',
+                                graded_by: teacherId,
+                                graded_at: new Date().toISOString()
+                            })
+                            .eq('attempt_id', currentAttemptId)
+                            .eq('question_id', qId);
+
+                        if (error) console.warn('Answer update error:', error);
+                    }
                 }
 
-                await examDB.from('exam_attempts')
+                // Update attempt
+                const overallFeedback = document.getElementById('overallFeedback')?.value || '';
+                await sb.from(TABLES.attempts)
                     .update({ 
                         score: totalScore, 
+                        feedback: overallFeedback,
                         status: 'graded',
+                        graded_by: teacherId,
                         graded_at: new Date().toISOString()
                     })
-                    .eq('id', currentAttempt.id);
+                    .eq('id', currentAttemptId);
 
-                // Send notification
-                await examDB.from('exam_notifications').insert({
-                    user_id: currentAttempt.student_id,
-                    title: 'تم تصحيح اختبارك',
-                    message: `تم تصحيح اختبار ${currentAttempt.exam_exams?.title}. درجتك: ${totalScore}/${currentAttempt.exam_exams?.total_marks}`,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                });
+                App.Toast.success('✅ تم حفظ التصحيح بنجاح');
+                App.Modal.close('gradeModal');
+                loadSubmissions();
 
-                App.toast('تم حفظ التصحيح بنجاح');
-                closeGradingModal();
-                await loadSubmissions();
             } catch (error) {
-                console.error('Error saving grades:', error);
-                App.toast('حدث خطأ أثناء الحفظ', 'error');
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ في الحفظ');
             }
-        };
+            App.Loading.hide();
+        }
 
-        window.closeGradingModal = function() {
-            document.getElementById('gradingModal').classList.remove('active');
-            currentAttempt = null;
-            currentAnswers = [];
-        };
+        function exportSubmissions() {
+            const data = allSubmissions.map(s => ({
+                الامتحان: s.examName,
+                الطالب: s.studentName,
+                الدرجة: `${s.score}/${s.total_points}`,
+                النسبة: s.total_points > 0 ? Math.round((s.score / s.total_points) * 100) + '%' : '0%',
+                الحالة: s.isGraded ? 'تم التصحيح' : 'بانتظار التصحيح',
+                التاريخ: App.DateTime.dateOnly(s.created_at)
+            }));
+            App.exportCSV(data, 'submissions_export');
+        }
 
-        window.viewProgress = function(attemptId) {
-            App.toast('جاري تحميل التقدم...');
-            // View progress logic
-        };
-
-        window.exportSubmissions = function() {
-            App.toast('جاري تصدير البيانات...');
-            setTimeout(() => App.toast('تم التصدير'), 1000);
-        };
-
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await examAuth.logout();
-            window.location.href = '../login.html';
-        });
-    })();
+        loadSubmissions();
     </script>
 </body>
 </html>

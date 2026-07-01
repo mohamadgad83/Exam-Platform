@@ -3,377 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>النتائج | منصة الاختبارات</title>
+    <title>نتائجي - الطالب</title>
     <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --dark: #1e293b; --gray: #64748b;
+            --light: #f1f5f9; --white: #ffffff;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08); --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+            --radius: 12px; --radius-lg: 16px;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; color: var(--dark); min-height: 100vh; }
 
-        .results-filters {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+        .sidebar {
+            position: fixed; right: 0; top: 0; width: 260px; height: 100vh;
+            background: var(--dark); color: var(--white); z-index: 1000;
+            display: flex; flex-direction: column; transition: transform 0.3s;
         }
-
-        .results-filters .form-select,
-        .results-filters .form-input {
-            width: auto;
-            min-width: 180px;
+        .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .sidebar-header .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .sidebar-header .user-info { margin-top: 12px; font-size: 0.85rem; opacity: 0.8; }
+        .sidebar-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 24px;
+            color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.2s;
+            border-right: 3px solid transparent;
         }
-
-        .results-grid {
-            display: grid;
-            gap: 16px;
+        .sidebar-nav a:hover, .sidebar-nav a.active {
+            color: var(--white); background: rgba(99,102,241,0.15);
+            border-right-color: var(--primary);
         }
-
-        .result-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 20px;
-            align-items: center;
-            transition: all var(--transition-fast);
+        .sidebar-nav a i { width: 24px; text-align: center; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-footer button {
+            width: 100%; padding: 10px; background: rgba(239,68,68,0.2); color: var(--danger);
+            border: 1px solid var(--danger); border-radius: var(--radius); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        .sidebar-footer button:hover { background: var(--danger); color: white; }
 
-        .result-card:hover {
-            border-color: var(--primary-color);
-            transform: translateX(-4px);
+        .main-content { margin-right: 260px; min-height: 100vh; }
+        .top-bar {
+            background: var(--white); padding: 16px 32px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
         }
+        .top-bar h1 { font-size: 1.3rem; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
 
-        .result-info h3 {
-            font-size: 1.1rem;
-            margin-bottom: 4px;
-        }
-
-        .result-info .meta {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .result-score {
-            text-align: center;
-            min-width: 100px;
-        }
-
-        .result-score .score-value {
-            font-size: 1.8rem;
-            font-weight: 900;
-        }
-
-        .result-score .score-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .result-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .score-excellent { color: var(--success-color); }
-        .score-good { color: var(--warning-color); }
-        .score-fail { color: var(--danger-color); }
-
-        .results-empty {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-muted);
-        }
-
-        .results-empty-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
+        /* Stats Row */
         .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+            padding: 24px 32px;
+        }
+        .stat-card {
+            background: var(--white); border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-icon {
+            width: 56px; height: 56px; border-radius: var(--radius); display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .stat-icon.primary { background: rgba(99,102,241,0.1); color: var(--primary); }
+        .stat-icon.success { background: rgba(34,197,94,0.1); color: var(--success); }
+        .stat-icon.warning { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .stat-icon.info { background: rgba(59,130,246,0.1); color: var(--info); }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 700; }
+        .stat-info p { color: var(--gray); font-size: 0.9rem; margin-top: 4px; }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 24px;
+            padding: 0 32px 24px;
+        }
+        .chart-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); padding: 24px;
+        }
+        .chart-card h3 {
+            font-size: 1rem; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .chart-container { height: 300px; }
+
+        /* Results Table */
+        .results-section {
+            padding: 0 32px 32px;
+        }
+        .results-card {
+            background: var(--white); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+        .results-card-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--light);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .results-card-header h2 { font-size: 1.1rem; }
+        .search-box {
+            padding: 10px 16px; border: 1px solid var(--light);
+            border-radius: var(--radius); font-size: 0.9rem; font-family: inherit;
+            min-width: 250px;
+        }
+        .search-box:focus { outline: none; border-color: var(--primary); }
+
+        .results-table { width: 100%; border-collapse: collapse; }
+        .results-table th {
+            background: var(--light); padding: 14px 20px; text-align: right;
+            font-size: 0.85rem; font-weight: 600; color: var(--gray);
+        }
+        .results-table td {
+            padding: 16px 20px; border-bottom: 1px solid var(--light);
+            font-size: 0.9rem;
+        }
+        .results-table tr:hover { background: rgba(99,102,241,0.02); }
+
+        .score-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem;
+        }
+        .score-high { background: rgba(34,197,94,0.1); color: var(--success); }
+        .score-mid { background: rgba(245,158,11,0.1); color: var(--warning); }
+        .score-low { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+        .action-btn {
+            padding: 8px 16px; border-radius: var(--radius); border: none;
+            font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .action-btn-primary { background: var(--primary); color: white; }
+        .action-btn-primary:hover { background: var(--primary-dark); }
+        .action-btn-outline {
+            background: transparent; color: var(--primary); border: 1px solid var(--primary);
         }
 
-        .stat-mini {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            text-align: center;
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 60px; color: var(--gray);
+        }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; opacity: 0.4; }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid var(--light);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast-container {
+            position: fixed; top: 20px; left: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .toast {
+            padding: 14px 20px; border-radius: var(--radius); color: white;
+            font-size: 0.9rem; display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease;
+            min-width: 300px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        /* Impersonation Banner */
+        .impersonation-banner {
+            background: linear-gradient(90deg, var(--warning), #fbbf24);
+            color: var(--dark); padding: 10px 32px; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .impersonation-banner button {
+            background: var(--dark); color: white; border: none;
+            padding: 6px 16px; border-radius: var(--radius); cursor: pointer; font-size: 0.8rem;
         }
 
-        .stat-mini .value {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--primary-light);
+        @media (max-width: 1200px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
         }
-
-        .stat-mini .label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
         @media (max-width: 768px) {
-            .result-card {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            .result-actions {
-                justify-content: center;
-            }
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-toggle { display: block; }
+            .stats-row { grid-template-columns: 1fr; padding: 16px; }
+            .charts-grid, .results-section { padding: 0 16px 16px; }
+            .top-bar { padding: 16px; }
+            .results-table { display: block; overflow-x: auto; }
         }
     </style>
 </head>
-<body class="dark-mode">
-    <div class="app-layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>🎓 منصة الاختبارات</h2>
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="./dashboard.html" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span class="nav-text">لوحة التحكم</span>
-                </a>
-                <a href="./exams.html" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    <span class="nav-text">الاختبارات</span>
-                </a>
-                <a href="./results.html" class="nav-item active">
-                    <span class="nav-icon">📈</span>
-                    <span class="nav-text">النتائج</span>
-                </a>
-                <a href="./profile.html" class="nav-item">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">الملف الشخصي</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <button class="btn btn-danger" id="logoutBtn">🚪 تسجيل الخروج</button>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <header class="top-bar">
-                <h1>نتائج الاختبارات</h1>
-                <div class="user-info">
-                    <span id="userName">...</span>
-                    <span class="badge badge-primary" id="userRole">طالب</span>
-                </div>
-            </header>
-
-            <div class="content-wrapper">
-                <!-- Stats -->
-                <div class="stats-row" id="statsRow">
-                    <div class="stat-mini"><div class="value" id="statTotal">0</div><div class="label">إجمالي الاختبارات</div></div>
-                    <div class="stat-mini"><div class="value" id="statAvg">0%</div><div class="label">المتوسط العام</div></div>
-                    <div class="stat-mini"><div class="value" id="statBest">0%</div><div class="label">أفضل نتيجة</div></div>
-                    <div class="stat-mini"><div class="value" id="statPassed">0</div><div class="label">اختبارات ناجح</div></div>
-                </div>
-
-                <!-- Filters -->
-                <div class="results-header">
-                    <h2 style="font-size: 1.2rem;">📋 سجل النتائج</h2>
-                    <div class="results-filters">
-                        <select class="form-select" id="subjectFilter">
-                            <option value="">جميع المواد</option>
-                        </select>
-                        <select class="form-select" id="statusFilter">
-                            <option value="">جميع الحالات</option>
-                            <option value="completed">مكتمل</option>
-                            <option value="time_expired">انتهى الوقت</option>
-                            <option value="suspended">موقوف</option>
-                        </select>
-                        <input type="text" class="form-input" id="searchInput" placeholder="بحث في الاختبارات...">
-                    </div>
-                </div>
-
-                <!-- Results List -->
-                <div class="results-grid" id="resultsGrid">
-                    <div class="results-empty">
-                        <div class="results-empty-icon">📋</div>
-                        <h3>جاري التحميل...</h3>
-                    </div>
-                </div>
-            </div>
-        </main>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
     </div>
-
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="impersonation-banner" id="impersonationBanner" style="display:none;">
+        <span><i class="fas fa-user-secret"></i> أنت تتصفح كطالب: <strong id="impersonatedName"></strong></span>
+        <button onclick="exitImpersonation()"><i class="fas fa-sign-out-alt"></i> خروج من وضع الانتحال</button>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-graduation-cap"></i> منصة الاختبارات</div>
+            <div class="user-info" id="userName">جاري التحميل...</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fas fa-home"></i> لوحة التحكم</a>
+            <a href="exams.html"><i class="fas fa-file-alt"></i> الامتحانات</a>
+            <a href="results.html" class="active"><i class="fas fa-chart-bar"></i> نتائجي</a>
+            <a href="groups.html"><i class="fas fa-users"></i> مجموعاتي</a>
+            <a href="profile.html"><i class="fas fa-user"></i> ملفي الشخصي</a>
+        </nav>
+        <div class="sidebar-footer">
+            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <h1><i class="fas fa-chart-bar"></i> نتائجي</h1>
+            <div></div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon primary"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-info">
+                    <h3 id="statTotal">0</h3>
+                    <p>إجمالي الامتحانات</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success"><i class="fas fa-trophy"></i></div>
+                <div class="stat-info">
+                    <h3 id="statAvg">0%</h3>
+                    <p>متوسط الدرجات</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning"><i class="fas fa-arrow-up"></i></div>
+                <div class="stat-info">
+                    <h3 id="statHighest">0%</h3>
+                    <p>أعلى درجة</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3 id="statTime">0د</h3>
+                    <p>إجمالي الوقت</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-line"></i> تطور الأداء</h3>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-pie"></i> توزيع الدرجات</h3>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="results-card">
+                <div class="results-card-header">
+                    <h2><i class="fas fa-list"></i> سجل النتائج</h2>
+                    <input type="text" class="search-box" id="searchInput" placeholder="ابحث في النتائج..." oninput="filterResults()">
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>الامتحان</th>
+                                <th>المادة</th>
+                                <th>التاريخ</th>
+                                <th>الدرجة</th>
+                                <th>الوقت</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد نتائج</p></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
     <script>
+        let currentUser = null;
+        let impersonatedUser = null;
         let allResults = [];
-        let studentId = null;
+        let perfChart = null;
+        let distChart = null;
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const user = await examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-
-            document.getElementById('userName').textContent = user.user_metadata?.full_name || user.email || 'طالب';
-
-            document.getElementById('sidebarToggle').addEventListener('click', () => {
-                document.getElementById('sidebar').classList.toggle('collapsed');
-            });
-
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                await examAuth.signOut();
-                window.location.href = '../login.html';
-            });
-
-            // Get student record
-            const { data: student } = await examDB.students()
-                .select('id')
-                .eq('user_id', user.id)
-                .single();
-            studentId = student?.id;
-
-            await loadSubjects();
-            await loadResults();
-
-            // Filters
-            document.getElementById('subjectFilter').addEventListener('change', filterResults);
-            document.getElementById('statusFilter').addEventListener('change', filterResults);
-            document.getElementById('searchInput').addEventListener('input', debounce(filterResults, 300));
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initSession();
+                await loadResults();
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ في تحميل البيانات', 'error');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
         });
 
-        async function loadSubjects() {
-            const { data } = await examDB.subjects().select('id, name').order('name');
-            const select = document.getElementById('subjectFilter');
-            if (data) {
-                data.forEach(s => {
-                    select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-                });
+        async function initSession() {
+            const impData = localStorage.getItem('impersonation');
+            if (impData) {
+                impersonatedUser = JSON.parse(impData);
+                document.getElementById('impersonationBanner').style.display = 'flex';
+                document.getElementById('impersonatedName').textContent = impersonatedUser.full_name || impersonatedUser.email;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = '../login.html'; return; }
+
+            const targetUserId = impersonatedUser ? impersonatedUser.id : user.id;
+            const { data: profile } = await supabase.from('exam_users').select('*').eq('id', targetUserId).single();
+            currentUser = profile || { id: targetUserId, email: user.email, full_name: user.email };
+            document.getElementById('userName').textContent = currentUser.full_name || currentUser.email;
+
+            const effectiveRole = impersonatedUser ? impersonatedUser.role : currentUser.role;
+            if (effectiveRole !== 'student' && !impersonatedUser) {
+                showToast('غير مصرح بالوصول', 'error');
+                setTimeout(() => logout(), 2000); return;
             }
         }
 
         async function loadResults() {
-            App.Loading.show();
-            try {
-                const { data: attempts, error } = await examDB.attempts()
-                    .select('*, exam_exams(title, total_score, subject_id, exam_subjects(name))')
-                    .eq('student_id', studentId)
-                    .order('ended_at', { ascending: false });
+            const userId = impersonatedUser ? impersonatedUser.id : currentUser.id;
 
-                if (error) throw error;
+            const { data: attempts } = await supabase
+                .from('exam_attempts')
+                .select('*, exam:exam_exams(*)')
+                .eq('student_id', userId)
+                .eq('status', 'completed')
+                .order('completed_at', { ascending: false });
 
-                allResults = attempts || [];
-                renderResults(allResults);
-                updateStats(allResults);
+            allResults = attempts || [];
 
-            } catch (err) {
-                console.error(err);
-                App.Toast.error('حدث خطأ في تحميل النتائج');
-                document.getElementById('resultsGrid').innerHTML = `
-                    <div class="results-empty">
-                        <div class="results-empty-icon">⚠️</div>
-                        <h3>تعذر تحميل النتائج</h3>
-                        <p>يرجى المحاولة مرة أخرى</p>
-                    </div>
-                `;
-            } finally {
-                App.Loading.hide();
-            }
+            // Stats
+            const total = allResults.length;
+            const scores = allResults.map(a => a.score || 0);
+            const avg = total > 0 ? Math.round(scores.reduce((a,b) => a+b, 0) / total) : 0;
+            const highest = total > 0 ? Math.max(...scores) : 0;
+            const totalTime = allResults.reduce((sum, a) => {
+                const diff = new Date(a.completed_at) - new Date(a.started_at);
+                return sum + Math.floor(diff / 60000);
+            }, 0);
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statAvg').textContent = avg + '%';
+            document.getElementById('statHighest').textContent = highest + '%';
+            document.getElementById('statTime').textContent = totalTime + 'د';
+
+            // Charts
+            renderPerformanceChart(allResults.slice().reverse());
+            renderDistributionChart(scores);
+
+            // Table
+            renderResultsTable(allResults);
         }
 
-        function renderResults(results) {
-            const grid = document.getElementById('resultsGrid');
+        function renderPerformanceChart(attempts) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            if (perfChart) perfChart.destroy();
 
-            if (!results.length) {
-                grid.innerHTML = `
-                    <div class="results-empty">
-                        <div class="results-empty-icon">📋</div>
-                        <h3>لا توجد نتائج بعد</h3>
-                        <p>ستظهر نتائج اختباراتك هنا بعد إكمالها</p>
-                        <a href="./exams.html" class="btn btn-primary" style="margin-top: 16px;">استعراض الاختبارات</a>
-                    </div>
-                `;
+            if (attempts.length === 0) {
+                ctx.canvas.parentElement.innerHTML = '<div class="empty-state"><i class="fas fa-chart-area"></i><p>لا توجد بيانات</p></div>';
                 return;
             }
 
-            grid.innerHTML = results.map(attempt => {
-                const exam = attempt.exam_exams;
-                const total = exam?.total_score || 1;
-                const score = attempt.score || 0;
-                const pct = Math.round((score / total) * 100);
-                
-                let scoreClass = 'score-fail';
-                if (pct >= 80) scoreClass = 'score-excellent';
-                else if (pct >= 60) scoreClass = 'score-good';
+            const labels = attempts.map(a => a.exam?.title?.substring(0, 15) || 'امتحان');
+            const scores = attempts.map(a => a.score || 0);
 
-                const statusMap = {
-                    'completed': '✅ مكتمل',
-                    'time_expired': '⏰ انتهى الوقت',
-                    'suspended': '🚫 موقوف',
-                    'auto_submitted': '🤖 تسليم تلقائي'
-                };
+            perfChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'الدرجة',
+                        data: scores,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99,102,241,0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderDistributionChart(scores) {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            if (distChart) distChart.destroy();
+
+            const ranges = { '90-100': 0, '80-89': 0, '70-79': 0, '60-69': 0, '0-59': 0 };
+            scores.forEach(s => {
+                if (s >= 90) ranges['90-100']++;
+                else if (s >= 80) ranges['80-89']++;
+                else if (s >= 70) ranges['70-79']++;
+                else if (s >= 60) ranges['60-69']++;
+                else ranges['0-59']++;
+            });
+
+            distChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(ranges),
+                    datasets: [{
+                        data: Object.values(ranges),
+                        backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderResultsTable(results) {
+            const tbody = document.getElementById('resultsBody');
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>لا توجد نتائج</p></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = results.map(r => {
+                const score = r.score || 0;
+                const scoreClass = score >= 80 ? 'score-high' : score >= 60 ? 'score-mid' : 'score-low';
+                const timeDiff = Math.floor((new Date(r.completed_at) - new Date(r.started_at)) / 60000);
 
                 return `
-                    <div class="result-card">
-                        <div class="result-info">
-                            <h3>${exam?.title || 'اختبار'}</h3>
-                            <div class="meta">
-                                <span>📚 ${exam?.exam_subjects?.name || '-'}</span>
-                                <span>📅 ${App.DateTime.format(attempt.ended_at || attempt.created_at)}</span>
-                                <span>${statusMap[attempt.status] || attempt.status}</span>
-                            </div>
-                        </div>
-                        <div class="result-score">
-                            <div class="score-value ${scoreClass}">${pct}%</div>
-                            <div class="score-label">${score} / ${total}</div>
-                        </div>
-                        <div class="result-actions">
-                            <a href="./exam-review.html?attempt=${attempt.id}" class="btn btn-sm btn-primary">مراجعة</a>
-                            ${attempt.status === 'completed' ? `<button class="btn btn-sm btn-secondary" onclick="App.copy('${exam?.title} - ${pct}%')">🔗 نسخ</button>` : ''}
-                        </div>
-                    </div>
+                    <tr>
+                        <td><strong>${r.exam?.title || 'امتحان'}</strong></td>
+                        <td>${r.exam?.subject || 'عام'}</td>
+                        <td>${formatDate(new Date(r.completed_at))}</td>
+                        <td><span class="score-badge ${scoreClass}">${score}%</span></td>
+                        <td>${timeDiff} دقيقة</td>
+                        <td>
+                            <a href="exam-review.html?attempt=${r.id}" class="action-btn action-btn-primary">
+                                <i class="fas fa-eye"></i> مراجعة
+                            </a>
+                        </td>
+                    </tr>
                 `;
             }).join('');
         }
 
-        function updateStats(results) {
-            const completed = results.filter(r => r.status === 'completed' || r.status === 'auto_submitted');
-            const scores = completed.map(r => {
-                const total = r.exam_exams?.total_score || 1;
-                return ((r.score || 0) / total) * 100;
-            });
-
-            document.getElementById('statTotal').textContent = results.length;
-            document.getElementById('statAvg').textContent = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length) + '%' : '0%';
-            document.getElementById('statBest').textContent = scores.length ? Math.round(Math.max(...scores)) + '%' : '0%';
-            document.getElementById('statPassed').textContent = scores.filter(s => s >= 60).length;
-        }
-
         function filterResults() {
-            const subject = document.getElementById('subjectFilter').value;
-            const status = document.getElementById('statusFilter').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
-
-            let filtered = allResults.filter(r => {
-                const exam = r.exam_exams;
-                if (subject && exam?.subject_id !== subject) return false;
-                if (status && r.status !== status) return false;
-                if (search && !exam?.title?.toLowerCase().includes(search)) return false;
-                return true;
-            });
-
-            renderResults(filtered);
+            const filtered = allResults.filter(r => 
+                (r.exam?.title || '').toLowerCase().includes(search) ||
+                (r.exam?.subject || '').toLowerCase().includes(search)
+            );
+            renderResultsTable(filtered);
         }
+
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check', error: 'fa-times', info: 'fa-info' };
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function exitImpersonation() { localStorage.removeItem('impersonation'); window.location.href = '../admin/dashboard.html'; }
+        async function logout() { await supabase.auth.signOut(); localStorage.removeItem('impersonation'); window.location.href = '../login.html'; }
     </script>
 </body>
 </html>

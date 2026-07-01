@@ -1,238 +1,999 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الاختبارات - نظام إدارة الاختبارات الإلكترونية</title>
-  <link rel="stylesheet" href="shared/styles.css">
-  <style>
-    .landing-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 2rem;
-      background: white;
-      box-shadow: var(--shadow);
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-    }
-    .landing-nav .logo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .landing-nav .nav-links {
-      display: flex;
-      gap: 2rem;
-    }
-    .landing-nav .nav-links a {
-      color: var(--gray-700);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    .landing-nav .nav-links a:hover {
-      color: var(--primary);
-    }
-    .landing-hero {
-      padding-top: 8rem;
-    }
-    .hero-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      margin-top: 2rem;
-    }
-    .stats-section {
-      padding: 4rem 2rem;
-      background: white;
-    }
-    .stats-section-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 2rem;
-      text-align: center;
-    }
-    .stat-item h2 {
-      font-size: 2.5rem;
-      color: var(--primary);
-      margin-bottom: 0.5rem;
-    }
-    .stat-item p {
-      color: var(--gray-500);
-    }
-    .how-it-works {
-      padding: 4rem 2rem;
-      background: var(--light);
-    }
-    .steps-grid {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-    }
-    .step-card {
-      background: white;
-      padding: 2rem;
-      border-radius: var(--radius-xl);
-      text-align: center;
-      box-shadow: var(--shadow);
-    }
-    .step-number {
-      width: 48px;
-      height: 48px;
-      background: var(--primary);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.25rem;
-      margin: 0 auto 1rem;
-    }
-    .footer {
-      background: var(--dark);
-      color: white;
-      padding: 3rem 2rem;
-      text-align: center;
-    }
-    .footer p {
-      opacity: 0.7;
-    }
-    @media (max-width: 768px) {
-      .stats-section-inner { grid-template-columns: repeat(2, 1fr); }
-      .steps-grid { grid-template-columns: 1fr; }
-      .landing-nav .nav-links { display: none; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الاختبارات الذكية | ExamPlatform</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --gray: #64748b;
+            --gray-light: #e2e8f0;
+            --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            --gradient-2: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --radius: 12px;
+            --radius-lg: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--white); color: var(--dark); overflow-x: hidden; }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.3s ease;
+        }
+        .navbar.scrolled {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            padding: 0.75rem 2rem;
+        }
+        .navbar.scrolled .logo-text { color: var(--dark); }
+        .navbar.scrolled .nav-links a { color: var(--dark); }
+        .navbar.scrolled .nav-links a:hover { color: var(--primary); }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 45px; height: 45px; border-radius: var(--radius);
+            background: var(--gradient-1);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        .logo-text { font-size: 1.5rem; font-weight: 800; color: white; transition: color 0.3s; }
+        .nav-links { display: flex; gap: 2rem; align-items: center; }
+        .nav-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-weight: 500; transition: all 0.3s; font-size: 0.95rem; }
+        .nav-links a:hover { color: white; transform: translateY(-2px); }
+        .nav-btn {
+            padding: 0.6rem 1.5rem; border-radius: 50px;
+            background: white; color: var(--primary);
+            font-weight: 700; border: none; cursor: pointer;
+            transition: all 0.3s; box-shadow: var(--shadow);
+        }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .nav-btn.primary { background: var(--gradient-1); color: white; }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            background: var(--gradient-2);
+            position: relative;
+            display: flex; align-items: center;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -50%; right: -20%;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(79,70,229,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .hero::after {
+            content: ''; position: absolute; bottom: -30%; left: -10%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .hero-grid {
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .hero-content {
+            max-width: 1400px; margin: 0 auto; padding: 8rem 2rem 4rem;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+            align-items: center; position: relative; z-index: 2;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.5rem 1rem; border-radius: 50px;
+            background: rgba(79,70,229,0.2); color: var(--primary-light);
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem;
+            border: 1px solid rgba(79,70,229,0.3);
+        }
+        .hero-title {
+            font-size: 3.5rem; font-weight: 900; color: white;
+            line-height: 1.2; margin-bottom: 1.5rem;
+        }
+        .hero-title span {
+            background: var(--gradient-1);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-desc {
+            font-size: 1.15rem; color: rgba(255,255,255,0.7);
+            line-height: 1.8; margin-bottom: 2rem; max-width: 500px;
+        }
+        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .btn {
+            padding: 1rem 2rem; border-radius: 50px; font-weight: 700;
+            font-size: 1rem; cursor: pointer; transition: all 0.3s;
+            border: none; display: inline-flex; align-items: center; gap: 0.5rem;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: var(--gradient-1); color: white;
+            box-shadow: 0 10px 30px rgba(79,70,229,0.4);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(79,70,229,0.5); }
+        .btn-outline {
+            background: transparent; color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .btn-outline:hover { background: white; color: var(--dark); border-color: white; }
+
+        /* Hero Visual */
+        .hero-visual {
+            position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .hero-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            padding: 2rem; width: 100%; max-width: 450px;
+            box-shadow: var(--shadow-xl);
+        }
+        .hero-card-header {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .hero-card-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-weight: 700;
+        }
+        .hero-card-title { color: white; font-weight: 700; }
+        .hero-card-subtitle { color: rgba(255,255,255,0.5); font-size: 0.8rem; }
+        .hero-question {
+            background: rgba(255,255,255,0.08);
+            border-radius: var(--radius); padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .hero-question-text { color: white; font-weight: 600; margin-bottom: 1rem; }
+        .hero-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .hero-option {
+            padding: 0.75rem 1rem; border-radius: var(--radius);
+            background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8);
+            font-size: 0.9rem; cursor: pointer; transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .hero-option:hover { background: rgba(79,70,229,0.3); border-color: var(--primary); }
+        .hero-option.correct { background: rgba(16,185,129,0.2); border-color: var(--success); color: var(--success); }
+        .hero-stats {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .hero-stat {
+            text-align: center; padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+        }
+        .hero-stat-value { color: white; font-size: 1.5rem; font-weight: 800; }
+        .hero-stat-label { color: rgba(255,255,255,0.5); font-size: 0.75rem; }
+
+        .floating-icon {
+            position: absolute; border-radius: var(--radius);
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            padding: 1rem; color: white; font-size: 1.5rem;
+            animation: float 6s ease-in-out infinite;
+        }
+        .floating-icon:nth-child(2) { top: 10%; right: -20px; animation-delay: 0s; }
+        .floating-icon:nth-child(3) { bottom: 20%; left: -30px; animation-delay: 2s; }
+        .floating-icon:nth-child(4) { top: 50%; right: -40px; animation-delay: 4s; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            background: var(--gradient-1);
+            padding: 3rem 2rem; position: relative; z-index: 3;
+        }
+        .stats-container {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+        }
+        .stat-item { text-align: center; color: white; }
+        .stat-number { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.25rem; }
+        .stat-label { font-size: 0.9rem; opacity: 0.8; }
+
+        /* ===== FEATURES ===== */
+        .features { padding: 6rem 2rem; background: #f8fafc; }
+        .section-header { text-align: center; max-width: 600px; margin: 0 auto 4rem; }
+        .section-badge {
+            display: inline-block; padding: 0.4rem 1rem;
+            background: rgba(79,70,229,0.1); color: var(--primary);
+            border-radius: 50px; font-size: 0.85rem; font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .section-title { font-size: 2.5rem; font-weight: 900; color: var(--dark); margin-bottom: 1rem; }
+        .section-desc { color: var(--gray); font-size: 1.1rem; line-height: 1.7; }
+        .features-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+        }
+        .feature-card {
+            background: white; border-radius: var(--radius-lg);
+            padding: 2.5rem; box-shadow: var(--shadow);
+            transition: all 0.3s; border: 1px solid var(--gray-light);
+            position: relative; overflow: hidden;
+        }
+        .feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: var(--gradient-1); transform: scaleX(0); transition: transform 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-xl); }
+        .feature-card:hover::before { transform: scaleX(1); }
+        .feature-icon {
+            width: 60px; height: 60px; border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; margin-bottom: 1.5rem;
+        }
+        .feature-icon.blue { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .feature-icon.cyan { background: rgba(6,182,212,0.1); color: var(--secondary); }
+        .feature-icon.green { background: rgba(16,185,129,0.1); color: var(--success); }
+        .feature-icon.orange { background: rgba(245,158,11,0.1); color: var(--accent); }
+        .feature-icon.purple { background: rgba(124,58,237,0.1); color: #7c3aed; }
+        .feature-icon.red { background: rgba(239,68,68,0.1); color: var(--danger); }
+        .feature-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--dark); }
+        .feature-desc { color: var(--gray); line-height: 1.7; font-size: 0.95rem; }
+
+        /* ===== ROLES ===== */
+        .roles { padding: 6rem 2rem; background: white; }
+        .roles-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+        }
+        .role-card {
+            background: var(--gradient-2); border-radius: var(--radius-lg);
+            padding: 3rem 2rem; text-align: center; color: white;
+            position: relative; overflow: hidden; transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .role-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 60%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .role-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-xl); }
+        .role-card:hover::before { opacity: 1; }
+        .role-icon {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; margin: 0 auto 1.5rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .role-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; }
+        .role-desc { color: rgba(255,255,255,0.7); line-height: 1.7; margin-bottom: 1.5rem; }
+        .role-features { list-style: none; text-align: right; margin-bottom: 2rem; }
+        .role-features li {
+            padding: 0.5rem 0; color: rgba(255,255,255,0.8);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .role-features li i { color: var(--success); }
+        .role-btn {
+            padding: 0.75rem 2rem; border-radius: 50px;
+            background: white; color: var(--dark);
+            font-weight: 700; border: none; cursor: pointer;
+            transition: all 0.3s; position: relative; z-index: 2;
+        }
+        .role-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); }
+
+        /* ===== HOW IT WORKS ===== */
+        .how-it-works { padding: 6rem 2rem; background: #f8fafc; }
+        .steps {
+            max-width: 1000px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+        }
+        .step { text-align: center; position: relative; }
+        .step:not(:last-child)::after {
+            content: ''; position: absolute; top: 30px; left: 60%;
+            width: 80%; height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        .step-number {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--gradient-1); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 800; margin: 0 auto 1rem;
+            box-shadow: 0 10px 20px rgba(79,70,229,0.3);
+        }
+        .step-title { font-weight: 700; margin-bottom: 0.5rem; color: var(--dark); }
+        .step-desc { color: var(--gray); font-size: 0.9rem; line-height: 1.6; }
+
+        /* ===== DEMO SECTION ===== */
+        .demo { padding: 6rem 2rem; background: white; }
+        .demo-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 3rem;
+            align-items: center;
+        }
+        .demo-content h2 { font-size: 2.5rem; font-weight: 900; margin-bottom: 1rem; color: var(--dark); }
+        .demo-content p { color: var(--gray); line-height: 1.8; margin-bottom: 2rem; font-size: 1.1rem; }
+        .demo-buttons { display: flex; flex-direction: column; gap: 1rem; }
+        .demo-btn {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.25rem 1.5rem; border-radius: var(--radius);
+            background: white; border: 2px solid var(--gray-light);
+            cursor: pointer; transition: all 0.3s; text-align: right;
+            text-decoration: none; color: var(--dark);
+        }
+        .demo-btn:hover { border-color: var(--primary); transform: translateX(-5px); box-shadow: var(--shadow-lg); }
+        .demo-btn-icon {
+            width: 50px; height: 50px; border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; flex-shrink: 0;
+        }
+        .demo-btn-icon.admin { background: rgba(79,70,229,0.1); color: var(--primary); }
+        .demo-btn-icon.teacher { background: rgba(6,182,212,0.1); color: var(--secondary); }
+        .demo-btn-icon.student { background: rgba(16,185,129,0.1); color: var(--success); }
+        .demo-btn-text h4 { font-weight: 700; margin-bottom: 0.25rem; }
+        .demo-btn-text span { color: var(--gray); font-size: 0.85rem; }
+        .demo-visual {
+            background: var(--gradient-2); border-radius: var(--radius-lg);
+            padding: 2rem; position: relative; overflow: hidden;
+        }
+        .demo-visual::before {
+            content: ''; position: absolute; top: -50%; right: -50%;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(79,70,229,0.2) 0%, transparent 60%);
+        }
+        .demo-chart {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius);
+            padding: 1.5rem; position: relative; z-index: 2;
+        }
+        .demo-chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .demo-chart-title { color: white; font-weight: 700; }
+        .demo-chart-filters { display: flex; gap: 0.5rem; }
+        .demo-filter {
+            padding: 0.35rem 0.75rem; border-radius: 50px;
+            background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);
+            font-size: 0.75rem; border: none; cursor: pointer;
+        }
+        .demo-filter.active { background: var(--primary); color: white; }
+        .demo-bars { display: flex; flex-direction: column; gap: 1rem; }
+        .demo-bar-item { display: flex; align-items: center; gap: 1rem; }
+        .demo-bar-label { color: rgba(255,255,255,0.7); font-size: 0.85rem; width: 80px; text-align: left; }
+        .demo-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+        .demo-bar-fill { height: 100%; border-radius: 5px; transition: width 1s ease; }
+        .demo-bar-value { color: white; font-weight: 700; font-size: 0.85rem; width: 40px; }
+
+        /* ===== TESTIMONIALS ===== */
+        .testimonials { padding: 6rem 2rem; background: #f8fafc; }
+        .testimonials-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+        }
+        .testimonial-card {
+            background: white; border-radius: var(--radius-lg);
+            padding: 2rem; box-shadow: var(--shadow); border: 1px solid var(--gray-light);
+        }
+        .testimonial-stars { color: var(--accent); margin-bottom: 1rem; }
+        .testimonial-text { color: var(--gray); line-height: 1.8; margin-bottom: 1.5rem; font-style: italic; }
+        .testimonial-author { display: flex; align-items: center; gap: 1rem; }
+        .testimonial-avatar {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--gradient-1); display: flex;
+            align-items: center; justify-content: center;
+            color: white; font-weight: 700;
+        }
+        .testimonial-name { font-weight: 700; color: var(--dark); }
+        .testimonial-role { color: var(--gray); font-size: 0.85rem; }
+
+        /* ===== CTA ===== */
+        .cta {
+            padding: 6rem 2rem;
+            background: var(--gradient-1); position: relative; overflow: hidden;
+        }
+        .cta::before {
+            content: ''; position: absolute; top: -50%; right: -20%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            border-radius: 50%;
+        }
+        .cta-content {
+            max-width: 800px; margin: 0 auto; text-align: center;
+            position: relative; z-index: 2; color: white;
+        }
+        .cta-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 1rem; }
+        .cta-desc { font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem; }
+        .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .cta-btn {
+            padding: 1rem 2.5rem; border-radius: 50px;
+            font-weight: 700; font-size: 1rem; cursor: pointer;
+            transition: all 0.3s; border: none;
+        }
+        .cta-btn.light { background: white; color: var(--primary); }
+        .cta-btn.light:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .cta-btn.outline { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.5); }
+        .cta-btn.outline:hover { background: white; color: var(--primary); }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark); color: rgba(255,255,255,0.7);
+            padding: 4rem 2rem 2rem;
+        }
+        .footer-grid {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
+        }
+        .footer-brand .logo-text { color: white; margin-bottom: 1rem; }
+        .footer-brand p { line-height: 1.8; margin-bottom: 1.5rem; }
+        .footer-social { display: flex; gap: 1rem; }
+        .footer-social a {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center;
+            color: white; transition: all 0.3s; text-decoration: none;
+        }
+        .footer-social a:hover { background: var(--primary); transform: translateY(-3px); }
+        .footer-title { color: white; font-weight: 700; margin-bottom: 1.5rem; }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 0.75rem; }
+        .footer-links a { color: rgba(255,255,255,0.6); text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: white; }
+        .footer-bottom {
+            max-width: 1200px; margin: 3rem auto 0; padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center; font-size: 0.9rem;
+        }
+
+        /* ===== MOBILE MENU ===== */
+        .mobile-menu-btn { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .navbar.scrolled .mobile-menu-btn { color: var(--dark); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero-content { grid-template-columns: 1fr; text-align: center; }
+            .hero-title { font-size: 2.5rem; }
+            .hero-desc { margin: 0 auto 2rem; }
+            .hero-buttons { justify-content: center; }
+            .hero-visual { display: none; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .roles-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: repeat(2, 1fr); }
+            .step:nth-child(2)::after { display: none; }
+            .demo-grid { grid-template-columns: 1fr; }
+            .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .hero-title { font-size: 2rem; }
+            .stats-container { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+            .roles-grid { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; }
+            .step::after { display: none !important; }
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .section-title { font-size: 1.75rem; }
+            .cta-title { font-size: 1.75rem; }
+        }
+    </style>
 </head>
 <body>
-  <nav class="landing-nav">
-    <div class="logo">
-      <span>📚</span>
-      <span>منصة الاختبارات</span>
-    </div>
-    <div class="nav-links">
-      <a href="#features">المميزات</a>
-      <a href="#how">كيف يعمل</a>
-      <a href="login.html" class="btn btn-primary">تسجيل الدخول</a>
-    </div>
-  </nav>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+            <span class="logo-text">ExamPlatform</span>
+        </div>
+        <div class="nav-links">
+            <a href="#features">المميزات</a>
+            <a href="#roles">الأدوار</a>
+            <a href="#how-it-works">كيف تعمل</a>
+            <a href="#demo">تجربة</a>
+            <button class="nav-btn" onclick="location.href='login.html'">تسجيل الدخول</button>
+            <button class="nav-btn primary" onclick="location.href='register.html'">إنشاء حساب</button>
+        </div>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+    </nav>
 
-  <section class="landing-hero">
-    <h1>نظام إدارة الاختبارات الإلكترونية</h1>
-    <p>منصة متكاملة لإنشاء وإدارة الاختبارات الإلكترونية للمدارس والمعاهد مع نظام أمان متقدم وواجهة سهلة الاستخدام</p>
-    <div class="hero-buttons">
-      <a href="login.html" class="btn btn-primary btn-lg">🚀 ابدأ الآن</a>
-      <a href="#features" class="btn btn-outline btn-lg">ℹ️ تعرف أكثر</a>
-    </div>
-  </section>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-grid"></div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    <i class="fas fa-sparkles"></i>
+                    منصة الاختبارات الذكية الجديدة
+                </div>
+                <h1 class="hero-title">
+                    اختبر طلابك<br>بـ <span>ذكاء</span> و<span>احترافية</span>
+                </h1>
+                <p class="hero-desc">
+                    منصة متكاملة لإنشاء وإدارة الاختبارات الإلكترونية بكل سهولة. 
+                    أنشئ أسئلة متنوعة، راقب أداء الطلاب، وحلل النتائج في لوحة تحكم ذكية.
+                </p>
+                <div class="hero-buttons">
+                    <a href="register.html" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        ابدأ الآن مجاناً
+                    </a>
+                    <a href="#demo" class="btn btn-outline">
+                        <i class="fas fa-play-circle"></i>
+                        جرب المنصة
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-card">
+                    <div class="hero-card-header">
+                        <div class="hero-card-avatar">أ</div>
+                        <div>
+                            <div class="hero-card-title">اختبار الفيزياء</div>
+                            <div class="hero-card-subtitle">الصف الثالث الثانوي</div>
+                        </div>
+                    </div>
+                    <div class="hero-question">
+                        <div class="hero-question-text">ما هي وحدة قياس القوة في النظام الدولي؟</div>
+                        <div class="hero-options">
+                            <div class="hero-option">أ) جول (Joule)</div>
+                            <div class="hero-option correct">ب) نيوتن (Newton)</div>
+                            <div class="hero-option">ج) واط (Watt)</div>
+                            <div class="hero-option">د) باسكال (Pascal)</div>
+                        </div>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">85%</div>
+                            <div class="hero-stat-label">الدرجة</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">12</div>
+                            <div class="hero-stat-label">دقيقة</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">3/5</div>
+                            <div class="hero-stat-label">السؤال</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="floating-icon"><i class="fas fa-brain"></i></div>
+                <div class="floating-icon"><i class="fas fa-trophy"></i></div>
+            </div>
+        </div>
+    </section>
 
-  <section class="stats-section">
-    <div class="stats-section-inner">
-      <div class="stat-item">
-        <h2>+500</h2>
-        <p>مدرسة مشتركة</p>
-      </div>
-      <div class="stat-item">
-        <h2>+50K</h2>
-        <p>طالب نشط</p>
-      </div>
-      <div class="stat-item">
-        <h2>+200K</h2>
-        <p>اختبار تم إجراؤه</p>
-      </div>
-      <div class="stat-item">
-        <h2>99.9%</h2>
-        <p>نسبة التوفر</p>
-      </div>
-    </div>
-  </section>
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number" data-count="15000">0</div>
+                <div class="stat-label">طالب مسجل</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="850">0</div>
+                <div class="stat-label">معلم نشط</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="12000">0</div>
+                <div class="stat-label">اختبار تم إنشاؤه</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-count="98">0</div>
+                <div class="stat-label">% رضا المستخدمين</div>
+            </div>
+        </div>
+    </section>
 
-  <section class="landing-features" id="features">
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="icon">🔒</div>
-        <h3>أمان متقدم</h3>
-        <p>وضع الامتحان الآمن مع منع النسخ والتبديل بين التبويبات وتسجيل الانتهاكات</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">⏱️</div>
-        <h3>مؤقت ذكي</h3>
-        <p>مؤقت تلقائي مع التحذير قبل انتهاء الوقت وتسليم تلقائي</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📊</div>
-        <h3>تقارير فورية</h3>
-        <p>نتائج فورية مع تحليل الأداء وإحصائيات مفصلة لكل طالب</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📝</div>
-        <h3>بنك أسئلة</h3>
-        <p>بنك أسئلة مركزي مع دعم أنواع متعددة من الأسئلة</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">👥</div>
-        <h3>إدارة المجموعات</h3>
-        <p>تنظيم الطلاب في مجموعات وتوزيع الاختبارات بسهولة</p>
-      </div>
-      <div class="feature-card">
-        <div class="icon">📱</div>
-        <h3>تصميم متجاوب</h3>
-        <p>يعمل على جميع الأجهزة: كمبيوتر، تابلت، وموبايل</p>
-      </div>
-    </div>
-  </section>
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <div class="section-badge">المميزات</div>
+            <h2 class="section-title">كل ما تحتاجه في منصة واحدة</h2>
+            <p class="section-desc">
+                صممنا المنصة لتكون الحل الشامل لكل احتياجاتك في إدارة الاختبارات والتقييم
+            </p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon blue"><i class="fas fa-question-circle"></i></div>
+                <h3 class="feature-title">بنك أسئلة ذكي</h3>
+                <p class="feature-desc">أنشئ أسئلة متنوعة (اختيار من متعدد، صح/خطأ، مقالي، أكمل الفراغ) مع دعم الصور والمعادلات الرياضية</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon cyan"><i class="fas fa-clock"></i></div>
+                <h3 class="feature-title">اختبارات مؤقتة</h3>
+                <p class="feature-desc">حدد وقت البدء والانتهاء للاختبار مع مؤقت تنازلي وإغلاق تلقائي عند انتهاء الوقت</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon green"><i class="fas fa-chart-pie"></i></div>
+                <h3 class="feature-title">تحليلات متقدمة</h3>
+                <p class="feature-desc">لوحة تحكم تحليلية تعرض إحصائيات الأداء، توزيع الدرجات، وتحليل صعوبة الأسئلة</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon orange"><i class="fas fa-shield-alt"></i></div>
+                <h3 class="feature-title">أمان وحماية</h3>
+                <p class="feature-desc">حماية ضد الغش مع كشف تعدد الأجهزة، تسجيل IP، وتشفير كامل للبيانات</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon purple"><i class="fas fa-mobile-alt"></i></div>
+                <h3 class="feature-title">تصميم متجاوب</h3>
+                <p class="feature-desc">تجربة ممتازة على جميع الأجهزة - موبايل، تابلت، لابتوب، وشاشات كبيرة</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon red"><i class="fas fa-file-export"></i></div>
+                <h3 class="feature-title">تصدير النتائج</h3>
+                <p class="feature-desc">صدر النتائج بصيغ PDF وExcel مع تقارير مفصلة لكل طالب ومادة</p>
+            </div>
+        </div>
+    </section>
 
-  <section class="how-it-works" id="how">
-    <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2rem; color: var(--gray-900);">كيف يعمل النظام؟</h2>
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-number">1</div>
-        <h3>إنشاء الاختبار</h3>
-        <p>المعلم ينشئ اختباراً من بنك الأسئلة أو يضيف أسئلة جديدة ويحدد المدة والدرجات</p>
-      </div>
-      <div class="step-card">
-        <div class="step-number">2</div>
-        <h3>توزيع الاختبار</h3>
-        <p>تحديد المجموعات أو الطلاب المستهدفين وتحديد موعد الاختبار</p>
-      </div>
-      <div class="step-card">
-        <div class="step-number">3</div>
-        <h3>إجراء الاختبار</h3>
-        <p>الطالب يدخل في وضع الامتحان الآمن ويجيب على الأسئلة في الوقت المحدد</p>
-      </div>
-      <div class="step-card">
-        <div class="step-number">4</div>
-        <h3>التصحيح التلقائي</h3>
-        <p>تصحيح فوري للأسئلة الموضوعية مع تقارير مفصلة للمعلم والطالب</p>
-      </div>
-      <div class="step-card">
-        <div class="step-number">5</div>
-        <h3>المراجعة والتحليل</h3>
-        <p>الطالب يراجع إجاباته والمعلم يحلل أداء الطلاب والأسئلة</p>
-      </div>
-      <div class="step-card">
-        <div class="step-number">6</div>
-        <h3>الشهادات</h3>
-        <p>إصدار شهادات إتمام الاختبار مع QR Code للتحقق</p>
-      </div>
-    </div>
-  </section>
+    <!-- Roles -->
+    <section class="roles" id="roles">
+        <div class="section-header">
+            <div class="section-badge">الأدوار</div>
+            <h2 class="section-title">مصممة لكل فريق العمل</h2>
+            <p class="section-desc">ثلاثة أدوار رئيسية تغطي كل احتياجات المؤسسة التعليمية</p>
+        </div>
+        <div class="roles-grid">
+            <div class="role-card">
+                <div class="role-icon"><i class="fas fa-user-shield"></i></div>
+                <h3 class="role-title">مدير النظام</h3>
+                <p class="role-desc">تحكم كامل في المنصة مع إدارة المستخدمين والمواد والإعدادات</p>
+                <ul class="role-features">
+                    <li><i class="fas fa-check"></i> إدارة المستخدمين والصلاحيات</li>
+                    <li><i class="fas fa-check"></i> إدارة المواد الدراسية</li>
+                    <li><i class="fas fa-check"></i> تقارير شاملة للنظام</li>
+                    <li><i class="fas fa-check"></i> إعدادات النظام والأمان</li>
+                </ul>
+                <button class="role-btn" onclick="demoLogin('admin')">تجربة كمدير</button>
+            </div>
+            <div class="role-card">
+                <div class="role-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <h3 class="role-title">المعلم</h3>
+                <p class="role-desc">أنشئ اختبارات وأسئلة وراقب أداء طلابك بكل سهولة</p>
+                <ul class="role-features">
+                    <li><i class="fas fa-check"></i> إنشاء بنك الأسئلة</li>
+                    <li><i class="fas fa-check"></i> تصميم الاختبارات</li>
+                    <li><i class="fas fa-check"></i> مراقبة الاختبارات</li>
+                    <li><i class="fas fa-check"></i> تصحيح وتقييم الطلاب</li>
+                </ul>
+                <button class="role-btn" onclick="demoLogin('teacher')">تجربة كمعلم</button>
+            </div>
+            <div class="role-card">
+                <div class="role-icon"><i class="fas fa-user-graduate"></i></div>
+                <h3 class="role-title">الطالب</h3>
+                <p class="role-desc">أدخل الاختبارات وتابع تقدمك وشاهد نتائجك</p>
+                <ul class="role-features">
+                    <li><i class="fas fa-check"></i> الاختبارات المتاحة</li>
+                    <li><i class="fas fa-check"></i> مؤقت تنازلي</li>
+                    <li><i class="fas fa-check"></i> النتائج والتقييم</li>
+                    <li><i class="fas fa-check"></i> تتبع التقدم</li>
+                </ul>
+                <button class="role-btn" onclick="demoLogin('student')">تجربة كطالب</button>
+            </div>
+        </div>
+    </section>
 
-  <footer class="footer">
-    <p>© 2026 منصة الاختبارات. جميع الحقوق محفوظة.</p>
-    <p style="margin-top: 0.5rem; font-size: 0.875rem;">نظام آمن وموثوق لإدارة الاختبارات الإلكترونية</p>
-  </footer>
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <div class="section-badge">الخطوات</div>
+            <h2 class="section-title">كيف تعمل المنصة</h2>
+            <p class="section-desc">أربع خطوات بسيطة للبدء في إنشاء وإدارة الاختبارات</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3 class="step-title">أنشئ حسابك</h3>
+                <p class="step-desc">سجل كمدير أو معم أو طالب في دقائق معدودة</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3 class="step-title">أضف الأسئلة</h3>
+                <p class="step-desc">أنشئ بنك أسئلة متنوع بأنواع مختلفة من الأسئلة</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3 class="step-title">صمم الاختبار</h3>
+                <p class="step-desc">اختر الأسئلة وحدد الوقت والإعدادات</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3 class="step-title">راقب النتائج</h3>
+                <p class="step-desc">تابع أداء الطلاب وصدر التقارير</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo" id="demo">
+        <div class="demo-grid">
+            <div class="demo-content">
+                <div class="section-badge">تجربة سريعة</div>
+                <h2>جرب المنصة الآن</h2>
+                <p>اختر الدور الذي تريد تجربته وشاهد كيف تعمل المنصة من الداخل. كل البيانات تجريبية ولا تؤثر على النظام.</p>
+                <div class="demo-buttons">
+                    <a href="admin/dashboard.html" class="demo-btn" onclick="return demoLogin('admin')">
+                        <div class="demo-btn-icon admin"><i class="fas fa-user-shield"></i></div>
+                        <div class="demo-btn-text">
+                            <h4>لوحة المدير</h4>
+                            <span>إدارة شاملة للنظام</span>
+                        </div>
+                    </a>
+                    <a href="teacher/dashboard.html" class="demo-btn" onclick="return demoLogin('teacher')">
+                        <div class="demo-btn-icon teacher"><i class="fas fa-chalkboard-teacher"></i></div>
+                        <div class="demo-btn-text">
+                            <h4>لوحة المعلم</h4>
+                            <span>إنشاء وإدارة الاختبارات</span>
+                        </div>
+                    </a>
+                    <a href="student/dashboard.html" class="demo-btn" onclick="return demoLogin('student')">
+                        <div class="demo-btn-icon student"><i class="fas fa-user-graduate"></i></div>
+                        <div class="demo-btn-text">
+                            <h4>لوحة الطالب</h4>
+                            <span>أداء الاختبارات ومتابعة النتائج</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="demo-visual">
+                <div class="demo-chart">
+                    <div class="demo-chart-header">
+                        <div class="demo-chart-title">أداء الطلاب</div>
+                        <div class="demo-chart-filters">
+                            <button class="demo-filter active">أسبوع</button>
+                            <button class="demo-filter">شهر</button>
+                        </div>
+                    </div>
+                    <div class="demo-bars">
+                        <div class="demo-bar-item">
+                            <span class="demo-bar-label">رياضيات</span>
+                            <div class="demo-bar-track"><div class="demo-bar-fill" style="width:85%;background:var(--primary)"></div></div>
+                            <span class="demo-bar-value">85%</span>
+                        </div>
+                        <div class="demo-bar-item">
+                            <span class="demo-bar-label">فيزياء</span>
+                            <div class="demo-bar-track"><div class="demo-bar-fill" style="width:72%;background:var(--secondary)"></div></div>
+                            <span class="demo-bar-value">72%</span>
+                        </div>
+                        <div class="demo-bar-item">
+                            <span class="demo-bar-label">كيمياء</span>
+                            <div class="demo-bar-track"><div class="demo-bar-fill" style="width:90%;background:var(--success)"></div></div>
+                            <span class="demo-bar-value">90%</span>
+                        </div>
+                        <div class="demo-bar-item">
+                            <span class="demo-bar-label">أحياء</span>
+                            <div class="demo-bar-track"><div class="demo-bar-fill" style="width:68%;background:var(--accent)"></div></div>
+                            <span class="demo-bar-value">68%</span>
+                        </div>
+                        <div class="demo-bar-item">
+                            <span class="demo-bar-label">لغة عربية</span>
+                            <div class="demo-bar-track"><div class="demo-bar-fill" style="width:95%;background:var(--danger)"></div></div>
+                            <span class="demo-bar-value">95%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+        <div class="section-header">
+            <div class="section-badge">آراء المستخدمين</div>
+            <h2 class="section-title">ماذا يقولون عنا</h2>
+            <p class="section-desc">تجارب حقيقية من مستخدمي المنصة في مختلف المؤسسات التعليمية</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <p class="testimonial-text">"غيرت المنصة طريقة إدارتي للاختبارات تماماً. الآن أستطيع إنشاء اختبار في دقائق ومتابعة الطلاب لحظياً."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">م</div>
+                    <div>
+                        <div class="testimonial-name">د. محمد العلي</div>
+                        <div class="testimonial-role">مدير مدرسة الثانوية العلمية</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <p class="testimonial-text">"بنك الأسئلة الذكي يساعدني كثيراً في إعادة استخدام الأسئلة وتصنيفها. التحليلات ممتازة جداً."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">س</div>
+                    <div>
+                        <div class="testimonial-name">أ. سارة أحمد</div>
+                        <div class="testimonial-role">معلمة الفيزياء</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                </div>
+                <p class="testimonial-text">"التصميم سهل الاستخدام والمؤقت يساعدني في إدارة وقتي أثناء الاختبار. أحببت التجربة كثيراً."</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">ع</div>
+                    <div>
+                        <div class="testimonial-name">عمر خالد</div>
+                        <div class="testimonial-role">طالب الصف الثالث الثانوي</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <div class="cta-content">
+            <h2 class="cta-title">ابدأ رحلتك التعليمية الذكية اليوم</h2>
+            <p class="cta-desc">انضم لآلاف المعلمين والطلاب الذين يستخدمون منصتنا لتحسين تجربة الاختبارات</p>
+            <div class="cta-buttons">
+                <button class="cta-btn light" onclick="location.href='register.html'">
+                    <i class="fas fa-user-plus"></i> إنشاء حساب مجاني
+                </button>
+                <button class="cta-btn outline" onclick="location.href='login.html'">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo">
+                    <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <span class="logo-text">ExamPlatform</span>
+                </div>
+                <p>منصة الاختبارات الذكية - حل متكامل لإدارة الاختبارات الإلكترونية في المؤسسات التعليمية. مصممة بأحدث التقنيات لتوفير تجربة سلسة وآمنة.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="footer-title">المنصة</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">المميزات</a></li>
+                    <li><a href="#roles">الأدوار</a></li>
+                    <li><a href="#how-it-works">كيف تعمل</a></li>
+                    <li><a href="#demo">تجربة</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-title">الدعم</h4>
+                <ul class="footer-links">
+                    <li><a href="#">مركز المساعدة</a></li>
+                    <li><a href="#">الأسئلة الشائعة</a></li>
+                    <li><a href="#">تواصل معنا</a></li>
+                    <li><a href="#">الشروط والأحكام</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="footer-title">الحساب</h4>
+                <ul class="footer-links">
+                    <li><a href="login.html">تسجيل الدخول</a></li>
+                    <li><a href="register.html">إنشاء حساب</a></li>
+                    <li><a href="forgot-password.html">نسيت كلمة المرور</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 منصة الاختبارات الذكية. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <script src="shared/supabase-client.js"></script>
+    <script src="shared/app.js"></script>
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Animated counters
+        const counters = document.querySelectorAll('.stat-number');
+        const observerOptions = { threshold: 0.5 };
+
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counter = entry.target;
+                    const target = parseInt(counter.getAttribute('data-count'));
+                    const duration = 2000;
+                    const step = target / (duration / 16);
+                    let current = 0;
+
+                    const timer = setInterval(() => {
+                        current += step;
+                        if (current >= target) {
+                            counter.textContent = target.toLocaleString();
+                            clearInterval(timer);
+                        } else {
+                            counter.textContent = Math.floor(current).toLocaleString();
+                        }
+                    }, 16);
+
+                    counterObserver.unobserve(counter);
+                }
+            });
+        }, observerOptions);
+
+        counters.forEach(counter => counterObserver.observe(counter));
+
+        // Demo login
+        function demoLogin(role) {
+            localStorage.setItem('demo_role', role);
+            localStorage.setItem('demo_mode', 'true');
+            return true;
+        }
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            // Simple alert for demo - can be expanded
+            alert('القائمة الجانبية - يمكن تطويرها حسب الحاجة');
+        }
+
+        // Animate bars on scroll
+        const demoBars = document.querySelectorAll('.demo-bar-fill');
+        const barObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const bar = entry.target;
+                    const width = bar.style.width;
+                    bar.style.width = '0';
+                    setTimeout(() => { bar.style.width = width; }, 100);
+                    barObserver.unobserve(bar);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        demoBars.forEach(bar => barObserver.observe(bar));
+    </script>
 </body>
 </html>

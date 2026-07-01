@@ -3,466 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الطلاب | منصة الاختبارات</title>
+    <title>طلابي - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; }
+        .search-box .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .student-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 10px; transition: var(--transition); }
+        .student-row:hover { background: var(--primary-50); }
+        .student-info { display: flex; align-items: center; gap: 14px; }
+        .student-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem; }
+        .student-details h4 { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+        .student-details p { font-size: 0.875rem; color: var(--text-muted); }
+        .student-stats { display: flex; gap: 24px; }
+        .student-stat { text-align: center; }
+        .student-stat .value { font-size: 1.25rem; font-weight: 800; color: var(--primary-600); }
+        .student-stat .label { font-size: 0.75rem; color: var(--text-muted); }
+        .performance-bar { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.875rem; color: white; }
+        .perf-excellent { background: linear-gradient(135deg, #10b981, #34d399); }
+        .perf-good { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .perf-average { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .perf-poor { background: linear-gradient(135deg, #ef4444, #f87171); }
+        .group-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.625rem; font-weight: 700; background: var(--primary-100); color: var(--primary-700); margin-left: 4px; }
+        .tabs-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-pill { padding: 8px 20px; border-radius: 40px; border: none; background: var(--bg-body); color: var(--text-secondary); font-weight: 600; cursor: pointer; font-family: inherit; transition: var(--transition); }
+        .tab-pill:hover { background: var(--primary-50); color: var(--primary-600); }
+        .tab-pill.active { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); color: white; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+    <div class="app-layout">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>منصة الاختبارات</span>
-                </div>
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>الرئيسية</span>
-                </a>
-                <a href="create-exam.html" class="nav-item">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>إنشاء اختبار</span>
-                </a>
-                <a href="questions.html" class="nav-item">
-                    <i class="fas fa-database"></i>
-                    <span>بنك الأسئلة</span>
-                </a>
-                <a href="submissions.html" class="nav-item">
-                    <i class="fas fa-check-double"></i>
-                    <span>التسليمات</span>
-                </a>
-                <a href="students.html" class="nav-item active">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>الطلاب</span>
-                </a>
-                <a href="groups.html" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>المجموعات</span>
-                </a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="create-exam.html" class="nav-item"><span class="nav-icon">➕</span><span>إنشاء امتحان</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="students.html" class="nav-item active"><span class="nav-icon">👨‍🎓</span><span>الطلاب</span></a>
+                <a href="submissions.html" class="nav-item"><span class="nav-icon">📋</span><span>التسليمات</span></a>
+                <a href="monitor.html" class="nav-item"><span class="nav-icon">👁️</span><span>المراقبة</span></a>
             </nav>
             <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
-                    <div class="user-details">
-                        <div class="user-name" id="userName">جاري التحميل...</div>
-                        <div class="user-role">معلم</div>
-                    </div>
-                </div>
-                <button class="btn btn-outline btn-sm" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>تسجيل الخروج</span>
-                </button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <header class="main-header">
-                <h1 class="page-title">إدارة الطلاب</h1>
-                <div class="header-actions">
-                    <button class="btn btn-icon" id="themeToggle"><i class="fas fa-moon"></i></button>
-                    <button class="btn btn-primary btn-sm" onclick="openStudentModal()">
-                        <i class="fas fa-plus"></i> طالب جديد
-                    </button>
-                </div>
-            </header>
-
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="fas fa-users"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="totalStudents">0</div>
-                        <div class="stat-label">إجمالي الطلاب</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-success"><i class="fas fa-user-check"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="activeStudents">0</div>
-                        <div class="stat-label">نشطون</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="pendingStudents">0</div>
-                        <div class="stat-label">بانتظار التفعيل</div>
-                    </div>
+            <div class="top-bar">
+                <h1 class="page-title">👨‍🎓 طلابي</h1>
+                <div class="user-menu">
+                    <button class="btn btn-secondary" onclick="exportStudents()">📥 تصدير</button>
                 </div>
             </div>
 
-            <!-- Filters -->
-            <div class="card filter-card">
-                <div class="card-body">
-                    <div class="filter-row">
-                        <div class="form-group">
-                            <label class="form-label">البحث</label>
-                            <div class="search-box">
-                                <i class="fas fa-search"></i>
-                                <input type="text" class="form-input" id="searchInput" placeholder="ابحث بالاسم أو البريد..." oninput="debounceLoad()">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">الصف</label>
-                            <select class="form-select" id="filterGrade" onchange="loadStudents()">
-                                <option value="">كل الصفوف</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">الحالة</label>
-                            <select class="form-select" id="filterStatus" onchange="loadStudents()">
-                                <option value="">الكل</option>
-                                <option value="active">نشط</option>
-                                <option value="inactive">غير نشط</option>
-                                <option value="pending">بانتظار</option>
-                            </select>
-                        </div>
-                    </div>
+            <div class="content-wrapper">
+                <!-- Tabs -->
+                <div class="tabs-row">
+                    <button class="tab-pill active" onclick="filterByGroup('all', this)">الكل</button>
+                    <button class="tab-pill" onclick="filterByGroup('ungrouped', this)">غير مرتبطين</button>
                 </div>
-            </div>
 
-            <!-- Students Table -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title"><i class="fas fa-list"></i> قائمة الطلاب</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-outline btn-sm" onclick="exportStudents()">
-                            <i class="fas fa-file-export"></i> تصدير
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="importStudents()">
-                            <i class="fas fa-file-import"></i> استيراد
-                        </button>
+                <!-- Filters -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input" id="searchInput" placeholder="ابحث بالاسم أو البريد..." oninput="debounceSearch()">
+                    </div>
+                    <select class="form-select" id="groupFilter" onchange="loadStudents()" style="min-width: 180px;">
+                        <option value="all">كل المجموعات</option>
+                    </select>
+                </div>
+
+                <!-- Students List -->
+                <div class="card">
+                    <div id="studentsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👨‍🎓</div>
+                            <p>جاري تحميل الطلاب...</p>
+                        </div>
                     </div>
                 </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>الطالب</th>
-                                <th>البريد الإلكتروني</th>
-                                <th>الهاتف</th>
-                                <th>الصف</th>
-                                <th>تاريخ التسجيل</th>
-                                <th>الاختبارات</th>
-                                <th>الحالة</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentsTable">
-                            <tr><td colspan="8" class="text-center"><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="pagination" id="pagination"></div>
             </div>
         </main>
     </div>
 
-    <!-- Student Modal -->
-    <div class="modal" id="studentModal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">إضافة طالب</h3>
-                <button class="btn btn-icon" onclick="closeStudentModal()"><i class="fas fa-times"></i></button>
+    <!-- Student Detail Modal -->
+    <div class="modal-overlay" id="studentModal">
+        <div class="modal-content" style="width: 700px; max-width: 95%;">
+            <h3>👨‍🎓 تفاصيل الطالب</h3>
+            <div id="studentDetail"></div>
+            <div style="margin-top: 20px;">
+                <h4 style="margin-bottom: 12px;">📊 أداء الامتحانات</h4>
+                <div id="studentAttempts"></div>
             </div>
-            <div class="modal-body">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label required">الاسم الكامل</label>
-                        <input type="text" class="form-input" id="studentName" placeholder="اسم الطالب">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label required">البريد الإلكتروني</label>
-                        <input type="email" class="form-input" id="studentEmail" placeholder="email@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">رقم الهاتف</label>
-                        <input type="tel" class="form-input" id="studentPhone" placeholder="05xxxxxxxx">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label required">الصف</label>
-                        <select class="form-select" id="studentGrade">
-                            <option value="">اختر الصف</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">تاريخ الميلاد</label>
-                        <input type="date" class="form-input" id="studentDob">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">الجنس</label>
-                        <select class="form-select" id="studentGender">
-                            <option value="">اختر</option>
-                            <option value="male">ذكر</option>
-                            <option value="female">أنثى</option>
-                        </select>
-                    </div>
-                    <div class="form-group full-width">
-                        <label class="form-label">ملاحظات</label>
-                        <textarea class="form-input" id="studentNotes" rows="2" placeholder="ملاحظات إضافية..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeStudentModal()">إلغاء</button>
-                <button class="btn btn-primary" onclick="saveStudent()">حفظ</button>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="App.Modal.close('studentModal')">إغلاق</button>
             </div>
         </div>
     </div>
 
     <script src="../shared/supabase-client.js"></script>
-    <script src="../shared/security.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-    (function() {
-        'use strict';
-
-        let editingStudentId = null;
-        let allStudents = [];
-        let debounceTimer = null;
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            await App.init();
-            const user = examAuth.getUser();
-            if (!user) { window.location.href = '../login.html'; return; }
-            const role = user.role || user.user_metadata?.role;
-            if (role !== 'teacher' && role !== 'admin') {
-                window.location.href = '../student/dashboard.html'; return;
-            }
-            document.getElementById('userName').textContent = user.name || user.email || 'معلم';
-            await loadGrades();
-            await loadStudents();
-        });
-
-        async function loadGrades() {
-            try {
-                const { data: grades } = await examDB.from('exam_grades').select('id, name').order('name');
-                const gradeSelects = document.querySelectorAll('#filterGrade, #studentGrade');
-                gradeSelects.forEach(select => {
-                    const currentOptions = select.innerHTML;
-                    select.innerHTML = currentOptions + (grades || []).map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-                });
-            } catch (e) { console.error('Error loading grades:', e); }
+        const currentUser = getUser();
+        if (!currentUser || (currentUser.role !== 'teacher' && currentUser.role !== 'admin')) {
+            window.location.href = '../login.html';
         }
 
-        window.debounceLoad = function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(loadStudents, 500);
-        };
+        const teacherId = currentUser.id;
+        let allStudents = [];
+        let allGroups = [];
+        let currentGroupFilter = 'all';
 
-        window.loadStudents = async function() {
+        async function loadStudents() {
+            App.Loading.show('جاري تحميل الطلاب...');
             try {
-                const user = examAuth.getUser();
-                let query = examDB.from('exam_students')
-                    .select(`*, exam_grades(name)`)
-                    .eq('teacher_id', user.id)
-                    .order('created_at', { ascending: false });
+                // Get teacher's groups
+                const { data: groups } = await sb.from(TABLES.groups).select('*').eq('teacher_id', teacherId);
+                allGroups = groups || [];
+                const groupIds = allGroups.map(g => g.id);
 
-                const gradeFilter = document.getElementById('filterGrade').value;
-                const statusFilter = document.getElementById('filterStatus').value;
-                const searchFilter = document.getElementById('searchInput').value.trim();
+                // Get group filter
+                const filterGroupId = document.getElementById('groupFilter').value;
+                let memberQuery = sb.from(TABLES.group_members).select('student_id, group_id');
 
-                if (gradeFilter) query = query.eq('grade_id', gradeFilter);
-                if (statusFilter) query = query.eq('status', statusFilter);
-
-                const { data: students, error } = await query;
-                if (error) throw error;
-                allStudents = students || [];
-
-                if (searchFilter) {
-                    allStudents = allStudents.filter(s => 
-                        s.name?.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                        s.email?.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                        s.phone?.includes(searchFilter)
-                    );
+                if (filterGroupId !== 'all') {
+                    memberQuery = memberQuery.eq('group_id', filterGroupId);
+                } else if (groupIds.length > 0) {
+                    memberQuery = memberQuery.in('group_id', groupIds);
                 }
 
-                // Stats
-                document.getElementById('totalStudents').textContent = students?.length || 0;
-                document.getElementById('activeStudents').textContent = students?.filter(s => s.status === 'active').length || 0;
-                document.getElementById('pendingStudents').textContent = students?.filter(s => s.status === 'pending').length || 0;
+                const { data: members } = await memberQuery;
+                const studentIds = [...new Set(members?.map(m => m.student_id) || [])];
 
-                renderStudentsTable(allStudents);
+                if (studentIds.length === 0) {
+                    document.getElementById('studentsList').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👨‍🎓</div>
+                            <p>لا يوجد طلاب في مجموعاتك</p>
+                            <a href="groups.html" class="btn btn-primary" style="margin-top: 16px;">👥 إدارة المجموعات</a>
+                        </div>
+                    `;
+                    App.Loading.hide();
+                    return;
+                }
+
+                // Get student details
+                const { data: students } = await sb.from(TABLES.users)
+                    .select('*')
+                    .in('id', studentIds)
+                    .eq('role', 'student');
+
+                // Get attempts for each student
+                const { data: teacherExams } = await sb.from(TABLES.exams).select('id').eq('teacher_id', teacherId);
+                const examIds = teacherExams?.map(e => e.id) || [];
+
+                let attempts = [];
+                if (examIds.length > 0) {
+                    const { data: attData } = await sb.from(TABLES.attempts)
+                        .select('student_id, score, total_points, exam_id, created_at')
+                        .in('exam_id', examIds)
+                        .in('student_id', studentIds);
+                    attempts = attData || [];
+                }
+
+                // Build student data with stats
+                allStudents = (students || []).map(s => {
+                    const studentAttempts = attempts.filter(a => a.student_id === s.id);
+                    const avgScore = studentAttempts.length > 0
+                        ? Math.round(studentAttempts.reduce((sum, a) => sum + (a.score / a.total_points * 100), 0) / studentAttempts.length)
+                        : 0;
+                    const studentGroups = members?.filter(m => m.student_id === s.id).map(m => m.group_id) || [];
+                    return { ...s, attempts: studentAttempts.length, avgScore, groups: studentGroups };
+                });
+
+                renderStudents(allStudents);
+                updateGroupFilter();
+
             } catch (error) {
-                console.error('Error loading students:', error);
-                document.getElementById('studentsTable').innerHTML = '<tr><td colspan="8" class="text-center text-error">حدث خطأ</td></tr>';
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
             }
-        };
+            App.Loading.hide();
+        }
 
-        async function renderStudentsTable(students) {
-            const tbody = document.getElementById('studentsTable');
-            if (!students.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center"><div class="empty-state"><i class="fas fa-inbox"></i><p>لا يوجد طلاب</p></div></td></tr>';
+        function renderStudents(students) {
+            const container = document.getElementById('studentsList');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = students.filter(s => 
+                !search || s.name?.toLowerCase().includes(search) || s.email?.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👨‍🎓</div>
+                        <p>لا يوجد طلاب مطابقين</p>
+                    </div>
+                `;
                 return;
             }
 
-            // Get exam counts
-            const user = examAuth.getUser();
-            const { data: attempts } = await examDB.from('exam_attempts')
-                .select('student_id, id')
-                .eq('teacher_id', user.id);
-            const attemptCounts = {};
-            attempts?.forEach(a => {
-                attemptCounts[a.student_id] = (attemptCounts[a.student_id] || 0) + 1;
-            });
+            container.innerHTML = filtered.map(s => {
+                const perfClass = s.avgScore >= 90 ? 'perf-excellent' : s.avgScore >= 70 ? 'perf-good' : s.avgScore >= 50 ? 'perf-average' : 'perf-poor';
+                const groupNames = s.groups.map(gid => {
+                    const g = allGroups.find(grp => grp.id === gid);
+                    return g ? `<span class="group-tag">${App.sanitizeHtml(g.name)}</span>` : '';
+                }).join('');
 
-            tbody.innerHTML = students.map(s => {
-                const statusClass = s.status === 'active' ? 'badge-success' : 
-                                   s.status === 'pending' ? 'badge-warning' : 'badge-secondary';
-                const statusText = s.status === 'active' ? 'نشط' : 
-                                  s.status === 'pending' ? 'بانتظار' : 'غير نشط';
                 return `
-                    <tr>
-                        <td>
-                            <div class="student-info">
-                                <div class="student-avatar">${s.name?.charAt(0) || '?'}</div>
-                                <div class="student-name">${s.name || 'Unknown'}</div>
+                    <div class="student-row" onclick="viewStudent(${s.id})" style="cursor: pointer;">
+                        <div class="student-info">
+                            <div class="student-avatar">${s.name?.charAt(0) || '?'}</div>
+                            <div class="student-details">
+                                <h4>${App.sanitizeHtml(s.name)}</h4>
+                                <p>${s.email || s.phone || ''} ${groupNames}</p>
                             </div>
-                        </td>
-                        <td>${s.email || '-'}</td>
-                        <td>${s.phone || '-'}</td>
-                        <td>${s.exam_grades?.name || '-'}</td>
-                        <td>${App.formatDate(s.created_at)}</td>
-                        <td>${attemptCounts[s.id] || 0}</td>
-                        <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-icon btn-sm" onclick="editStudent('${s.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-icon btn-sm" onclick="viewStudent('${s.id}')" title="عرض"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-icon btn-sm text-error" onclick="deleteStudent('${s.id}')" title="حذف"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="student-stats">
+                            <div class="student-stat">
+                                <div class="value">${s.attempts}</div>
+                                <div class="label">امتحان</div>
                             </div>
-                        </td>
-                    </tr>
+                            <div class="student-stat">
+                                <div class="value">${s.avgScore}%</div>
+                                <div class="label">متوسط</div>
+                            </div>
+                            <div class="performance-bar ${perfClass}">${s.avgScore}%</div>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
 
-        window.openStudentModal = function() {
-            editingStudentId = null;
-            document.getElementById('modalTitle').textContent = 'إضافة طالب';
-            document.getElementById('studentName').value = '';
-            document.getElementById('studentEmail').value = '';
-            document.getElementById('studentPhone').value = '';
-            document.getElementById('studentGrade').value = '';
-            document.getElementById('studentDob').value = '';
-            document.getElementById('studentGender').value = '';
-            document.getElementById('studentNotes').value = '';
-            document.getElementById('studentModal').classList.add('active');
-        };
+        const debounceSearch = App.debounce(() => renderStudents(allStudents), 300);
 
-        window.closeStudentModal = function() {
-            document.getElementById('studentModal').classList.remove('active');
-        };
+        function updateGroupFilter() {
+            const select = document.getElementById('groupFilter');
+            select.innerHTML = '<option value="all">كل المجموعات</option>' + 
+                allGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        }
 
-        window.saveStudent = async function() {
+        function filterByGroup(type, btn) {
+            currentGroupFilter = type;
+            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadStudents();
+        }
+
+        async function viewStudent(studentId) {
+            const student = allStudents.find(s => s.id === studentId);
+            if (!student) return;
+
+            App.Loading.show('جاري التحميل...');
             try {
-                const name = document.getElementById('studentName').value.trim();
-                const email = document.getElementById('studentEmail').value.trim();
-                const phone = document.getElementById('studentPhone').value.trim();
-                const gradeId = document.getElementById('studentGrade').value;
-                const dob = document.getElementById('studentDob').value;
-                const gender = document.getElementById('studentGender').value;
-                const notes = document.getElementById('studentNotes').value.trim();
+                document.getElementById('studentDetail').innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                        <div class="student-avatar" style="width: 64px; height: 64px; font-size: 1.5rem;">${student.name?.charAt(0) || '?'}</div>
+                        <div>
+                            <h3 style="font-size: 1.25rem; font-weight: 700;">${App.sanitizeHtml(student.name)}</h3>
+                            <p style="color: var(--text-muted);">${student.email || ''} | ${student.phone || ''}</p>
+                            <div style="margin-top: 6px;">${student.groups.map(gid => {
+                                const g = allGroups.find(grp => grp.id === gid);
+                                return g ? `<span class="group-tag">${App.sanitizeHtml(g.name)}</span>` : '';
+                            }).join('')}</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+                        <div style="background: var(--bg-body); padding: 16px; border-radius: var(--radius-md); text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">${student.attempts}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">امتحان منجز</div>
+                        </div>
+                        <div style="background: var(--bg-body); padding: 16px; border-radius: var(--radius-md); text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">${student.avgScore}%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">متوسط الأداء</div>
+                        </div>
+                        <div style="background: var(--bg-body); padding: 16px; border-radius: var(--radius-md); text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-600);">${student.groups.length}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">مجموعة</div>
+                        </div>
+                    </div>
+                `;
 
-                if (!name || !email || !gradeId) {
-                    App.toast('يرجى ملء الحقول المطلوبة', 'error');
-                    return;
-                }
+                // Load attempts
+                const { data: teacherExams } = await sb.from(TABLES.exams).select('id, title').eq('teacher_id', teacherId);
+                const examMap = {};
+                teacherExams?.forEach(e => examMap[e.id] = e.title);
 
-                const user = examAuth.getUser();
-                const payload = {
-                    teacher_id: user.id,
-                    name, email, phone, grade_id: gradeId,
-                    date_of_birth: dob || null,
-                    gender: gender || null,
-                    notes: notes || null,
-                    status: 'active'
-                };
-
-                if (editingStudentId) {
-                    const { error } = await examDB.from('exam_students')
-                        .update(payload)
-                        .eq('id', editingStudentId);
-                    if (error) throw error;
-                    App.toast('تم تحديث بيانات الطالب');
-                } else {
-                    payload.created_at = new Date().toISOString();
-                    const { error } = await examDB.from('exam_students').insert(payload);
-                    if (error) throw error;
-                    App.toast('تم إضافة الطالب بنجاح');
-                }
-
-                closeStudentModal();
-                await loadStudents();
-            } catch (error) {
-                console.error('Error saving student:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
-
-        window.editStudent = async function(id) {
-            try {
-                const { data: student, error } = await examDB.from('exam_students')
+                const { data: attempts } = await sb.from(TABLES.attempts)
                     .select('*')
-                    .eq('id', id)
-                    .single();
-                if (error) throw error;
+                    .eq('student_id', studentId)
+                    .order('created_at', { ascending: false });
 
-                editingStudentId = id;
-                document.getElementById('modalTitle').textContent = 'تعديل طالب';
-                document.getElementById('studentName').value = student.name || '';
-                document.getElementById('studentEmail').value = student.email || '';
-                document.getElementById('studentPhone').value = student.phone || '';
-                document.getElementById('studentGrade').value = student.grade_id || '';
-                document.getElementById('studentDob').value = student.date_of_birth || '';
-                document.getElementById('studentGender').value = student.gender || '';
-                document.getElementById('studentNotes').value = student.notes || '';
-                document.getElementById('studentModal').classList.add('active');
-            } catch (error) {
-                console.error('Error loading student:', error);
-                App.toast('حدث خطأ', 'error');
-            }
-        };
-
-        window.viewStudent = function(id) {
-            window.location.href = `student-profile.html?id=${id}`;
-        };
-
-        window.deleteStudent = function(id) {
-            App.confirm('هل أنت متأكد من حذف هذا الطالب؟', async () => {
-                try {
-                    await examDB.from('exam_students').delete().eq('id', id);
-                    App.toast('تم حذف الطالب');
-                    await loadStudents();
-                } catch (error) {
-                    console.error('Error deleting student:', error);
-                    App.toast('حدث خطأ', 'error');
+                const attemptsContainer = document.getElementById('studentAttempts');
+                if (!attempts || attempts.length === 0) {
+                    attemptsContainer.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>لا توجد محاولات</p></div>';
+                } else {
+                    attemptsContainer.innerHTML = `
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>الامتحان</th><th>الدرجة</th><th>النسبة</th><th>الحالة</th><th>التاريخ</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${attempts.map(a => {
+                                        const pct = Math.round((a.score / a.total_points) * 100);
+                                        const status = pct >= 60 ? '✅ ناجح' : '❌ راسب';
+                                        return `
+                                            <tr>
+                                                <td>${App.sanitizeHtml(examMap[a.exam_id] || 'غير معروف')}</td>
+                                                <td><strong>${a.score}/${a.total_points}</strong></td>
+                                                <td>
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <div class="progress-bar" style="width: 60px; height: 6px;"><div class="progress-fill" style="width: ${pct}%; background: ${pct >= 60 ? 'var(--success)' : 'var(--danger)'}"></div></div>
+                                                        <span>${pct}%</span>
+                                                    </div>
+                                                </td>
+                                                <td>${status}</td>
+                                                <td>${App.DateTime.dateOnly(a.created_at)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
                 }
-            });
-        };
 
-        window.exportStudents = function() {
-            App.toast('جاري تصدير البيانات...');
-            setTimeout(() => App.toast('تم التصدير'), 1000);
-        };
+                App.Modal.open('studentModal');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+            App.Loading.hide();
+        }
 
-        window.importStudents = function() {
-            App.toast('سيتم دعم الاستيراد قريباً');
-        };
+        function exportStudents() {
+            const data = allStudents.map(s => ({
+                الاسم: s.name,
+                البريد: s.email,
+                الهاتف: s.phone,
+                الامتحانات: s.attempts,
+                المتوسط: s.avgScore + '%',
+                المجموعات: s.groups.length
+            }));
+            App.exportCSV(data, 'my_students_export');
+        }
 
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await examAuth.logout();
-            window.location.href = '../login.html';
-        });
-    })();
+        loadStudents();
     </script>
 </body>
 </html>
