@@ -1,227 +1,528 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - Admin | Exam Platform</title>
+    <title>لوحة تحكم المدير - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 1rem; }
-        .stat-icon { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; }
-        .stat-icon.blue { background: #3b82f6; }
-        .stat-icon.green { background: #10b981; }
-        .stat-icon.orange { background: #f59e0b; }
-        .stat-icon.red { background: #ef4444; }
-        .stat-icon.purple { background: #8b5cf6; }
-        .stat-info h3 { font-size: 1.8rem; margin: 0; color: var(--text-primary); }
-        .stat-info p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
-        .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .chart-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .chart-card h3 { margin: 0 0 1rem 0; color: var(--text-primary); }
-        .recent-activity { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .activity-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); }
+        .impersonation-bar {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            padding: 10px 24px;
+            text-align: center;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+        }
+        .impersonation-bar.active { display: flex; }
+        .impersonation-bar button {
+            background: white;
+            color: var(--danger);
+            border: none;
+            padding: 6px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .impersonation-bar + .app-layout {
+            margin-top: 48px;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 16px;
+        }
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
         .activity-item:last-child { border-bottom: none; }
-        .activity-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; }
-        .activity-info { flex: 1; }
-        .activity-info p { margin: 0; font-size: 0.9rem; }
-        .activity-time { font-size: 0.75rem; color: var(--text-secondary); }
-        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+        .activity-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        .activity-content { flex: 1; }
+        .activity-title {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.875rem;
+        }
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .quick-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .quick-action-btn:hover {
+            background: var(--primary-50);
+            border-color: var(--primary-200);
+            transform: translateY(-2px);
+        }
+        .quick-action-icon {
+            font-size: 1.75rem;
+        }
+        .pending-questions-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .pending-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            background: var(--bg-body);
+            margin-bottom: 8px;
+        }
+        .pending-item-info h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .pending-item-info p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .pending-actions {
+            display: flex;
+            gap: 6px;
+        }
     </style>
 </head>
 <body>
-    <div class="admin-layout">
+    <!-- Impersonation Bar -->
+    <div class="impersonation-bar" id="impersonationBar">
+        <span>👤 أنت الآن تتصفح كـ: <strong id="impersonatedName"></strong></span>
+        <button onclick="stopImpersonation(); location.reload();">⬅️ العودة للأدمن</button>
+    </div>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
-                <span class="badge">Admin</span>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html" class="active"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
-                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
-                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
-                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
-                <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+                <a href="dashboard.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>لوحة التحكم</span>
+                </a>
+                <a href="users.html" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>المستخدمين</span>
+                </a>
+                <a href="classes.html" class="nav-item">
+                    <span class="nav-icon">🏫</span>
+                    <span>الصفوف</span>
+                </a>
+                <a href="exams.html" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>الامتحانات</span>
+                </a>
+                <a href="groups.html" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>المجموعات</span>
+                </a>
+                <a href="questions.html" class="nav-item">
+                    <span class="nav-icon">❓</span>
+                    <span>الأسئلة</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>التقارير</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>الإعدادات</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
-                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
-                <div class="super-access">
-                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
-                    <select onchange="switchDashboard(this.value)">
-                        <option value="admin" selected>Admin</option>
-                        <option value="../teacher/dashboard.html">Teacher</option>
-                        <option value="../student/dashboard.html">Student</option>
-                    </select>
-                </div>
-                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);">
+                    <span class="nav-icon">🚪</span>
+                    <span>تسجيل الخروج</span>
+                </button>
             </div>
         </aside>
-        
+
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="page-header">
-                <h1>لوحة تحكم النظام</h1>
-                <div class="user-info">
-                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+            <div class="top-bar">
+                <h1 class="page-title">👑 لوحة تحكم المدير</h1>
+                <div class="user-menu">
+                    <span id="adminName">مدير النظام</span>
+                    <div class="user-avatar" id="adminAvatar">👑</div>
                 </div>
-            </header>
-            
+            </div>
+
             <div class="content-wrapper">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <h3 id="totalUsers">0</h3>
-                            <p>إجمالي المستخدمين</p>
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                    <div class="stat-card skeleton" style="height: 120px;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <!-- Charts Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">📈 إحصائيات المنصة</h3>
+                                <p class="card-subtitle">نظرة عامة على أداء المنصة</p>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="statsChart"></canvas>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
-                        <div class="stat-info">
-                            <h3 id="totalStudents">0</h3>
-                            <p>الطلاب</p>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">⚡ إجراءات سريعة</h3>
+                                <p class="card-subtitle">وصول سريع للمهام الشائعة</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <div class="stat-info">
-                            <h3 id="totalTeachers">0</h3>
-                            <p>المعلمين</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple"><i class="fas fa-file-alt"></i></div>
-                        <div class="stat-info">
-                            <h3 id="totalExams">0</h3>
-                            <p>الاختبارات</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red"><i class="fas fa-clipboard-check"></i></div>
-                        <div class="stat-info">
-                            <h3 id="totalAttempts">0</h3>
-                            <p>المحاولات</p>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="location.href='users.html'">
+                                <span class="quick-action-icon">➕</span>
+                                <span>مستخدم جديد</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='../teacher/create-exam.html'">
+                                <span class="quick-action-icon">📝</span>
+                                <span>امتحان جديد</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='../add-question.html'">
+                                <span class="quick-action-icon">❓</span>
+                                <span>سؤال جديد</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="location.href='reports.html'">
+                                <span class="quick-action-icon">📊</span>
+                                <span>تقرير شامل</span>
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="charts-row">
-                    <div class="chart-card">
-                        <h3>إحصائيات الاختبارات الشهرية</h3>
-                        <canvas id="examsChart"></canvas>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                    <!-- Pending Questions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">⏳ أسئلة بانتظار المراجعة</h3>
+                                <p class="card-subtitle">أسئلة تحتاج موافقتك للنشر</p>
+                            </div>
+                            <a href="questions.html" class="btn btn-sm btn-ghost">عرض الكل</a>
+                        </div>
+                        <div class="pending-questions-list" id="pendingQuestions">
+                            <div class="empty-state" style="padding: 40px;">
+                                <div class="empty-state-icon">⏳</div>
+                                <p>لا توجد أسئلة بانتظار المراجعة</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="chart-card">
-                        <h3>توزيع المستخدمين</h3>
-                        <canvas id="usersChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="recent-activity">
-                    <h3><i class="fas fa-clock"></i> النشاط الأخير</h3>
-                    <div id="activityList">
-                        <div class="activity-item">
-                            <div class="activity-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                            <div class="activity-info"><p>جاري التحميل...</p></div>
+
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">🔄 آخر النشاطات</h3>
+                                <p class="card-subtitle">آخر الأحداث على المنصة</p>
+                            </div>
+                        </div>
+                        <div id="recentActivity">
+                            <div class="activity-item">
+                                <div class="activity-avatar">📚</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">تم تحميل لوحة التحكم</div>
+                                    <div class="activity-time">الآن</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-    
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        async function initDashboard() {
-            App.loading(true);
-            
+        // Auth check
+        const user = getUser();
+        if (!user || (user.role !== 'admin' && !user._impersonatedBy)) {
+            window.location.href = '../login.html';
+        }
+
+        // Show impersonation bar if active
+        if (isAdminViewingAs()) {
+            const bar = document.getElementById('impersonationBar');
+            const name = document.getElementById('impersonatedName');
+            bar.classList.add('active');
+            name.textContent = user.name + ' (' + (user.role === 'teacher' ? 'معلم' : 'طالب') + ')';
+        }
+
+        // Update admin name
+        const originalUser = getOriginalUser();
+        if (originalUser) {
+            document.getElementById('adminName').textContent = originalUser.name;
+        } else if (user) {
+            document.getElementById('adminName').textContent = user.name;
+        }
+
+        // Load stats
+        async function loadStats() {
             try {
-                const user = await examAuth.getUser();
-                if (!user || user.role !== 'admin') {
-                    window.location.href = '../login.html';
-                    return;
-                }
-                document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
-                
-                const [users, students, teachers, exams, attempts] = await Promise.all([
-                    examDB.from('exam_users').select('id', { count: 'exact', head: true }),
-                    examDB.from('exam_students').select('id', { count: 'exact', head: true }),
-                    examDB.from('exam_teachers').select('id', { count: 'exact', head: true }),
-                    examDB.from('exam_exams').select('id', { count: 'exact', head: true }),
-                    examDB.from('exam_attempts').select('id', { count: 'exact', head: true })
-                ]);
-                
-                document.getElementById('totalUsers').textContent = users.count || 0;
-                document.getElementById('totalStudents').textContent = students.count || 0;
-                document.getElementById('totalTeachers').textContent = teachers.count || 0;
-                document.getElementById('totalExams').textContent = exams.count || 0;
-                document.getElementById('totalAttempts').textContent = attempts.count || 0;
-                
-                const examsCtx = document.getElementById('examsChart').getContext('2d');
-                new Chart(examsCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
-                        datasets: [{
-                            label: 'الاختبارات',
-                            data: [12, 19, 15, 25, 22, 30],
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: { responsive: true, plugins: { legend: { display: false } } }
-                });
-                
-                const usersCtx = document.getElementById('usersChart').getContext('2d');
-                new Chart(usersCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['طلاب', 'معلمين', 'أدمن'],
-                        datasets: [{
-                            data: [students.count || 0, teachers.count || 0, 1],
-                            backgroundColor: ['#10b981', '#f59e0b', '#8b5cf6']
-                        }]
-                    },
-                    options: { responsive: true }
-                });
-                
-                const { data: recentAttempts } = await examDB.from('exam_attempts')
-                    .select('*, exam_students(name), exam_exams(title)')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                    
-                const activityList = document.getElementById('activityList');
-                if (recentAttempts && recentAttempts.length > 0) {
-                    activityList.innerHTML = recentAttempts.map(attempt => `
-                        <div class="activity-item">
-                            <div class="activity-icon"><i class="fas fa-clipboard-check"></i></div>
-                            <div class="activity-info">
-                                <p>${attempt.exam_students?.name || 'طالب'} أكمل اختبار ${attempt.exam_exams?.title || ''}</p>
-                                <span class="activity-time">${App.formatDate(attempt.created_at)}</span>
-                            </div>
+                const stats = await fetchAdminStats();
+
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-icon primary">👥</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalUsers)}</h3>
+                            <p>إجمالي المستخدمين</p>
+                            <span class="stat-trend up">↑ ${stats.teachers} معلم / ${stats.students} طالب</span>
                         </div>
-                    `).join('');
-                } else {
-                    activityList.innerHTML = '<div class="activity-item"><div class="activity-info"><p>لا يوجد نشاط حديث</p></div></div>';
-                }
-                
-            } catch (err) {
-                console.error(err);
-                App.showToast('خطأ في تحميل البيانات', 'error');
-            } finally {
-                App.loading(false);
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">📝</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalExams)}</h3>
+                            <p>الامتحانات</p>
+                            <span class="stat-trend up">↑ نشطة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">⏳</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.pendingQuestions)}</h3>
+                            <p>أسئلة بانتظار المراجعة</p>
+                            <span class="stat-trend down">يحتاج موافقة</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon danger">👥</div>
+                        <div class="stat-content">
+                            <h3>${App.formatNumber(stats.totalGroups)}</h3>
+                            <p>المجموعات</p>
+                            <span class="stat-trend up">↑ نشطة</span>
+                        </div>
+                    </div>
+                `;
+
+                // Init chart
+                initChart(stats);
+            } catch (error) {
+                console.error('Error loading stats:', error);
             }
         }
-        
-        function switchDashboard(url) {
-            if (url !== 'admin') window.location.href = url;
+
+        function initChart(stats) {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['مستخدمين', 'معلمين', 'طلاب', 'امتحانات', 'مجموعات'],
+                    datasets: [{
+                        label: 'العدد',
+                        data: [stats.totalUsers, stats.teachers, stats.students, stats.totalExams, stats.totalGroups],
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
         }
-        
-        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        // Load pending questions
+        async function loadPendingQuestions() {
+            try {
+                const questions = await fetchQuestions({ status: 'pending' });
+                const container = document.getElementById('pendingQuestions');
+
+                if (!questions || questions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="padding: 40px;">
+                            <div class="empty-state-icon">✅</div>
+                            <p>لا توجد أسئلة بانتظار المراجعة</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = questions.slice(0, 5).map(q => `
+                    <div class="pending-item">
+                        <div class="pending-item-info">
+                            <h4>${App.sanitizeHtml(q.question_text?.substring(0, 50) || 'سؤال بدون نص')}...</h4>
+                            <p>${getTypeText(q.type)} | ${q.subject_name || 'مادة غير محددة'}</p>
+                        </div>
+                        <div class="pending-actions">
+                            <button class="btn btn-sm btn-success" onclick="approveQuestion(${q.id})">✓</button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectQuestion(${q.id})">✗</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading pending questions:', error);
+            }
+        }
+
+        async function approveQuestion(id) {
+            if (!await App.confirm('هل أنت متأكد من الموافقة على هذا السؤال؟')) return;
+            try {
+                const { error } = await sb.from(TABLES.questions).update({ status: 'active' }).eq('id', id);
+                if (error) throw error;
+                App.Toast.success('تمت الموافقة على السؤال');
+                loadPendingQuestions();
+                loadStats();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+        }
+
+        async function rejectQuestion(id) {
+            if (!await App.confirm('هل أنت متأكد من رفض هذا السؤال؟')) return;
+            try {
+                const { error } = await sb.from(TABLES.questions).update({ status: 'rejected' }).eq('id', id);
+                if (error) throw error;
+                App.Toast.success('تم رفض السؤال');
+                loadPendingQuestions();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+        }
+
+        // Load recent activity
+        async function loadRecentActivity() {
+            try {
+                const { data: recentUsers } = await sb.from(TABLES.users)
+                    .select('name, role, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                const { data: recentExams } = await sb.from(TABLES.exams)
+                    .select('title, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(3);
+
+                const activities = [];
+
+                if (recentUsers) {
+                    recentUsers.forEach(u => {
+                        activities.push({
+                            icon: u.role === 'teacher' ? '👨‍🏫' : u.role === 'student' ? '👨‍🎓' : '👑',
+                            title: `تسجيل ${u.role === 'teacher' ? 'معلم' : u.role === 'student' ? 'طالب' : 'مدير'} جديد: ${u.name}`,
+                            time: App.DateTime.relative(u.created_at)
+                        });
+                    });
+                }
+
+                if (recentExams) {
+                    recentExams.forEach(e => {
+                        activities.push({
+                            icon: '📝',
+                            title: `إنشاء امتحان جديد: ${e.title}`,
+                            time: App.DateTime.relative(e.created_at)
+                        });
+                    });
+                }
+
+                activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+                const container = document.getElementById('recentActivity');
+                if (activities.length === 0) {
+                    container.innerHTML = '<div class="activity-item"><div class="activity-content"><div class="activity-title">لا توجد نشاطات حديثة</div></div></div>';
+                    return;
+                }
+
+                container.innerHTML = activities.slice(0, 6).map(a => `
+                    <div class="activity-item">
+                        <div class="activity-avatar">${a.icon}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${a.title}</div>
+                            <div class="activity-time">${a.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
+        }
+
+        // Helper
+        function getTypeText(type) {
+            const types = { mcq: 'اختيار من متعدد', true_false: 'صح/خطأ', essay: 'مقالي', fill_blank: 'ملء فراغ' };
+            return types[type] || type;
+        }
+
+        // Init
+        loadStats();
+        loadPendingQuestions();
+        loadRecentActivity();
     </script>
 </body>
 </html>

@@ -1,313 +1,374 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المستخدمين - Admin | Exam Platform</title>
+    <title>إدارة المستخدمين - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
-        .toolbar input, .toolbar select { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); }
-        .toolbar input { flex: 1; min-width: 200px; }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: #3b82f6; color: #fff; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-warning { background: #f59e0b; color: #fff; }
-        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .data-table th, .data-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: var(--bg-secondary); font-weight: 600; }
-        .data-table tr:hover { background: var(--bg-secondary); }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
-        .status-active { background: #d1fae5; color: #065f46; }
-        .status-inactive { background: #fee2e2; color: #991b1b; }
-        .actions { display: flex; gap: 0.5rem; }
-        .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
-        .pagination button { padding: 0.5rem 1rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); border-radius: 8px; cursor: pointer; }
-        .pagination button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--card-bg); padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-header h3 { margin: 0; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary); }
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; }
+        .search-box .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .filter-select { min-width: 150px; }
+        .user-avatar-sm { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; }
+        .user-role-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .role-admin { background: #fee2e2; color: #991b1b; }
+        .role-teacher { background: #dbeafe; color: #1e40af; }
+        .role-student { background: #d1fae5; color: #065f46; }
+        .status-active { color: var(--success); }
+        .status-inactive { color: var(--danger); }
+        .action-btns { display: flex; gap: 4px; }
+        .action-btns button { padding: 6px 10px; font-size: 0.75rem; }
+        .modal-form { display: flex; flex-direction: column; gap: 16px; }
+        .modal-form .form-group { margin: 0; }
+        .tabs-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-pill { padding: 8px 20px; border-radius: 40px; border: none; background: var(--bg-body); color: var(--text-secondary); font-weight: 600; cursor: pointer; font-family: inherit; transition: var(--transition); }
+        .tab-pill:hover { background: var(--primary-50); color: var(--primary-600); }
+        .tab-pill.active { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); color: white; }
     </style>
 </head>
 <body>
-    <div class="admin-layout">
+    <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
-                <span class="badge">Admin</span>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="users.html" class="active"><i class="fas fa-users"></i> المستخدمين</a>
-                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
-                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
-                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
-                <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item active"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
             </nav>
             <div class="sidebar-footer">
-                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
-                <div class="super-access">
-                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
-                    <select onchange="switchDashboard(this.value)">
-                        <option value="admin" selected>Admin</option>
-                        <option value="../teacher/dashboard.html">Teacher</option>
-                        <option value="../student/dashboard.html">Student</option>
-                    </select>
-                </div>
-                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
-        
+
         <main class="main-content">
-            <header class="page-header">
-                <h1>إدارة المستخدمين</h1>
-                <div class="user-info">
-                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+            <div class="top-bar">
+                <h1 class="page-title">👥 إدارة المستخدمين</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="openAddModal()">➕ مستخدم جديد</button>
                 </div>
-            </header>
-            
+            </div>
+
             <div class="content-wrapper">
-                <div class="toolbar">
-                    <input type="text" id="searchInput" placeholder="بحث بالاسم أو البريد أو الهاتف..." oninput="debounceLoad()">
-                    <select id="roleFilter" onchange="loadUsers()">
-                        <option value="">كل الأدوار</option>
-                        <option value="student">طالب</option>
-                        <option value="teacher">معلم</option>
-                        <option value="admin">أدمن</option>
-                    </select>
-                    <select id="statusFilter" onchange="loadUsers()">
-                        <option value="">كل الحالات</option>
-                        <option value="active">نشط</option>
-                        <option value="inactive">معطل</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> مستخدم جديد</button>
+                <!-- Tabs -->
+                <div class="tabs-row">
+                    <button class="tab-pill active" onclick="filterByRole('all', this)">الكل</button>
+                    <button class="tab-pill" onclick="filterByRole('admin', this)">👑 مديرين</button>
+                    <button class="tab-pill" onclick="filterByRole('teacher', this)">👨‍🏫 معلمين</button>
+                    <button class="tab-pill" onclick="filterByRole('student', this)">👨‍🎓 طلاب</button>
                 </div>
-                
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>الاسم</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>الدور</th>
-                            <th>الحالة</th>
-                            <th>تاريخ التسجيل</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr><td colspan="7" style="text-align:center">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
-                
-                <div class="pagination" id="pagination"></div>
+
+                <!-- Filters -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input" id="searchInput" placeholder="ابحث بالاسم أو البريد أو رقم الهاتف..." oninput="debounceSearch()">
+                    </div>
+                    <select class="form-select filter-select" id="statusFilter" onchange="loadUsers()">
+                        <option value="all">كل الحالات</option>
+                        <option value="active">✅ نشط</option>
+                        <option value="inactive">❌ غير نشط</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="exportUsers()">📥 تصدير</button>
+                </div>
+
+                <!-- Users Table -->
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>اسم المستخدم</th>
+                                    <th>رقم الهاتف</th>
+                                    <th>الدور</th>
+                                    <th>الحالة</th>
+                                    <th>تاريخ التسجيل</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="skeleton" style="height: 40px;"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
-    
+
+    <!-- Add/Edit User Modal -->
     <div class="modal-overlay" id="userModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="modalTitle">مستخدم جديد</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <form id="userForm" onsubmit="saveUser(event)">
+        <div class="modal-content">
+            <h3 id="modalTitle">➕ مستخدم جديد</h3>
+            <form class="modal-form" id="userForm" onsubmit="saveUser(event)">
                 <input type="hidden" id="userId">
                 <div class="form-group">
-                    <label>الاسم الكامل</label>
-                    <input type="text" id="userName" required>
+                    <label class="form-label">الاسم الكامل</label>
+                    <input type="text" class="form-input" id="userName" required>
                 </div>
                 <div class="form-group">
-                    <label>البريد الإلكتروني</label>
-                    <input type="email" id="userEmail" required>
+                    <label class="form-label">اسم المستخدم</label>
+                    <input type="text" class="form-input" id="userUsername" required>
                 </div>
                 <div class="form-group">
-                    <label>رقم الهاتف</label>
-                    <input type="tel" id="userPhone">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-input" id="userEmail" required>
                 </div>
                 <div class="form-group">
-                    <label>الدور</label>
-                    <select id="userRole" required>
-                        <option value="student">طالب</option>
-                        <option value="teacher">معلم</option>
-                        <option value="admin">أدمن</option>
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="userPhone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الدور</label>
+                    <select class="form-select" id="userRole" required>
+                        <option value="student">👨‍🎓 طالب</option>
+                        <option value="teacher">👨‍🏫 معلم</option>
+                        <option value="admin">👑 مدير</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>الحالة</label>
-                    <select id="userStatus">
-                        <option value="active">نشط</option>
-                        <option value="inactive">معطل</option>
+                    <label class="form-label">الصف الدراسي</label>
+                    <select class="form-select" id="userClass">
+                        <option value="">-- اختر الصف --</option>
                     </select>
                 </div>
                 <div class="form-group" id="passwordGroup">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="userPassword">
+                    <label class="form-label">كلمة المرور</label>
+                    <input type="password" class="form-input" id="userPassword" placeholder="اتركه فارغاً للحفاظ على كلمة المرور الحالية">
                 </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn" onclick="closeModal()" style="background: var(--bg-secondary);">إلغاء</button>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="App.Modal.close('userModal')">إلغاء</button>
                     <button type="submit" class="btn btn-primary">حفظ</button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        let currentPage = 1;
-        const pageSize = 10;
-        let debounceTimer;
-        
-        async function initUsers() {
-            const user = await examAuth.getUser();
-            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
-            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
+        }
+
+        let currentRoleFilter = 'all';
+        let allUsers = [];
+
+        async function loadUsers() {
+            App.Loading.show('جاري تحميل المستخدمين...');
+            try {
+                const filters = {};
+                if (currentRoleFilter !== 'all') filters.role = currentRoleFilter;
+
+                const status = document.getElementById('statusFilter').value;
+                if (status !== 'all') filters.status = status;
+
+                const users = await fetchUsers(filters);
+                allUsers = users;
+                renderUsers(users);
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ في تحميل المستخدمين');
+            }
+            App.Loading.hide();
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = users.filter(u => 
+                !search || 
+                u.name?.toLowerCase().includes(search) ||
+                u.username?.toLowerCase().includes(search) ||
+                u.email?.toLowerCase().includes(search) ||
+                u.phone?.includes(search)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <p>لا يوجد مستخدمين</p>
+                        </div>
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(u => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="user-avatar-sm">${u.name?.charAt(0) || '?'}</div>
+                            <div>
+                                <div style="font-weight: 600;">${App.sanitizeHtml(u.name || '')}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${App.sanitizeHtml(u.email || '')}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${App.sanitizeHtml(u.username || '')}</td>
+                    <td>${u.phone || '-'}</td>
+                    <td><span class="user-role-badge role-${u.role}">${u.role === 'admin' ? '👑 مدير' : u.role === 'teacher' ? '👨‍🏫 معلم' : '👨‍🎓 طالب'}</span></td>
+                    <td class="status-${u.status}">${u.status === 'active' ? '✅ نشط' : '❌ غير نشط'}</td>
+                    <td>${App.DateTime.dateOnly(u.created_at)}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn btn-sm btn-secondary" onclick="viewAsUser(${u.id})" title="تصفح كـ">👁️</button>
+                            <button class="btn btn-sm btn-ghost" onclick="editUser(${u.id})" title="تعديل">✏️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" title="حذف">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterByRole(role, btn) {
+            currentRoleFilter = role;
+            document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             loadUsers();
         }
-        
-        function debounceLoad() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(loadUsers, 300);
+
+        const debounceSearch = App.debounce(() => renderUsers(allUsers), 300);
+
+        async function loadClasses() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('userClass');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
-        
-        async function loadUsers() {
-            App.loading(true);
-            const search = document.getElementById('searchInput').value;
-            const role = document.getElementById('roleFilter').value;
-            const status = document.getElementById('statusFilter').value;
-            
-            let query = examDB.from('exam_users').select('*', { count: 'exact' });
-            
-            if (search) {
-                query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
-            }
-            if (role) query = query.eq('role', role);
-            if (status) query = query.eq('status', status);
-            
-            const from = (currentPage - 1) * pageSize;
-            const { data, count, error } = await query.range(from, from + pageSize - 1).order('created_at', { ascending: false });
-            
-            if (error) { App.showToast('خطأ في تحميل البيانات', 'error'); App.loading(false); return; }
-            
-            const tbody = document.getElementById('usersTableBody');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">لا يوجد مستخدمين</td></tr>';
-            } else {
-                tbody.innerHTML = data.map((u, i) => `
-                    <tr>
-                        <td>${from + i + 1}</td>
-                        <td>${u.name || '-'}</td>
-                        <td>${u.email || '-'}</td>
-                        <td><span class="badge">${u.role}</span></td>
-                        <td><span class="status-badge ${u.status === 'active' ? 'status-active' : 'status-inactive'}">${u.status === 'active' ? 'نشط' : 'معطل'}</span></td>
-                        <td>${App.formatDate(u.created_at)}</td>
-                        <td class="actions">
-                            <button class="btn btn-warning" onclick="editUser('${u.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
-                            <button class="btn ${u.status === 'active' ? 'btn-danger' : 'btn-success'}" onclick="toggleStatus('${u.id}', '${u.status}')" title="${u.status === 'active' ? 'تعطيل' : 'تفعيل'}">
-                                <i class="fas fa-${u.status === 'active' ? 'ban' : 'check'}"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteUser('${u.id}')" title="حذف"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-            
-            renderPagination(count || 0);
-            App.loading(false);
-        }
-        
-        function renderPagination(total) {
-            const pages = Math.ceil(total / pageSize);
-            const container = document.getElementById('pagination');
-            if (pages <= 1) { container.innerHTML = ''; return; }
-            let html = '';
-            for (let i = 1; i <= pages; i++) {
-                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
-            }
-            container.innerHTML = html;
-        }
-        
-        function goPage(p) { currentPage = p; loadUsers(); }
-        
-        function openModal() {
+
+        function openAddModal() {
             document.getElementById('userForm').reset();
             document.getElementById('userId').value = '';
-            document.getElementById('modalTitle').textContent = 'مستخدم جديد';
+            document.getElementById('modalTitle').textContent = '➕ مستخدم جديد';
             document.getElementById('passwordGroup').style.display = 'block';
-            document.getElementById('userModal').classList.add('active');
+            document.getElementById('userPassword').required = true;
+            App.Modal.open('userModal');
         }
-        
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-        
+
         async function editUser(id) {
-            const { data, error } = await examDB.from('exam_users').select('*').eq('id', id).single();
-            if (error) { App.showToast('خطأ', 'error'); return; }
-            document.getElementById('userId').value = data.id;
-            document.getElementById('userName').value = data.name || '';
-            document.getElementById('userEmail').value = data.email || '';
-            document.getElementById('userPhone').value = data.phone || '';
-            document.getElementById('userRole').value = data.role || 'student';
-            document.getElementById('userStatus').value = data.status || 'active';
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name || '';
+            document.getElementById('userUsername').value = user.username || '';
+            document.getElementById('userEmail').value = user.email || '';
+            document.getElementById('userPhone').value = user.phone || '';
+            document.getElementById('userRole').value = user.role || 'student';
+            document.getElementById('userClass').value = user.class_id || '';
+            document.getElementById('modalTitle').textContent = '✏️ تعديل مستخدم';
             document.getElementById('passwordGroup').style.display = 'none';
-            document.getElementById('modalTitle').textContent = 'تعديل مستخدم';
-            document.getElementById('userModal').classList.add('active');
+            document.getElementById('userPassword').required = false;
+            App.Modal.open('userModal');
         }
-        
+
         async function saveUser(e) {
             e.preventDefault();
-            const id = document.getElementById('userId').value;
-            const payload = {
-                name: document.getElementById('userName').value,
-                email: document.getElementById('userEmail').value,
-                phone: document.getElementById('userPhone').value,
-                role: document.getElementById('userRole').value,
-                status: document.getElementById('userStatus').value
-            };
-            
-            if (!id) {
-                payload.password = document.getElementById('userPassword').value;
-                const { error } = await examDB.from('exam_users').insert(payload);
-                if (error) { App.showToast('خطأ في الإضافة', 'error'); return; }
-                App.showToast('تم الإضافة بنجاح', 'success');
-            } else {
-                const { error } = await examDB.from('exam_users').update(payload).eq('id', id);
-                if (error) { App.showToast('خطأ في التحديث', 'error'); return; }
-                App.showToast('تم التحديث بنجاح', 'success');
+            App.Loading.show('جاري الحفظ...');
+
+            try {
+                const id = document.getElementById('userId').value;
+                const data = {
+                    name: document.getElementById('userName').value,
+                    username: document.getElementById('userUsername').value,
+                    email: document.getElementById('userEmail').value,
+                    phone: document.getElementById('userPhone').value,
+                    role: document.getElementById('userRole').value,
+                    class_id: document.getElementById('userClass').value || null,
+                    status: 'active'
+                };
+
+                const password = document.getElementById('userPassword').value;
+                if (password) {
+                    data.password_hash = await hashPassword(password);
+                }
+
+                if (id) {
+                    const { error } = await sb.from(TABLES.users).update(data).eq('id', id);
+                    if (error) throw error;
+                    App.Toast.success('تم تحديث المستخدم بنجاح');
+                } else {
+                    const { error } = await sb.from(TABLES.users).insert(data);
+                    if (error) throw error;
+                    App.Toast.success('تم إضافة المستخدم بنجاح');
+                }
+
+                App.Modal.close('userModal');
+                loadUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ: ' + error.message);
             }
-            closeModal(); loadUsers();
+            App.Loading.hide();
         }
-        
-        async function toggleStatus(id, current) {
-            const newStatus = current === 'active' ? 'inactive' : 'active';
-            if (!await App.confirm(`هل تريد ${newStatus === 'active' ? 'تفعيل' : 'تعطيل'} هذا المستخدم؟`)) return;
-            const { error } = await examDB.from('exam_users').update({ status: newStatus }).eq('id', id);
-            if (error) App.showToast('خطأ', 'error');
-            else { App.showToast('تم التحديث', 'success'); loadUsers(); }
-        }
-        
+
         async function deleteUser(id) {
             if (!await App.confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-            const { error } = await examDB.from('exam_users').delete().eq('id', id);
-            if (error) App.showToast('خطأ في الحذف', 'error');
-            else { App.showToast('تم الحذف', 'success'); loadUsers(); }
+            App.Loading.show('جاري الحذف...');
+            try {
+                const { error } = await sb.from(TABLES.users).delete().eq('id', id);
+                if (error) throw error;
+                App.Toast.success('تم حذف المستخدم');
+                loadUsers();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
         }
-        
-        function switchDashboard(url) {
-            if (url !== 'admin') window.location.href = url;
+
+        async function viewAsUser(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            if (!await App.confirm(`هل تريد الدخول كـ ${user.name} (${user.role === 'teacher' ? 'معلم' : 'طالب'})؟`)) return;
+
+            const result = await impersonateUser(id);
+            if (result.success) {
+                App.Toast.success(`تم الدخول كـ ${user.name}`);
+                setTimeout(() => {
+                    if (user.role === 'teacher') window.location.href = '../teacher/dashboard.html';
+                    else if (user.role === 'student') window.location.href = '../student/dashboard.html';
+                    else window.location.href = 'dashboard.html';
+                }, 500);
+            } else {
+                App.Toast.error(result.error);
+            }
         }
-        
-        document.addEventListener('DOMContentLoaded', initUsers);
+
+        function exportUsers() {
+            const data = allUsers.map(u => ({
+                الاسم: u.name,
+                'اسم المستخدم': u.username,
+                البريد: u.email,
+                الهاتف: u.phone,
+                الدور: u.role === 'admin' ? 'مدير' : u.role === 'teacher' ? 'معلم' : 'طالب',
+                الحالة: u.status === 'active' ? 'نشط' : 'غير نشط',
+                'تاريخ التسجيل': App.DateTime.dateOnly(u.created_at)
+            }));
+            App.exportCSV(data, 'users_export');
+        }
+
+        // Init
+        loadClasses();
+        loadUsers();
     </script>
 </body>
 </html>

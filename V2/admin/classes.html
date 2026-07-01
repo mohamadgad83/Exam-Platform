@@ -1,274 +1,352 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الفصول والمجموعات - Admin | Exam Platform</title>
+    <title>إدارة الصفوف - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); }
-        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-        .tab.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .toolbar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: #3b82f6; color: #fff; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-warning { background: #f59e0b; color: #fff; }
-        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .data-table th, .data-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: var(--bg-secondary); }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .class-card { background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .class-card h4 { margin: 0 0 0.5rem; color: var(--text-primary); }
-        .class-card p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; }
-        .class-card .meta { display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--card-bg); padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary); }
+        .classes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .class-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; transition: var(--transition); }
+        .class-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); border-color: var(--primary-200); }
+        .class-icon { width: 56px; height: 56px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 16px; }
+        .class-name { font-size: 1.125rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+        .class-meta { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 16px; }
+        .class-actions { display: flex; gap: 8px; }
+        .subjects-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .subject-tag { background: var(--bg-body); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .tabs-content { display: none; }
+        .tabs-content.active { display: block; }
+        .subject-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 8px; }
     </style>
 </head>
 <body>
-    <div class="admin-layout">
+    <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
-                <span class="badge">Admin</span>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
-                <a href="classes.html" class="active"><i class="fas fa-school"></i> الفصول والمجموعات</a>
-                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
-                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
-                <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item active"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
             </nav>
             <div class="sidebar-footer">
-                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
-                <div class="super-access">
-                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
-                    <select onchange="switchDashboard(this.value)">
-                        <option value="admin" selected>Admin</option>
-                        <option value="../teacher/dashboard.html">Teacher</option>
-                        <option value="../student/dashboard.html">Student</option>
-                    </select>
-                </div>
-                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
-        
+
         <main class="main-content">
-            <header class="page-header">
-                <h1>إدارة الفصول والمجموعات</h1>
-                <div class="user-info">
-                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+            <div class="top-bar">
+                <h1 class="page-title">🏫 إدارة الصفوف والمواد</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="openClassModal()">➕ صف جديد</button>
                 </div>
-            </header>
-            
+            </div>
+
             <div class="content-wrapper">
+                <!-- Tabs -->
                 <div class="tabs">
-                    <div class="tab active" onclick="switchTab('classes')"><i class="fas fa-school"></i> الفصول الدراسية</div>
-                    <div class="tab" onclick="switchTab('groups')"><i class="fas fa-users"></i> المجموعات</div>
+                    <button class="tab-btn active" onclick="showTab('classes', this)">📚 الصفوف</button>
+                    <button class="tab-btn" onclick="showTab('subjects', this)">📖 المواد</button>
                 </div>
-                
-                <div id="classesTab" class="tab-content active">
-                    <div class="toolbar">
-                        <button class="btn btn-primary" onclick="openClassModal()"><i class="fas fa-plus"></i> فصل جديد</button>
-                    </div>
-                    <div class="card-grid" id="classesGrid">
-                        <p>جاري التحميل...</p>
+
+                <!-- Classes Tab -->
+                <div class="tabs-content active" id="classesTab">
+                    <div class="classes-grid" id="classesGrid">
+                        <div class="class-card skeleton" style="height: 200px;"></div>
+                        <div class="class-card skeleton" style="height: 200px;"></div>
+                        <div class="class-card skeleton" style="height: 200px;"></div>
                     </div>
                 </div>
-                
-                <div id="groupsTab" class="tab-content">
-                    <div class="toolbar">
-                        <button class="btn btn-primary" onclick="openGroupModal()"><i class="fas fa-plus"></i> مجموعة جديدة</button>
+
+                <!-- Subjects Tab -->
+                <div class="tabs-content" id="subjectsTab">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="openSubjectModal()">➕ مادة جديدة</button>
                     </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr><th>الاسم</th><th>الوصف</th><th>السعة</th><th>الإجراءات</th></tr>
-                        </thead>
-                        <tbody id="groupsTableBody">
-                            <tr><td colspan="4" style="text-align:center">جاري التحميل...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="card">
+                        <div id="subjectsList">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📖</div>
+                                <p>جاري تحميل المواد...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
-    
+
+    <!-- Add/Edit Class Modal -->
     <div class="modal-overlay" id="classModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="classModalTitle">فصل جديد</h3>
-                <button class="close-btn" onclick="closeClassModal()">&times;</button>
-            </div>
-            <form id="classForm" onsubmit="saveClass(event)">
+        <div class="modal-content">
+            <h3 id="classModalTitle">➕ صف جديد</h3>
+            <form class="modal-form" id="classForm" onsubmit="saveClass(event)">
                 <input type="hidden" id="classId">
                 <div class="form-group">
-                    <label>اسم الفصل</label>
-                    <input type="text" id="className" required>
+                    <label class="form-label">اسم الصف</label>
+                    <input type="text" class="form-input" id="className" required placeholder="مثال: الصف الأول الثانوي">
                 </div>
                 <div class="form-group">
-                    <label>المرحلة</label>
-                    <select id="classStage" required>
-                        <option value="">اختر المرحلة</option>
-                    </select>
+                    <label class="form-label">الوصف</label>
+                    <input type="text" class="form-input" id="classDesc" placeholder="وصف اختياري">
                 </div>
-                <div class="form-group">
-                    <label>الصف</label>
-                    <select id="classGrade" required>
-                        <option value="">اختر الصف</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>المادة</label>
-                    <select id="classSubject">
-                        <option value="">اختر المادة</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>السعة</label>
-                    <input type="number" id="classCapacity" value="30">
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn" onclick="closeClassModal()" style="background: var(--bg-secondary);">إلغاء</button>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="App.Modal.close('classModal')">إلغاء</button>
                     <button type="submit" class="btn btn-primary">حفظ</button>
                 </div>
             </form>
         </div>
     </div>
-    
-    <div class="modal-overlay" id="groupModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="groupModalTitle">مجموعة جديدة</h3>
-                <button class="close-btn" onclick="closeGroupModal()">&times;</button>
-            </div>
-            <form id="groupForm" onsubmit="saveGroup(event)">
-                <input type="hidden" id="groupId">
+
+    <!-- Add/Edit Subject Modal -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal-content">
+            <h3 id="subjectModalTitle">➕ مادة جديدة</h3>
+            <form class="modal-form" id="subjectForm" onsubmit="saveSubject(event)">
+                <input type="hidden" id="subjectId">
                 <div class="form-group">
-                    <label>اسم المجموعة</label>
-                    <input type="text" id="groupName" required>
+                    <label class="form-label">اسم المادة</label>
+                    <input type="text" class="form-input" id="subjectName" required placeholder="مثال: الرياضيات">
                 </div>
                 <div class="form-group">
-                    <label>الوصف</label>
-                    <textarea id="groupDesc" rows="3"></textarea>
+                    <label class="form-label">الكود</label>
+                    <input type="text" class="form-input" id="subjectCode" placeholder="مثال: MATH">
                 </div>
-                <div class="form-group">
-                    <label>السعة</label>
-                    <input type="number" id="groupCapacity" value="20">
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn" onclick="closeGroupModal()" style="background: var(--bg-secondary);">إلغاء</button>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="App.Modal.close('subjectModal')">إلغاء</button>
                     <button type="submit" class="btn btn-primary">حفظ</button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        async function initClasses() {
-            const user = await examAuth.getUser();
-            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
-            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
-            loadClasses(); loadGroups(); loadDropdowns();
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
         }
-        
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+
+        let allClasses = [];
+        let allSubjects = [];
+
+        function showTab(tab, btn) {
+            document.querySelectorAll('.tabs-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tab + 'Tab').classList.add('active');
+            btn.classList.add('active');
         }
-        
-        async function loadDropdowns() {
-            const [{ data: stages }, { data: grades }, { data: subjects }] = await Promise.all([
-                examDB.from('exam_stages').select('id, name'),
-                examDB.from('exam_grades').select('id, name'),
-                examDB.from('exam_subjects').select('id, name')
-            ]);
-            const fill = (sel, data) => { data?.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.name; sel.appendChild(o); }); };
-            fill(document.getElementById('classStage'), stages);
-            fill(document.getElementById('classGrade'), grades);
-            fill(document.getElementById('classSubject'), subjects);
-        }
-        
+
         async function loadClasses() {
-            const { data, error } = await examDB.from('exam_classes').select('*, exam_stages(name), exam_grades(name), exam_subjects(name)');
-            const grid = document.getElementById('classesGrid');
-            if (error || !data || data.length === 0) { grid.innerHTML = '<p>لا يوجد فصول</p>'; return; }
-            grid.innerHTML = data.map(c => `
-                <div class="class-card">
-                    <h4>${c.name}</h4>
-                    <p>${c.exam_stages?.name || ''} - ${c.exam_grades?.name || ''}</p>
-                    <div class="meta">
-                        <span><i class="fas fa-book"></i> ${c.exam_subjects?.name || 'عام'}</span>
-                        <span><i class="fas fa-users"></i> ${c.capacity || 30}</span>
-                    </div>
-                    <div class="actions" style="margin-top:1rem; display:flex; gap:0.5rem;">
-                        <button class="btn btn-warning" onclick="editClass('${c.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger" onclick="deleteClass('${c.id}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
+            try {
+                const classes = await fetchClasses();
+                allClasses = classes;
+
+                // Get subjects for each class
+                const { data: classSubjects } = await sb.from(TABLES.class_subjects).select('*');
+                const { data: subjects } = await sb.from(TABLES.subjects).select('*');
+                allSubjects = subjects || [];
+
+                const grid = document.getElementById('classesGrid');
+                if (classes.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <div class="empty-state-icon">🏫</div>
+                            <p>لا توجد صفوف</p>
+                            <button class="btn btn-primary" onclick="openClassModal()" style="margin-top: 16px;">➕ إضافة صف</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = classes.map(c => {
+                    const classSubIds = classSubjects?.filter(cs => cs.class_id === c.id).map(cs => cs.subject_id) || [];
+                    const classSubs = subjects?.filter(s => classSubIds.includes(s.id)) || [];
+
+                    return `
+                        <div class="class-card">
+                            <div class="class-icon">🏫</div>
+                            <div class="class-name">${App.sanitizeHtml(c.name)}</div>
+                            <div class="class-meta">${c.description || 'لا يوجد وصف'}</div>
+                            <div class="subjects-list">
+                                ${classSubs.length > 0 
+                                    ? classSubs.map(s => `<span class="subject-tag">${App.sanitizeHtml(s.name)}</span>`).join('')
+                                    : '<span style="color: var(--text-muted); font-size: 0.75rem;">لا توجد مواد مرتبطة</span>'
+                                }
+                            </div>
+                            <div class="class-actions" style="margin-top: 16px;">
+                                <button class="btn btn-sm btn-ghost" onclick="editClass(${c.id})">✏️ تعديل</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteClass(${c.id})">🗑️ حذف</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ في تحميل الصفوف');
+            }
         }
-        
-        async function loadGroups() {
-            const { data, error } = await examDB.from('exam_groups').select('*');
-            const tbody = document.getElementById('groupsTableBody');
-            if (error || !data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">لا يوجد مجموعات</td></tr>'; return; }
-            tbody.innerHTML = data.map(g => `
-                <tr>
-                    <td>${g.name}</td>
-                    <td>${g.description || '-'}</td>
-                    <td>${g.capacity || 20}</td>
-                    <td>
-                        <button class="btn btn-warning" onclick="editGroup('${g.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-danger" onclick="deleteGroup('${g.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+
+        async function loadSubjects() {
+            try {
+                const subjects = await fetchSubjects();
+                allSubjects = subjects;
+                const container = document.getElementById('subjectsList');
+
+                if (subjects.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📖</div>
+                            <p>لا توجد مواد</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = subjects.map(s => `
+                    <div class="subject-row">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="user-avatar-sm">📖</div>
+                            <div>
+                                <div style="font-weight: 600;">${App.sanitizeHtml(s.name)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${s.code || 'بدون كود'}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-sm btn-ghost" onclick="editSubject(${s.id})">✏️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSubject(${s.id})">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
-        
-        function openClassModal() { document.getElementById('classForm').reset(); document.getElementById('classId').value=''; document.getElementById('classModalTitle').textContent='فصل جديد'; document.getElementById('classModal').classList.add('active'); }
-        function closeClassModal() { document.getElementById('classModal').classList.remove('active'); }
-        function openGroupModal() { document.getElementById('groupForm').reset(); document.getElementById('groupId').value=''; document.getElementById('groupModalTitle').textContent='مجموعة جديدة'; document.getElementById('groupModal').classList.add('active'); }
-        function closeGroupModal() { document.getElementById('groupModal').classList.remove('active'); }
-        
+
+        function openClassModal() {
+            document.getElementById('classForm').reset();
+            document.getElementById('classId').value = '';
+            document.getElementById('classModalTitle').textContent = '➕ صف جديد';
+            App.Modal.open('classModal');
+        }
+
+        async function editClass(id) {
+            const cls = allClasses.find(c => c.id === id);
+            if (!cls) return;
+            document.getElementById('classId').value = cls.id;
+            document.getElementById('className').value = cls.name || '';
+            document.getElementById('classDesc').value = cls.description || '';
+            document.getElementById('classModalTitle').textContent = '✏️ تعديل صف';
+            App.Modal.open('classModal');
+        }
+
         async function saveClass(e) {
             e.preventDefault();
-            const payload = { name: document.getElementById('className').value, stage_id: document.getElementById('classStage').value, grade_id: document.getElementById('classGrade').value, subject_id: document.getElementById('classSubject').value || null, capacity: document.getElementById('classCapacity').value };
-            const id = document.getElementById('classId').value;
-            const { error } = id ? await examDB.from('exam_classes').update(payload).eq('id', id) : await examDB.from('exam_classes').insert(payload);
-            if (error) App.showToast('خطأ', 'error'); else { App.showToast('تم الحفظ', 'success'); closeClassModal(); loadClasses(); }
+            App.Loading.show('جاري الحفظ...');
+            try {
+                const id = document.getElementById('classId').value;
+                const data = {
+                    name: document.getElementById('className').value,
+                    description: document.getElementById('classDesc').value
+                };
+                if (id) {
+                    await sb.from(TABLES.classes).update(data).eq('id', id);
+                    App.Toast.success('تم تحديث الصف');
+                } else {
+                    await sb.from(TABLES.classes).insert(data);
+                    App.Toast.success('تم إضافة الصف');
+                }
+                App.Modal.close('classModal');
+                loadClasses();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
         }
-        
-        async function saveGroup(e) {
+
+        async function deleteClass(id) {
+            if (!await App.confirm('هل أنت متأكد من حذف هذا الصف؟')) return;
+            App.Loading.show('جاري الحذف...');
+            try {
+                await sb.from(TABLES.classes).delete().eq('id', id);
+                App.Toast.success('تم الحذف');
+                loadClasses();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        function openSubjectModal() {
+            document.getElementById('subjectForm').reset();
+            document.getElementById('subjectId').value = '';
+            document.getElementById('subjectModalTitle').textContent = '➕ مادة جديدة';
+            App.Modal.open('subjectModal');
+        }
+
+        async function editSubject(id) {
+            const sub = allSubjects.find(s => s.id === id);
+            if (!sub) return;
+            document.getElementById('subjectId').value = sub.id;
+            document.getElementById('subjectName').value = sub.name || '';
+            document.getElementById('subjectCode').value = sub.code || '';
+            document.getElementById('subjectModalTitle').textContent = '✏️ تعديل مادة';
+            App.Modal.open('subjectModal');
+        }
+
+        async function saveSubject(e) {
             e.preventDefault();
-            const payload = { name: document.getElementById('groupName').value, description: document.getElementById('groupDesc').value, capacity: document.getElementById('groupCapacity').value };
-            const id = document.getElementById('groupId').value;
-            const { error } = id ? await examDB.from('exam_groups').update(payload).eq('id', id) : await examDB.from('exam_groups').insert(payload);
-            if (error) App.showToast('خطأ', 'error'); else { App.showToast('تم الحفظ', 'success'); closeGroupModal(); loadGroups(); }
+            App.Loading.show('جاري الحفظ...');
+            try {
+                const id = document.getElementById('subjectId').value;
+                const data = {
+                    name: document.getElementById('subjectName').value,
+                    code: document.getElementById('subjectCode').value
+                };
+                if (id) {
+                    await sb.from(TABLES.subjects).update(data).eq('id', id);
+                    App.Toast.success('تم التحديث');
+                } else {
+                    await sb.from(TABLES.subjects).insert(data);
+                    App.Toast.success('تم الإضافة');
+                }
+                App.Modal.close('subjectModal');
+                loadSubjects();
+                loadClasses();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
         }
-        
-        async function editClass(id) { const { data } = await examDB.from('exam_classes').select('*').eq('id', id).single(); if(!data) return; document.getElementById('classId').value=data.id; document.getElementById('className').value=data.name; document.getElementById('classStage').value=data.stage_id; document.getElementById('classGrade').value=data.grade_id; document.getElementById('classSubject').value=data.subject_id||''; document.getElementById('classCapacity').value=data.capacity; document.getElementById('classModalTitle').textContent='تعديل فصل'; document.getElementById('classModal').classList.add('active'); }
-        async function editGroup(id) { const { data } = await examDB.from('exam_groups').select('*').eq('id', id).single(); if(!data) return; document.getElementById('groupId').value=data.id; document.getElementById('groupName').value=data.name; document.getElementById('groupDesc').value=data.description||''; document.getElementById('groupCapacity').value=data.capacity; document.getElementById('groupModalTitle').textContent='تعديل مجموعة'; document.getElementById('groupModal').classList.add('active'); }
-        async function deleteClass(id) { if(!await App.confirm('هل أنت متأكد؟')) return; const { error } = await examDB.from('exam_classes').delete().eq('id', id); if(!error) { App.showToast('تم الحذف', 'success'); loadClasses(); } }
-        async function deleteGroup(id) { if(!await App.confirm('هل أنت متأكد؟')) return; const { error } = await examDB.from('exam_groups').delete().eq('id', id); if(!error) { App.showToast('تم الحذف', 'success'); loadGroups(); } }
-        
-        function switchDashboard(url) { if(url !== 'admin') window.location.href = url; }
-        document.addEventListener('DOMContentLoaded', initClasses);
+
+        async function deleteSubject(id) {
+            if (!await App.confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
+            App.Loading.show('جاري الحذف...');
+            try {
+                await sb.from(TABLES.subjects).delete().eq('id', id);
+                App.Toast.success('تم الحذف');
+                loadSubjects();
+                loadClasses();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        loadClasses();
+        loadSubjects();
     </script>
 </body>
 </html>

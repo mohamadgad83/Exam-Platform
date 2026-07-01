@@ -1,190 +1,221 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مراقبة الاختبارات - Admin | Exam Platform</title>
+    <title>إدارة الامتحانات - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .toolbar input, .toolbar select { padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-primary); }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: #3b82f6; color: #fff; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-info { background: #06b6d4; color: #fff; }
-        .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .data-table th, .data-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: var(--bg-secondary); }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
-        .status-draft { background: #e5e7eb; color: #374151; }
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 10px 16px 10px 40px; }
+        .search-box .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); }
+        .exam-status { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .status-draft { background: #f3f4f6; color: #6b7280; }
         .status-published { background: #d1fae5; color: #065f46; }
-        .status-active { background: #dbeafe; color: #1e40af; }
         .status-closed { background: #fee2e2; color: #991b1b; }
-        .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
-        .pagination button { padding: 0.5rem 1rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); border-radius: 8px; cursor: pointer; }
-        .pagination button.active { background: #3b82f6; color: #fff; }
+        .status-upcoming { background: #dbeafe; color: #1e40af; }
+        .exam-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 10px; transition: var(--transition); }
+        .exam-row:hover { background: var(--primary-50); }
+        .exam-info h4 { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .exam-info p { font-size: 0.875rem; color: var(--text-muted); }
+        .exam-meta { display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; }
+        .exam-meta span { display: flex; align-items: center; gap: 4px; }
     </style>
 </head>
 <body>
-    <div class="admin-layout">
+    <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
-                <span class="badge">Admin</span>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
-                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
-                <a href="exams.html" class="active"><i class="fas fa-file-alt"></i> الاختبارات</a>
-                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
-                <a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item active"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
             </nav>
             <div class="sidebar-footer">
-                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
-                <div class="super-access">
-                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
-                    <select onchange="switchDashboard(this.value)">
-                        <option value="admin" selected>Admin</option>
-                        <option value="../teacher/dashboard.html">Teacher</option>
-                        <option value="../student/dashboard.html">Student</option>
-                    </select>
-                </div>
-                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
-        
+
         <main class="main-content">
-            <header class="page-header">
-                <h1>مراقبة الاختبارات</h1>
-                <div class="user-info">
-                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+            <div class="top-bar">
+                <h1 class="page-title">📝 إدارة الامتحانات</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="location.href='../teacher/create-exam.html'">➕ امتحان جديد</button>
                 </div>
-            </header>
-            
+            </div>
+
             <div class="content-wrapper">
-                <div class="toolbar">
-                    <input type="text" id="searchInput" placeholder="بحث بعنوان الاختبار..." oninput="debounceLoad()">
-                    <select id="statusFilter" onchange="loadExams()">
-                        <option value="">كل الحالات</option>
-                        <option value="draft">مسودة</option>
-                        <option value="published">منشور</option>
-                        <option value="active">نشط</option>
-                        <option value="closed">مغلق</option>
+                <!-- Filters -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="form-input" id="searchInput" placeholder="ابحث بعنوان الامتحان..." oninput="debounceSearch()">
+                    </div>
+                    <select class="form-select" id="statusFilter" onchange="loadExams()" style="min-width: 150px;">
+                        <option value="all">كل الحالات</option>
+                        <option value="draft">📝 مسودة</option>
+                        <option value="published">✅ منشور</option>
+                        <option value="closed">❌ مغلق</option>
+                        <option value="upcoming">📅 قادم</option>
                     </select>
-                    <select id="subjectFilter" onchange="loadExams()">
-                        <option value="">كل المواد</option>
+                    <select class="form-select" id="classFilter" onchange="loadExams()" style="min-width: 150px;">
+                        <option value="all">كل الصفوف</option>
                     </select>
+                    <button class="btn btn-secondary" onclick="exportExams()">📥 تصدير</button>
                 </div>
-                
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>العنوان</th>
-                            <th>المادة</th>
-                            <th>المدة</th>
-                            <th>الدرجة الكاملة</th>
-                            <th>المحاولات</th>
-                            <th>الحالة</th>
-                            <th>المنشئ</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="examsTableBody">
-                        <tr><td colspan="8" style="text-align:center">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
-                
-                <div class="pagination" id="pagination"></div>
+
+                <!-- Exams List -->
+                <div class="card">
+                    <div id="examsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>جاري تحميل الامتحانات...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
-    
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        let currentPage = 1;
-        const pageSize = 10;
-        let debounceTimer;
-        
-        async function initExams() {
-            const user = await examAuth.getUser();
-            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
-            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
-            await loadSubjects();
-            loadExams();
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
         }
-        
-        async function loadSubjects() {
-            const { data } = await examDB.from('exam_subjects').select('id, name');
-            const sel = document.getElementById('subjectFilter');
-            data?.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o); });
-        }
-        
-        function debounceLoad() { clearTimeout(debounceTimer); debounceTimer = setTimeout(loadExams, 300); }
-        
+
+        let allExams = [];
+
         async function loadExams() {
-            App.loading(true);
-            const search = document.getElementById('searchInput').value;
-            const status = document.getElementById('statusFilter').value;
-            const subject = document.getElementById('subjectFilter').value;
-            
-            let query = examDB.from('exam_exams').select('*, exam_subjects(name), exam_teachers(name)', { count: 'exact' });
-            if (search) query = query.ilike('title', `%${search}%`);
-            if (status) query = query.eq('status', status);
-            if (subject) query = query.eq('subject_id', subject);
-            
-            const from = (currentPage - 1) * pageSize;
-            const { data, count, error } = await query.range(from, from + pageSize - 1).order('created_at', { ascending: false });
-            
-            if (error) { App.showToast('خطأ', 'error'); App.loading(false); return; }
-            
-            const tbody = document.getElementById('examsTableBody');
-            if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">لا يوجد اختبارات</td></tr>'; }
-            else {
-                tbody.innerHTML = data.map(exam => {
-                    const statusClass = `status-${exam.status || 'draft'}`;
-                    const statusText = { draft: 'مسودة', published: 'منشور', active: 'نشط', closed: 'مغلق' }[exam.status] || exam.status;
-                    return `
-                        <tr>
-                            <td><strong>${exam.title}</strong></td>
-                            <td>${exam.exam_subjects?.name || '-'}</td>
-                            <td>${exam.duration || 0} دقيقة</td>
-                            <td>${exam.total_marks || 0}</td>
-                            <td>-</td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                            <td>${exam.exam_teachers?.name || '-'}</td>
-                            <td>
-                                <button class="btn btn-info" onclick="viewExam('${exam.id}')" title="عرض"><i class="fas fa-eye"></i></button>
-                                <button class="btn btn-warning" onclick="editExam('${exam.id}')" title="تعديل"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-danger" onclick="deleteExam('${exam.id}')" title="حذف"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+            App.Loading.show('جاري تحميل الامتحانات...');
+            try {
+                const filters = {};
+                const status = document.getElementById('statusFilter').value;
+                const classId = document.getElementById('classFilter').value;
+
+                if (status !== 'all') filters.status = status;
+                if (classId !== 'all') filters.classId = classId;
+
+                const exams = await fetchExams(filters);
+                allExams = exams;
+                renderExams(exams);
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
             }
-            renderPagination(count || 0);
-            App.loading(false);
+            App.Loading.hide();
         }
-        
-        function renderPagination(total) {
-            const pages = Math.ceil(total / pageSize);
-            const container = document.getElementById('pagination');
-            if (pages <= 1) { container.innerHTML = ''; return; }
-            let html = '';
-            for (let i = 1; i <= pages; i++) html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
-            container.innerHTML = html;
+
+        function renderExams(exams) {
+            const container = document.getElementById('examsList');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = exams.filter(e => 
+                !search || e.title?.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>لا توجد امتحانات</p>
+                        <button class="btn btn-primary" onclick="location.href='../teacher/create-exam.html'" style="margin-top: 16px;">➕ إنشاء امتحان</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(e => {
+                const statusClass = e.status === 'published' ? 'status-published' : 
+                                   e.status === 'draft' ? 'status-draft' : 
+                                   e.status === 'closed' ? 'status-closed' : 'status-upcoming';
+                const statusText = e.status === 'published' ? 'منشور' : 
+                                  e.status === 'draft' ? 'مسودة' : 
+                                  e.status === 'closed' ? 'مغلق' : 'قادم';
+
+                return `
+                    <div class="exam-row">
+                        <div class="exam-info">
+                            <h4>${App.sanitizeHtml(e.title)}</h4>
+                            <p>${App.sanitizeHtml(e.description || 'لا يوجد وصف')}</p>
+                            <div class="exam-meta">
+                                <span>⏱️ ${e.duration} دقيقة</span>
+                                <span>🎯 ${e.total_points} نقطة</span>
+                                <span>📅 ${App.DateTime.dateOnly(e.start_time)}</span>
+                                <span>👤 ${e.teacher_name || 'غير معروف'}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="exam-status ${statusClass}">${statusText}</span>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn btn-sm btn-ghost" onclick="viewExam(${e.id})" title="عرض">👁️</button>
+                                <button class="btn btn-sm btn-ghost" onclick="editExam(${e.id})" title="تعديل">✏️</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteExam(${e.id})" title="حذف">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        function goPage(p) { currentPage = p; loadExams(); }
-        
-        function viewExam(id) { window.open(`../teacher/exam-preview.html?id=${id}`, '_blank'); }
-        function editExam(id) { window.open(`../teacher/exam-editor.html?id=${id}`, '_blank'); }
-        async function deleteExam(id) { if(!await App.confirm('هل أنت متأكد من حذف هذا الاختبار؟')) return; const { error } = await examDB.from('exam_exams').delete().eq('id', id); if(!error) { App.showToast('تم الحذف', 'success'); loadExams(); } }
-        
-        function switchDashboard(url) { if(url !== 'admin') window.location.href = url; }
-        document.addEventListener('DOMContentLoaded', initExams);
+
+        const debounceSearch = App.debounce(() => renderExams(allExams), 300);
+
+        async function loadClasses() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('classFilter');
+            select.innerHTML = '<option value="all">كل الصفوف</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function viewExam(id) {
+            window.open(`../teacher/exam-preview.html?id=${id}`, '_blank');
+        }
+
+        function editExam(id) {
+            window.location.href = `../teacher/create-exam.html?edit=${id}`;
+        }
+
+        async function deleteExam(id) {
+            if (!await App.confirm('هل أنت متأكد من حذف هذا الامتحان؟')) return;
+            App.Loading.show('جاري الحذف...');
+            try {
+                await sb.from(TABLES.exams).delete().eq('id', id);
+                App.Toast.success('تم الحذف');
+                loadExams();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        function exportExams() {
+            const data = allExams.map(e => ({
+                العنوان: e.title,
+                الوصف: e.description,
+                الحالة: e.status,
+                المدة: e.duration,
+                النقاط: e.total_points,
+                'تاريخ البدء': App.DateTime.dateOnly(e.start_time),
+                'تاريخ الانتهاء': App.DateTime.dateOnly(e.end_time)
+            }));
+            App.exportCSV(data, 'exams_export');
+        }
+
+        loadClasses();
+        loadExams();
     </script>
 </body>
 </html>

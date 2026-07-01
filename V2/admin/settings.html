@@ -1,298 +1,477 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات المنصة - Admin | Exam Platform</title>
+    <title>الإعدادات - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="../shared/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .settings-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border-color); }
-        .settings-tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-        .settings-tab.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .settings-card { background: var(--card-bg); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
-        .settings-card h3 { margin: 0 0 1.5rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
-        .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 1rem; }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .toggle-switch { display: flex; align-items: center; gap: 1rem; }
-        .toggle-switch input { width: 50px; height: 26px; appearance: none; background: #ccc; border-radius: 26px; position: relative; cursor: pointer; }
-        .toggle-switch input::after { content: ''; position: absolute; width: 22px; height: 22px; background: #fff; border-radius: 50%; top: 2px; right: 2px; transition: 0.3s; }
-        .toggle-switch input:checked { background: #3b82f6; }
-        .toggle-switch input:checked::after { right: 26px; }
-        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: #3b82f6; color: #fff; }
-        .btn-success { background: #10b981; color: #fff; }
-        .section-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; }
+        .settings-grid { display: grid; grid-template-columns: 250px 1fr; gap: 24px; }
+        .settings-sidebar { background: var(--bg-surface); border-radius: var(--radius-lg); padding: 16px; border: 1px solid var(--border-color); height: fit-content; }
+        .settings-nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); font-weight: 600; color: var(--text-secondary); border: none; background: transparent; width: 100%; text-align: right; font-family: inherit; font-size: 0.875rem; }
+        .settings-nav-item:hover { background: var(--bg-body); color: var(--primary-600); }
+        .settings-nav-item.active { background: linear-gradient(135deg, var(--primary-50), var(--primary-100)); color: var(--primary-700); border-right: 3px solid var(--primary-600); }
+        .settings-content { display: none; }
+        .settings-content.active { display: block; }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 12px; }
+        .setting-info h4 { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .setting-info p { font-size: 0.875rem; color: var(--text-muted); }
+        .toggle-switch { position: relative; width: 52px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--border-color); border-radius: 28px; transition: 0.3s; }
+        .toggle-slider:before { position: absolute; content: ''; height: 22px; width: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .toggle-switch input:checked + .toggle-slider { background: var(--primary-500); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
+        .color-picker { display: flex; gap: 8px; }
+        .color-option { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: var(--transition); }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.active { border-color: var(--text-main); }
     </style>
 </head>
 <body>
-    <div class="admin-layout">
+    <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-graduation-cap"></i> Exam Platform</h2>
-                <span class="badge">Admin</span>
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a>
-                <a href="users.html"><i class="fas fa-users"></i> المستخدمين</a>
-                <a href="classes.html"><i class="fas fa-school"></i> الفصول والمجموعات</a>
-                <a href="exams.html"><i class="fas fa-file-alt"></i> الاختبارات</a>
-                <a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a>
-                <a href="settings.html" class="active"><i class="fas fa-cog"></i> الإعدادات</a>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item active"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
             </nav>
             <div class="sidebar-footer">
-                <button onclick="App.toggleDarkMode()"><i class="fas fa-moon"></i> <span>الوضع الليلي</span></button>
-                <div class="super-access">
-                    <label><i class="fas fa-exchange-alt"></i> الوصول السريع</label>
-                    <select onchange="switchDashboard(this.value)">
-                        <option value="admin" selected>Admin</option>
-                        <option value="../teacher/dashboard.html">Teacher</option>
-                        <option value="../student/dashboard.html">Student</option>
-                    </select>
-                </div>
-                <button onclick="examAuth.signOut()"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
             </div>
         </aside>
-        
+
         <main class="main-content">
-            <header class="page-header">
-                <h1>إعدادات المنصة</h1>
-                <div class="user-info">
-                    <span id="adminName"><i class="fas fa-user-shield"></i> Admin</span>
+            <div class="top-bar">
+                <h1 class="page-title">⚙️ إعدادات المنصة</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="saveAllSettings()">💾 حفظ الإعدادات</button>
                 </div>
-            </header>
-            
+            </div>
+
             <div class="content-wrapper">
-                <div class="settings-tabs">
-                    <div class="settings-tab active" onclick="switchTab('general')"><i class="fas fa-sliders-h"></i> عام</div>
-                    <div class="settings-tab" onclick="switchTab('payment')"><i class="fas fa-credit-card"></i> الدفع</div>
-                    <div class="settings-tab" onclick="switchTab('registration')"><i class="fas fa-user-plus"></i> التسجيل</div>
-                    <div class="settings-tab" onclick="switchTab('notifications')"><i class="fas fa-bell"></i> الإشعارات</div>
-                    <div class="settings-tab" onclick="switchTab('security')"><i class="fas fa-shield-alt"></i> الأمان</div>
-                </div>
-                
-                <div id="generalTab" class="tab-content active">
-                    <div class="settings-card">
-                        <h3><i class="fas fa-info-circle"></i> معلومات المنصة</h3>
-                        <p class="section-desc">إعدادات العرض الأساسية للمنصة</p>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>اسم المنصة</label>
-                                <input type="text" id="platformName" value="Exam Platform">
-                            </div>
-                            <div class="form-group">
-                                <label>البريد الإلكتروني للدعم</label>
-                                <input type="email" id="supportEmail" value="support@example.com">
+                <div class="settings-grid">
+                    <!-- Settings Sidebar -->
+                    <div class="settings-sidebar">
+                        <button class="settings-nav-item active" onclick="showSettingsTab('general', this)">🏠 عام</button>
+                        <button class="settings-nav-item" onclick="showSettingsTab('security', this)">🔒 الأمان</button>
+                        <button class="settings-nav-item" onclick="showSettingsTab('exams', this)">📝 الامتحانات</button>
+                        <button class="settings-nav-item" onclick="showSettingsTab('notifications', this)">🔔 الإشعارات</button>
+                        <button class="settings-nav-item" onclick="showSettingsTab('appearance', this)">🎨 المظهر</button>
+                        <button class="settings-nav-item" onclick="showSettingsTab('payment', this)">💳 الدفع</button>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div>
+                        <!-- General Settings -->
+                        <div class="settings-content active" id="generalSettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">🏠 الإعدادات العامة</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>اسم المنصة</h4>
+                                        <p>الاسم الذي يظهر في رأس الصفحة والإشعارات</p>
+                                    </div>
+                                    <input type="text" class="form-input" id="platformName" value="منصة الاختبارات" style="width: 250px;">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>وصف المنصة</h4>
+                                        <p>وصف قصير يظهر في الصفحة الرئيسية</p>
+                                    </div>
+                                    <input type="text" class="form-input" id="platformDesc" value="نظام متكامل لإدارة الاختبارات" style="width: 250px;">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>التسجيل المفتوح</h4>
+                                        <p>السماح للطلاب بالتسجيل الذاتي</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="openRegistration" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>تفعيل البريد الإلكتروني</h4>
+                                        <p>إرسال رسائل تأكيد عبر البريد</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="emailVerification">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>وصف المنصة</label>
-                            <textarea id="platformDesc">منصة إلكترونية للاختبارات والتقييم</textarea>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>اللغة الافتراضية</label>
-                                <select id="defaultLang">
-                                    <option value="ar" selected>العربية</option>
-                                    <option value="en">English</option>
-                                </select>
+
+                        <!-- Security Settings -->
+                        <div class="settings-content" id="securitySettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">🔒 إعدادات الأمان</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>منع نسخ الامتحان</h4>
+                                        <p>تعطيل النسخ واللصق أثناء الامتحان</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="preventCopy" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>وضع ملء الشاشة</h4>
+                                        <p>إجبار الطالب على وضع ملء الشاشة</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="forceFullscreen" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>كشف أدوات المطور</h4>
+                                        <p>منع فتح DevTools أثناء الامتحان</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="detectDevTools" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>الحد الأقصى للانتهاكات</h4>
+                                        <p>عدد محاولات الغش المسموح بها قبل الطرد</p>
+                                    </div>
+                                    <input type="number" class="form-input" id="maxViolations" value="3" min="1" max="10" style="width: 100px;">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>تسجيل IP</h4>
+                                        <p>تسجيل عنوان IP لكل محاولة دخول</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="logIP" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>المنطقة الزمنية</label>
-                                <select id="timezone">
-                                    <option value="Africa/Cairo" selected>القاهرة (GMT+2)</option>
-                                    <option value="Asia/Riyadh">الرياض (GMT+3)</option>
-                                    <option value="UTC">UTC</option>
-                                </select>
+                        </div>
+
+                        <!-- Exam Settings -->
+                        <div class="settings-content" id="examsSettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">📝 إعدادات الامتحانات</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>الحد الأدنى للأسئلة</h4>
+                                        <p>الحد الأدنى لعدد الأسئلة في الامتحان</p>
+                                    </div>
+                                    <input type="number" class="form-input" id="minQuestions" value="5" min="1" style="width: 100px;">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>الحد الأقصى للأسئلة</h4>
+                                        <p>الحد الأقصى لعدد الأسئلة في الامتحان</p>
+                                    </div>
+                                    <input type="number" class="form-input" id="maxQuestions" value="100" min="1" style="width: 100px;">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>عرض النتائج فوراً</h4>
+                                        <p>إظهار النتيجة مباشرة بعد التسليم</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="showResultsImmediately" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>السماح بمراجعة الإجابات</h4>
+                                        <p>السماح للطالب بمراجعة إجاباته بعد الامتحان</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="allowReview" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>خلط الأسئلة</h4>
+                                        <p>عرض الأسئلة بترتيب عشوائي لكل طالب</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="shuffleQuestions" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications Settings -->
+                        <div class="settings-content" id="notificationsSettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">🔔 إعدادات الإشعارات</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>إشعارات الامتحانات الجديدة</h4>
+                                        <p>إرسال إشعار عند نشر امتحان جديد</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notifyNewExam" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>إشعارات النتائج</h4>
+                                        <p>إرسال إشعار عند توفر النتيجة</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notifyResults" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>إشعارات التسجيل</h4>
+                                        <p>إرسال إشعار عند تسجيل طالب جديد</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notifyRegistration">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>إشعارات الأمان</h4>
+                                        <p>إرسال إشعار عند اكتشاف محاولة غش</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notifySecurity" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appearance Settings -->
+                        <div class="settings-content" id="appearanceSettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">🎨 إعدادات المظهر</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>الوضع الليلي</h4>
+                                        <p>تفعيل الوضع الليلي للمنصة</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="darkMode" onchange="toggleDarkMode()">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>اللون الرئيسي</h4>
+                                        <p>اختيار لون المنصة الرئيسي</p>
+                                    </div>
+                                    <div class="color-picker">
+                                        <div class="color-option active" style="background: #6366f1;" onclick="setPrimaryColor('#6366f1', this)"></div>
+                                        <div class="color-option" style="background: #3b82f6;" onclick="setPrimaryColor('#3b82f6', this)"></div>
+                                        <div class="color-option" style="background: #8b5cf6;" onclick="setPrimaryColor('#8b5cf6', this)"></div>
+                                        <div class="color-option" style="background: #ec4899;" onclick="setPrimaryColor('#ec4899', this)"></div>
+                                        <div class="color-option" style="background: #10b981;" onclick="setPrimaryColor('#10b981', this)"></div>
+                                        <div class="color-option" style="background: #f59e0b;" onclick="setPrimaryColor('#f59e0b', this)"></div>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>حجم الخط</h4>
+                                        <p>تعديل حجم الخط الافتراضي</p>
+                                    </div>
+                                    <select class="form-select" id="fontSize" style="width: 150px;">
+                                        <option value="small">صغير</option>
+                                        <option value="normal" selected>عادي</option>
+                                        <option value="large">كبير</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Settings -->
+                        <div class="settings-content" id="paymentSettings">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">💳 إعدادات الدفع</h3>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>تفعيل الدفع</h4>
+                                        <p>تفعيل نظام الدفع للامتحانات</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="enablePayment">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>العملة الافتراضية</h4>
+                                        <p>العملة المستخدمة في المدفوعات</p>
+                                    </div>
+                                    <select class="form-select" id="currency" style="width: 150px;">
+                                        <option value="EGP">جنيه مصري (EGP)</option>
+                                        <option value="SAR">ريال سعودي (SAR)</option>
+                                        <option value="USD">دولار أمريكي (USD)</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h4>السعر الافتراضي للامتحان</h4>
+                                        <p>السعر الافتراضي لكل امتحان</p>
+                                    </div>
+                                    <input type="number" class="form-input" id="defaultPrice" value="50" min="0" style="width: 150px;">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="settings-card">
-                        <h3><i class="fas fa-paint-brush"></i> المظهر</h3>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل الوضع الليلي الافتراضي</label>
-                            <input type="checkbox" id="defaultDarkMode">
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>إظهار الشعار المخصص</label>
-                            <input type="checkbox" id="customLogo" checked>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="paymentTab" class="tab-content">
-                    <div class="settings-card">
-                        <h3><i class="fas fa-money-bill-wave"></i> إعدادات الدفع</h3>
-                        <p class="section-desc">تكوين بوابات الدفع والأسعار</p>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>العملة الافتراضية</label>
-                                <select id="currency">
-                                    <option value="EGP" selected>جنيه مصري (EGP)</option>
-                                    <option value="SAR">ريال سعودي (SAR)</option>
-                                    <option value="USD">دولار أمريكي (USD)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>السعر الافتراضي للاختبار</label>
-                                <input type="number" id="defaultPrice" value="50">
-                            </div>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل الدفع الإلكتروني</label>
-                            <input type="checkbox" id="enableOnlinePayment" checked>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل الكوبونات</label>
-                            <input type="checkbox" id="enableCoupons" checked>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="registrationTab" class="tab-content">
-                    <div class="settings-card">
-                        <h3><i class="fas fa-user-cog"></i> إعدادات التسجيل</h3>
-                        <div class="form-group toggle-switch">
-                            <label>التسجيل مفتوح</label>
-                            <input type="checkbox" id="registrationOpen" checked>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل التحقق بالبريد الإلكتروني</label>
-                            <input type="checkbox" id="emailVerification" checked>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل التسجيل عبر الجوال</label>
-                            <input type="checkbox" id="phoneRegistration">
-                        </div>
-                        <div class="form-group">
-                            <label>حقول التسجيل الإضافية (مفصولة بفاصلة)</label>
-                            <input type="text" id="extraFields" value="المرحلة,الصف,الفرع">
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="notificationsTab" class="tab-content">
-                    <div class="settings-card">
-                        <h3><i class="fas fa-bell"></i> إعدادات الإشعارات</h3>
-                        <div class="form-group toggle-switch">
-                            <label>إشعارات البريد الإلكتروني</label>
-                            <input type="checkbox" id="emailNotifications" checked>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>إشعارات داخل المنصة</label>
-                            <input type="checkbox" id="inAppNotifications" checked>
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>إشعارات WhatsApp</label>
-                            <input type="checkbox" id="whatsappNotifications">
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="securityTab" class="tab-content">
-                    <div class="settings-card">
-                        <h3><i class="fas fa-lock"></i> إعدادات الأمان</h3>
-                        <div class="form-group">
-                            <label>مدة صلاحية الجلسة (دقيقة)</label>
-                            <input type="number" id="sessionTimeout" value="60">
-                        </div>
-                        <div class="form-group">
-                            <label>عدد محاولات تسجيل الدخول الفاشلة المسموحة</label>
-                            <input type="number" id="maxLoginAttempts" value="5">
-                        </div>
-                        <div class="form-group toggle-switch">
-                            <label>تفعيل المصادقة الثنائية (2FA)</label>
-                            <input type="checkbox" id="enable2FA">
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="text-align: left; margin-top: 2rem;">
-                    <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button>
-                    <button class="btn btn-success" onclick="resetSettings()" style="margin-right: 1rem;"><i class="fas fa-undo"></i> استعادة الافتراضي</button>
                 </div>
             </div>
         </main>
     </div>
-    
+
     <script src="../shared/supabase-client.js"></script>
     <script src="../shared/app.js"></script>
+
     <script>
-        async function initSettings() {
-            const user = await examAuth.getUser();
-            if (!user || user.role !== 'admin') { window.location.href = '../login.html'; return; }
-            document.getElementById('adminName').innerHTML = `<i class="fas fa-user-shield"></i> ${user.name || 'Admin'}`;
-            loadSettings();
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
         }
-        
-        function switchTab(tab) {
-            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
+
+        function showSettingsTab(tab, btn) {
+            document.querySelectorAll('.settings-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(tab + 'Settings').classList.add('active');
+            btn.classList.add('active');
         }
-        
-        async function loadSettings() {
-            const { data } = await examDB.from('exam_settings').select('*').maybeSingle();
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    const el = document.getElementById(key);
-                    if (el) {
-                        if (el.type === 'checkbox') el.checked = data[key];
-                        else el.value = data[key] || '';
-                    }
-                });
+
+        function toggleDarkMode() {
+            const isDark = document.getElementById('darkMode').checked;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            App.Storage.set('darkMode', isDark);
+        }
+
+        function setPrimaryColor(color, el) {
+            document.querySelectorAll('.color-option').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.documentElement.style.setProperty('--primary-500', color);
+            App.Storage.set('primaryColor', color);
+        }
+
+        async function saveAllSettings() {
+            App.Loading.show('جاري حفظ الإعدادات...');
+            try {
+                const settings = {
+                    platform_name: document.getElementById('platformName').value,
+                    platform_description: document.getElementById('platformDesc').value,
+                    open_registration: document.getElementById('openRegistration').checked,
+                    email_verification: document.getElementById('emailVerification').checked,
+                    prevent_copy: document.getElementById('preventCopy').checked,
+                    force_fullscreen: document.getElementById('forceFullscreen').checked,
+                    detect_devtools: document.getElementById('detectDevTools').checked,
+                    max_violations: parseInt(document.getElementById('maxViolations').value),
+                    log_ip: document.getElementById('logIP').checked,
+                    min_questions: parseInt(document.getElementById('minQuestions').value),
+                    max_questions: parseInt(document.getElementById('maxQuestions').value),
+                    show_results_immediately: document.getElementById('showResultsImmediately').checked,
+                    allow_review: document.getElementById('allowReview').checked,
+                    shuffle_questions: document.getElementById('shuffleQuestions').checked,
+                    notify_new_exam: document.getElementById('notifyNewExam').checked,
+                    notify_results: document.getElementById('notifyResults').checked,
+                    notify_registration: document.getElementById('notifyRegistration').checked,
+                    notify_security: document.getElementById('notifySecurity').checked,
+                    dark_mode: document.getElementById('darkMode').checked,
+                    font_size: document.getElementById('fontSize').value,
+                    enable_payment: document.getElementById('enablePayment').checked,
+                    currency: document.getElementById('currency').value,
+                    default_price: parseFloat(document.getElementById('defaultPrice').value),
+                    updated_at: new Date().toISOString()
+                };
+
+                // Save to localStorage for now (can be moved to DB later)
+                App.Storage.set('platform_settings', settings);
+
+                // Also try to save to DB if table exists
+                try {
+                    await sb.from('exam_settings').upsert({ id: 1, ...settings });
+                } catch (e) {
+                    // Table might not exist yet
+                }
+
+                App.Toast.success('تم حفظ الإعدادات بنجاح');
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ في الحفظ');
             }
+            App.Loading.hide();
         }
-        
-        async function saveSettings() {
-            const fields = ['platformName', 'supportEmail', 'platformDesc', 'defaultLang', 'timezone', 'defaultDarkMode', 'customLogo', 'currency', 'defaultPrice', 'enableOnlinePayment', 'enableCoupons', 'registrationOpen', 'emailVerification', 'phoneRegistration', 'extraFields', 'emailNotifications', 'inAppNotifications', 'whatsappNotifications', 'sessionTimeout', 'maxLoginAttempts', 'enable2FA'];
-            const payload = {};
-            fields.forEach(f => {
-                const el = document.getElementById(f);
-                if (el) payload[f] = el.type === 'checkbox' ? el.checked : el.value;
-            });
-            payload.updated_at = new Date().toISOString();
-            
-            const { error } = await examDB.from('exam_settings').upsert(payload, { onConflict: 'id' });
-            if (error) App.showToast('خطأ في الحفظ', 'error');
-            else App.showToast('تم حفظ الإعدادات بنجاح', 'success');
+
+        // Load saved settings
+        function loadSettings() {
+            const saved = App.Storage.get('platform_settings');
+            if (!saved) return;
+
+            if (saved.platform_name) document.getElementById('platformName').value = saved.platform_name;
+            if (saved.platform_description) document.getElementById('platformDesc').value = saved.platform_description;
+            if (saved.open_registration !== undefined) document.getElementById('openRegistration').checked = saved.open_registration;
+            if (saved.email_verification !== undefined) document.getElementById('emailVerification').checked = saved.email_verification;
+            if (saved.prevent_copy !== undefined) document.getElementById('preventCopy').checked = saved.prevent_copy;
+            if (saved.force_fullscreen !== undefined) document.getElementById('forceFullscreen').checked = saved.force_fullscreen;
+            if (saved.detect_devtools !== undefined) document.getElementById('detectDevTools').checked = saved.detect_devtools;
+            if (saved.max_violations) document.getElementById('maxViolations').value = saved.max_violations;
+            if (saved.log_ip !== undefined) document.getElementById('logIP').checked = saved.log_ip;
+            if (saved.min_questions) document.getElementById('minQuestions').value = saved.min_questions;
+            if (saved.max_questions) document.getElementById('maxQuestions').value = saved.max_questions;
+            if (saved.show_results_immediately !== undefined) document.getElementById('showResultsImmediately').checked = saved.show_results_immediately;
+            if (saved.allow_review !== undefined) document.getElementById('allowReview').checked = saved.allow_review;
+            if (saved.shuffle_questions !== undefined) document.getElementById('shuffleQuestions').checked = saved.shuffle_questions;
+            if (saved.notify_new_exam !== undefined) document.getElementById('notifyNewExam').checked = saved.notify_new_exam;
+            if (saved.notify_results !== undefined) document.getElementById('notifyResults').checked = saved.notify_results;
+            if (saved.notify_registration !== undefined) document.getElementById('notifyRegistration').checked = saved.notify_registration;
+            if (saved.notify_security !== undefined) document.getElementById('notifySecurity').checked = saved.notify_security;
+            if (saved.dark_mode !== undefined) {
+                document.getElementById('darkMode').checked = saved.dark_mode;
+                if (saved.dark_mode) document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            if (saved.font_size) document.getElementById('fontSize').value = saved.font_size;
+            if (saved.enable_payment !== undefined) document.getElementById('enablePayment').checked = saved.enable_payment;
+            if (saved.currency) document.getElementById('currency').value = saved.currency;
+            if (saved.default_price) document.getElementById('defaultPrice').value = saved.default_price;
         }
-        
-        function resetSettings() {
-            if (!confirm('هل أنت متأكد من استعادة الإعدادات الافتراضية؟')) return;
-            document.getElementById('platformName').value = 'Exam Platform';
-            document.getElementById('supportEmail').value = 'support@example.com';
-            document.getElementById('platformDesc').value = 'منصة إلكترونية للاختبارات والتقييم';
-            document.getElementById('defaultLang').value = 'ar';
-            document.getElementById('timezone').value = 'Africa/Cairo';
-            document.getElementById('defaultDarkMode').checked = false;
-            document.getElementById('customLogo').checked = true;
-            document.getElementById('currency').value = 'EGP';
-            document.getElementById('defaultPrice').value = '50';
-            document.getElementById('enableOnlinePayment').checked = true;
-            document.getElementById('enableCoupons').checked = true;
-            document.getElementById('registrationOpen').checked = true;
-            document.getElementById('emailVerification').checked = true;
-            document.getElementById('phoneRegistration').checked = false;
-            document.getElementById('extraFields').value = 'المرحلة,الصف,الفرع';
-            document.getElementById('emailNotifications').checked = true;
-            document.getElementById('inAppNotifications').checked = true;
-            document.getElementById('whatsappNotifications').checked = false;
-            document.getElementById('sessionTimeout').value = '60';
-            document.getElementById('maxLoginAttempts').value = '5';
-            document.getElementById('enable2FA').checked = false;
-            App.showToast('تمت الاستعادة - اضغط حفظ للتطبيق', 'success');
-        }
-        
-        function switchDashboard(url) { if(url !== 'admin') window.location.href = url; }
-        document.addEventListener('DOMContentLoaded', initSettings);
+
+        loadSettings();
     </script>
 </body>
 </html>

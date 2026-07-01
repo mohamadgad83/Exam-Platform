@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مراجعة الأسئلة - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .question-card { background: var(--bg-body); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border-right: 4px solid var(--warning); }
+        .question-card.approved { border-right-color: var(--success); }
+        .question-card.rejected { border-right-color: var(--danger); }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .question-text { font-size: 1rem; font-weight: 600; color: var(--text-main); margin-bottom: 12px; line-height: 1.8; }
+        .question-meta { display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; }
+        .options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .option-item { padding: 10px 14px; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.875rem; }
+        .option-item.correct { border-color: var(--success); background: #d1fae5; color: #065f46; font-weight: 700; }
+        .question-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .filter-tab { padding: 8px 20px; border-radius: 40px; border: none; background: var(--bg-body); color: var(--text-secondary); font-weight: 600; cursor: pointer; font-family: inherit; }
+        .filter-tab.active { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); color: white; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item active"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1 class="page-title">❓ مراجعة الأسئلة</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="location.href='../add-question.html'">➕ سؤال جديد</button>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterQuestions('pending', this)">⏳ بانتظار المراجعة</button>
+                    <button class="filter-tab" onclick="filterQuestions('active', this)">✅ تمت الموافقة</button>
+                    <button class="filter-tab" onclick="filterQuestions('rejected', this)">❌ مرفوضة</button>
+                    <button class="filter-tab" onclick="filterQuestions('all', this)">الكل</button>
+                </div>
+
+                <!-- Questions List -->
+                <div id="questionsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⏳</div>
+                        <p>جاري تحميل الأسئلة...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Question Detail Modal -->
+    <div class="modal-overlay" id="questionModal">
+        <div class="modal-content" style="width: 700px; max-width: 95%;">
+            <h3>🔍 تفاصيل السؤال</h3>
+            <div id="questionDetail"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="App.Modal.close('questionModal')">إغلاق</button>
+                <button class="btn btn-danger" id="rejectBtn" onclick="rejectCurrent()">❌ رفض</button>
+                <button class="btn btn-success" id="approveBtn" onclick="approveCurrent()">✅ موافقة</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+
+    <script>
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
+        }
+
+        let allQuestions = [];
+        let currentFilter = 'pending';
+        let currentQuestionId = null;
+
+        async function loadQuestions() {
+            App.Loading.show('جاري تحميل الأسئلة...');
+            try {
+                const questions = await fetchQuestions({ status: currentFilter === 'all' ? null : currentFilter });
+                allQuestions = questions;
+                renderQuestions(questions);
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        function renderQuestions(questions) {
+            const container = document.getElementById('questionsList');
+
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">${currentFilter === 'pending' ? '✅' : '❓'}</div>
+                        <p>${currentFilter === 'pending' ? 'لا توجد أسئلة بانتظار المراجعة' : 'لا توجد أسئلة'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = questions.map(q => {
+                const statusClass = q.status === 'active' ? 'approved' : q.status === 'rejected' ? 'rejected' : '';
+                const typeText = q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : q.type === 'essay' ? 'مقالي' : 'ملء فراغ';
+
+                let optionsHtml = '';
+                if (q.type === 'mcq' && q.options) {
+                    try {
+                        const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                        optionsHtml = `<div class="options-list">${opts.map((opt, i) => 
+                            `<div class="option-item ${i === q.correct_answer ? 'correct' : ''}">${String.fromCharCode(65 + i)}. ${App.sanitizeHtml(opt)}</div>`
+                        ).join('')}</div>`;
+                    } catch (e) {}
+                }
+
+                return `
+                    <div class="question-card ${statusClass}">
+                        <div class="question-header">
+                            <div class="question-meta">
+                                <span>🏷️ ${typeText}</span>
+                                <span>📚 ${q.subject_name || 'مادة غير محددة'}</span>
+                                <span>👨‍🏫 ${q.teacher_name || 'غير معروف'}</span>
+                                <span>📅 ${App.DateTime.dateOnly(q.created_at)}</span>
+                            </div>
+                            <span class="badge badge-${q.status === 'active' ? 'success' : q.status === 'rejected' ? 'danger' : 'warning'}">
+                                ${q.status === 'active' ? '✅ تمت الموافقة' : q.status === 'rejected' ? '❌ مرفوض' : '⏳ بانتظار المراجعة'}
+                            </span>
+                        </div>
+                        <div class="question-text">${App.sanitizeHtml(q.question_text || '')}</div>
+                        ${optionsHtml}
+                        <div class="question-actions">
+                            <button class="btn btn-sm btn-ghost" onclick="viewQuestion(${q.id})">🔍 عرض التفاصيل</button>
+                            ${q.status === 'pending' ? `
+                                <button class="btn btn-sm btn-success" onclick="approveQuestion(${q.id})">✅ موافقة</button>
+                                <button class="btn btn-sm btn-danger" onclick="rejectQuestion(${q.id})">❌ رفض</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterQuestions(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadQuestions();
+        }
+
+        async function viewQuestion(id) {
+            const q = allQuestions.find(q => q.id === id);
+            if (!q) return;
+            currentQuestionId = id;
+
+            const typeText = q.type === 'mcq' ? 'اختيار من متعدد' : q.type === 'true_false' ? 'صح/خطأ' : q.type === 'essay' ? 'مقالي' : 'ملء فراغ';
+
+            let optionsHtml = '';
+            if (q.type === 'mcq' && q.options) {
+                try {
+                    const opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                    optionsHtml = `<div class="options-list" style="margin: 16px 0;">${opts.map((opt, i) => 
+                        `<div class="option-item ${i === q.correct_answer ? 'correct' : ''}" style="padding: 12px;">${String.fromCharCode(65 + i)}. ${App.sanitizeHtml(opt)}</div>`
+                    ).join('')}</div>`;
+                } catch (e) {}
+            }
+
+            document.getElementById('questionDetail').innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <span class="badge badge-info">${typeText}</span>
+                    <span class="badge badge-primary">${q.subject_name || 'مادة غير محددة'}</span>
+                </div>
+                <div style="font-size: 1.125rem; font-weight: 700; margin-bottom: 16px; line-height: 1.8;">
+                    ${App.sanitizeHtml(q.question_text || '')}
+                </div>
+                ${optionsHtml}
+                <div style="background: var(--bg-body); padding: 16px; border-radius: var(--radius-md); margin-top: 16px;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">📝 تفاصيل إضافية:</div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                        <div>النقاط: ${q.points || 1}</div>
+                        <div>المعلم: ${q.teacher_name || 'غير معروف'}</div>
+                        <div>تاريخ الإنشاء: ${App.DateTime.format(q.created_at)}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('approveBtn').style.display = q.status === 'pending' ? 'inline-flex' : 'none';
+            document.getElementById('rejectBtn').style.display = q.status === 'pending' ? 'inline-flex' : 'none';
+
+            App.Modal.open('questionModal');
+        }
+
+        async function approveCurrent() {
+            if (currentQuestionId) await approveQuestion(currentQuestionId);
+            App.Modal.close('questionModal');
+        }
+
+        async function rejectCurrent() {
+            if (currentQuestionId) await rejectQuestion(currentQuestionId);
+            App.Modal.close('questionModal');
+        }
+
+        async function approveQuestion(id) {
+            if (!await App.confirm('هل أنت متأكد من الموافقة على هذا السؤال؟')) return;
+            App.Loading.show('جاري الموافقة...');
+            try {
+                await sb.from(TABLES.questions).update({ status: 'active' }).eq('id', id);
+                App.Toast.success('تمت الموافقة على السؤال');
+                loadQuestions();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        async function rejectQuestion(id) {
+            if (!await App.confirm('هل أنت متأكد من رفض هذا السؤال؟')) return;
+            App.Loading.show('جاري الرفض...');
+            try {
+                await sb.from(TABLES.questions).update({ status: 'rejected' }).eq('id', id);
+                App.Toast.success('تم رفض السؤال');
+                loadQuestions();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        loadQuestions();
+    </script>
+</body>
+</html>

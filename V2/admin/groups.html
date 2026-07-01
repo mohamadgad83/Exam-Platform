@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المجموعات - منصة الاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <style>
+        .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .group-card { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; transition: var(--transition); }
+        .group-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+        .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .group-name { font-size: 1.125rem; font-weight: 700; color: var(--text-main); }
+        .group-teacher { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 12px; }
+        .group-stats { display: flex; gap: 16px; margin-bottom: 16px; }
+        .group-stat { text-align: center; }
+        .group-stat-value { font-size: 1.25rem; font-weight: 800; color: var(--primary-600); }
+        .group-stat-label { font-size: 0.75rem; color: var(--text-muted); }
+        .members-preview { display: flex; margin-bottom: 16px; }
+        .member-avatar-mini { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; border: 2px solid var(--bg-surface); margin-left: -8px; }
+        .member-avatar-mini:first-child { margin-left: 0; }
+        .member-count { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; color: var(--text-muted); border: 2px solid var(--bg-surface); margin-left: -8px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">📚</div>
+                <span class="brand-text">منصة الاختبارات</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>لوحة التحكم</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span><span>المستخدمين</span></a>
+                <a href="classes.html" class="nav-item"><span class="nav-icon">🏫</span><span>الصفوف</span></a>
+                <a href="exams.html" class="nav-item"><span class="nav-icon">📝</span><span>الامتحانات</span></a>
+                <a href="groups.html" class="nav-item active"><span class="nav-icon">👥</span><span>المجموعات</span></a>
+                <a href="questions.html" class="nav-item"><span class="nav-icon">❓</span><span>الأسئلة</span></a>
+                <a href="reports.html" class="nav-item"><span class="nav-icon">📈</span><span>التقارير</span></a>
+                <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span>الإعدادات</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="nav-item" onclick="logout()" style="color: var(--danger);"><span class="nav-icon">🚪</span><span>تسجيل الخروج</span></button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1 class="page-title">👥 إدارة المجموعات</h1>
+                <div class="user-menu">
+                    <button class="btn btn-primary" onclick="openGroupModal()">➕ مجموعة جديدة</button>
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <div class="filter-bar" style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div class="search-box" style="flex: 1; position: relative;">
+                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">🔍</span>
+                        <input type="text" class="form-input" id="searchInput" placeholder="ابحث باسم المجموعة..." oninput="debounceSearch()" style="padding-left: 40px;">
+                    </div>
+                    <button class="btn btn-secondary" onclick="exportGroups()">📥 تصدير</button>
+                </div>
+
+                <div class="groups-grid" id="groupsGrid">
+                    <div class="group-card skeleton" style="height: 220px;"></div>
+                    <div class="group-card skeleton" style="height: 220px;"></div>
+                    <div class="group-card skeleton" style="height: 220px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Group Modal -->
+    <div class="modal-overlay" id="groupModal">
+        <div class="modal-content">
+            <h3 id="groupModalTitle">➕ مجموعة جديدة</h3>
+            <form class="modal-form" id="groupForm" onsubmit="saveGroup(event)">
+                <input type="hidden" id="groupId">
+                <div class="form-group">
+                    <label class="form-label">اسم المجموعة</label>
+                    <input type="text" class="form-input" id="groupName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">المعلم</label>
+                    <select class="form-select" id="groupTeacher" required>
+                        <option value="">-- اختر المعلم --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الصف</label>
+                    <select class="form-select" id="groupClass">
+                        <option value="">-- اختر الصف --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الوصف</label>
+                    <input type="text" class="form-input" id="groupDesc" placeholder="وصف اختياري">
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="App.Modal.close('groupModal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Members Modal -->
+    <div class="modal-overlay" id="membersModal">
+        <div class="modal-content" style="width: 600px;">
+            <h3>👥 أعضاء المجموعة</h3>
+            <div id="membersList" style="max-height: 400px; overflow-y: auto;"></div>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="App.Modal.close('membersModal')">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../shared/supabase-client.js"></script>
+    <script src="../shared/app.js"></script>
+
+    <script>
+        const currentUser = getUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '../login.html';
+        }
+
+        let allGroups = [];
+        let allTeachers = [];
+        let allStudents = [];
+
+        async function loadGroups() {
+            App.Loading.show('جاري التحميل...');
+            try {
+                const { data: groups, error } = await sb.from(TABLES.groups).select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                allGroups = groups || [];
+                renderGroups(groups || []);
+            } catch (error) {
+                console.error('Error:', error);
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        async function renderGroups(groups) {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = groups.filter(g => !search || g.name?.toLowerCase().includes(search));
+
+            const grid = document.getElementById('groupsGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">👥</div>
+                        <p>لا توجد مجموعات</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Get members count for each group
+            const { data: members } = await sb.from(TABLES.group_members).select('group_id');
+            const memberCounts = {};
+            members?.forEach(m => { memberCounts[m.group_id] = (memberCounts[m.group_id] || 0) + 1; });
+
+            // Get teachers
+            const { data: teachers } = await sb.from(TABLES.users).select('id, name').eq('role', 'teacher');
+            const teacherMap = {};
+            teachers?.forEach(t => { teacherMap[t.id] = t.name; });
+
+            grid.innerHTML = filtered.map(g => {
+                const count = memberCounts[g.id] || 0;
+                const teacherName = teacherMap[g.teacher_id] || 'غير معروف';
+
+                return `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <div class="group-name">${App.sanitizeHtml(g.name)}</div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn btn-sm btn-ghost" onclick="editGroup(${g.id})">✏️</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteGroup(${g.id})">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="group-teacher">👨‍🏫 ${teacherName}</div>
+                        <div class="group-stats">
+                            <div class="group-stat">
+                                <div class="group-stat-value">${count}</div>
+                                <div class="group-stat-label">عضو</div>
+                            </div>
+                            <div class="group-stat">
+                                <div class="group-stat-value">${g.exam_count || 0}</div>
+                                <div class="group-stat-label">امتحان</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-secondary" onclick="viewMembers(${g.id})">👥 الأعضاء</button>
+                            <button class="btn btn-sm btn-outline" onclick="addMembers(${g.id})">➕ إضافة أعضاء</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const debounceSearch = App.debounce(() => renderGroups(allGroups), 300);
+
+        async function loadTeachers() {
+            const { data: teachers } = await sb.from(TABLES.users).select('id, name').eq('role', 'teacher');
+            allTeachers = teachers || [];
+            const select = document.getElementById('groupTeacher');
+            select.innerHTML = '<option value="">-- اختر المعلم --</option>' + 
+                (teachers || []).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        }
+
+        async function loadClasses() {
+            const classes = await fetchClasses();
+            const select = document.getElementById('groupClass');
+            select.innerHTML = '<option value="">-- اختر الصف --</option>' + 
+                classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function openGroupModal() {
+            document.getElementById('groupForm').reset();
+            document.getElementById('groupId').value = '';
+            document.getElementById('groupModalTitle').textContent = '➕ مجموعة جديدة';
+            App.Modal.open('groupModal');
+        }
+
+        async function editGroup(id) {
+            const group = allGroups.find(g => g.id === id);
+            if (!group) return;
+            document.getElementById('groupId').value = group.id;
+            document.getElementById('groupName').value = group.name || '';
+            document.getElementById('groupTeacher').value = group.teacher_id || '';
+            document.getElementById('groupClass').value = group.class_id || '';
+            document.getElementById('groupDesc').value = group.description || '';
+            document.getElementById('groupModalTitle').textContent = '✏️ تعديل مجموعة';
+            App.Modal.open('groupModal');
+        }
+
+        async function saveGroup(e) {
+            e.preventDefault();
+            App.Loading.show('جاري الحفظ...');
+            try {
+                const id = document.getElementById('groupId').value;
+                const data = {
+                    name: document.getElementById('groupName').value,
+                    teacher_id: document.getElementById('groupTeacher').value,
+                    class_id: document.getElementById('groupClass').value || null,
+                    description: document.getElementById('groupDesc').value
+                };
+                if (id) {
+                    await sb.from(TABLES.groups).update(data).eq('id', id);
+                    App.Toast.success('تم التحديث');
+                } else {
+                    await sb.from(TABLES.groups).insert(data);
+                    App.Toast.success('تم الإضافة');
+                }
+                App.Modal.close('groupModal');
+                loadGroups();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        async function deleteGroup(id) {
+            if (!await App.confirm('هل أنت متأكد من حذف هذه المجموعة؟')) return;
+            App.Loading.show('جاري الحذف...');
+            try {
+                await sb.from(TABLES.groups).delete().eq('id', id);
+                App.Toast.success('تم الحذف');
+                loadGroups();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        async function viewMembers(groupId) {
+            App.Loading.show('جاري التحميل...');
+            try {
+                const { data: members } = await sb.from(TABLES.group_members)
+                    .select('student_id')
+                    .eq('group_id', groupId);
+
+                const studentIds = members?.map(m => m.student_id) || [];
+                if (studentIds.length === 0) {
+                    document.getElementById('membersList').innerHTML = '<div class="empty-state"><p>لا يوجد أعضاء</p></div>';
+                    App.Modal.open('membersModal');
+                    App.Loading.hide();
+                    return;
+                }
+
+                const { data: students } = await sb.from(TABLES.users)
+                    .select('id, name, email, phone')
+                    .in('id', studentIds);
+
+                document.getElementById('membersList').innerHTML = (students || []).map(s => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border-light);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="user-avatar-sm">${s.name?.charAt(0) || '?'}</div>
+                            <div>
+                                <div style="font-weight: 600;">${App.sanitizeHtml(s.name)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${s.email || s.phone || ''}</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="removeMember(${groupId}, ${s.id})">🗑️</button>
+                    </div>
+                `).join('');
+
+                App.Modal.open('membersModal');
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+            App.Loading.hide();
+        }
+
+        async function removeMember(groupId, studentId) {
+            if (!await App.confirm('هل أنت متأكد من إزالة هذا العضو؟')) return;
+            try {
+                await sb.from(TABLES.group_members).delete().eq('group_id', groupId).eq('student_id', studentId);
+                App.Toast.success('تم الإزالة');
+                viewMembers(groupId);
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+        }
+
+        async function addMembers(groupId) {
+            const { data: students } = await sb.from(TABLES.users)
+                .select('id, name, class_id')
+                .eq('role', 'student')
+                .eq('status', 'active');
+
+            if (!students || students.length === 0) {
+                App.Toast.warning('لا يوجد طلاب متاحين');
+                return;
+            }
+
+            // Simple prompt for now - can be enhanced with a multi-select modal
+            const studentNames = students.map((s, i) => `${i + 1}. ${s.name}`).join('\n');
+            const choice = prompt(`اختر رقم الطالب لإضافته:\n${studentNames}`);
+            if (!choice) return;
+
+            const idx = parseInt(choice) - 1;
+            if (idx < 0 || idx >= students.length) {
+                App.Toast.error('رقم غير صحيح');
+                return;
+            }
+
+            try {
+                await sb.from(TABLES.group_members).insert({
+                    group_id: groupId,
+                    student_id: students[idx].id
+                });
+                App.Toast.success('تم إضافة العضو');
+                loadGroups();
+            } catch (error) {
+                App.Toast.error('حدث خطأ');
+            }
+        }
+
+        function exportGroups() {
+            const data = allGroups.map(g => ({
+                الاسم: g.name,
+                المعلم: g.teacher_id,
+                الوصف: g.description
+            }));
+            App.exportCSV(data, 'groups_export');
+        }
+
+        loadTeachers();
+        loadClasses();
+        loadGroups();
+    </script>
+</body>
+</html>
