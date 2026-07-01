@@ -1,34 +1,56 @@
 /**
  * ============================================
- * Supabase Client & Auth Module - MERGED V1+V2
- * Exam Platform - Uses V1's REAL database credentials
+ * Supabase Client & Auth Module - FIXED V2
+ * Exam Platform - Secure & Working
  * ============================================
  */
 
-// ==================== V1 REAL DATABASE CREDENTIALS ====================
-const SUPABASE_URL = 'https://cuchwughgvhiwgaoodib.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1Y2h3dWdoZ3ZoaXdnYW9vZGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDUzMTUsImV4cCI6MjA5NjUyMTMxNX0.vM_wo2q8QYzdSa93wv4lAXv2q-zR1_5VXk2yfJ9pxgQ';
+// ==================== ENVIRONMENT CONFIGURATION ====================
+const SUPABASE_CONFIG = {
+    url: 'https://cuchwughgvhiwgaoodib.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1Y2h3dWdoZ3ZoaXdnYW9vZGliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDUzMTUsImV4cCI6MjA5NjUyMTMxNX0.vM_wo2q8QYzdSa93wv4lAXv2q-zR1_5VXk2yfJ9pxgQ'
+};
 
-// Initialize Supabase client
+// ==================== SUPABASE CLIENT INITIALIZATION ====================
 let supabaseClient = null;
 
-function getSupabaseClient() {
+function initSupabase() {
+    if (typeof supabase === 'undefined') {
+        console.error('❌ Supabase library not loaded! Make sure to include:');
+        console.error('   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
+        console.error('   BEFORE this file in your HTML.');
+        return null;
+    }
+    
     if (!supabaseClient) {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true
-            }
-        });
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
+            console.log('✅ Supabase client initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize Supabase client:', error);
+            return null;
+        }
     }
     return supabaseClient;
 }
 
-// Legacy V1 client (for backward compatibility)
+function getSupabaseClient() {
+    if (!supabaseClient) {
+        return initSupabase();
+    }
+    return supabaseClient;
+}
+
+// Legacy alias
 const sb = getSupabaseClient();
 
-// ==================== TABLE NAMES (V1's correct names) ====================
+// ==================== TABLE NAMES ====================
 const TABLES = {
     users: 'exam_users',
     classes: 'exam_classes',
@@ -49,11 +71,11 @@ const TABLES = {
     notifications: 'exam_notifications'
 };
 
-// ==================== V1 AUTH (SHA-256 - works with current DB) ====================
+// ==================== AUTHENTICATION ====================
 
 function getUser() {
     try {
-        const user = localStorage.getItem('user');
+        const user = localStorage.getItem('exam_user');
         return user ? JSON.parse(user) : null;
     } catch (e) {
         console.error('Error getting user:', e);
@@ -63,16 +85,16 @@ function getUser() {
 
 function setUser(user) {
     try {
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('exam_user', JSON.stringify(user));
     } catch (e) {
         console.error('Error setting user:', e);
     }
 }
 
 function logout() {
-    localStorage.removeItem('user');
+    localStorage.removeItem('exam_user');
     localStorage.removeItem('originalUser');
-    window.location.href = '../login.html';
+    window.location.href = 'login.html';
 }
 
 async function hashPassword(password) {
@@ -84,8 +106,13 @@ async function hashPassword(password) {
 
 async function loginUser(identifier, password) {
     try {
+        const client = getSupabaseClient();
+        if (!client) {
+            return { success: false, error: 'فشل الاتصال بقاعدة البيانات' };
+        }
+        
         const hashedPassword = await hashPassword(password);
-        let query = sb.from(TABLES.users).select('*');
+        let query = client.from(TABLES.users).select('*');
 
         if (/^\d+$/.test(identifier)) {
             query = query.eq('phone', identifier);
@@ -96,7 +123,7 @@ async function loginUser(identifier, password) {
         const { data, error } = await query.single();
 
         if (error || !data) {
-            const { data: emailData, error: emailError } = await sb
+            const { data: emailData, error: emailError } = await client
                 .from(TABLES.users).select('*').eq('email', identifier).single();
             if (emailError || !emailData) {
                 return { success: false, error: 'المستخدم غير موجود' };
@@ -140,6 +167,72 @@ async function loginUser(identifier, password) {
     }
 }
 
+// ==================== ADMIN DEFAULT ACCOUNT ====================
+// Creates a default admin account if no admin exists
+async function createDefaultAdmin() {
+    try {
+        const client = getSupabaseClient();
+        if (!client) return { success: false, error: 'No database connection' };
+        
+        // Check if any admin exists
+        const { data: existingAdmins, error: checkError } = await client
+            .from(TABLES.users)
+            .select('id')
+            .eq('role', 'admin')
+            .limit(1);
+        
+        if (checkError) {
+            console.error('Error checking admin:', checkError);
+            return { success: false, error: checkError.message };
+        }
+        
+        if (existingAdmins && existingAdmins.length > 0) {
+            console.log('✅ Admin account already exists');
+            return { success: true, message: 'Admin already exists', created: false };
+        }
+        
+        // Create default admin
+        const defaultPassword = await hashPassword('admin123');
+        const { data: newAdmin, error: insertError } = await client
+            .from(TABLES.users)
+            .insert({
+                name: 'مدير النظام',
+                username: 'admin',
+                email: 'admin@examplatform.com',
+                password_hash: defaultPassword,
+                role: 'admin',
+                status: 'active',
+                phone: '01000000000'
+            })
+            .select()
+            .single();
+        
+        if (insertError) {
+            console.error('Error creating admin:', insertError);
+            return { success: false, error: insertError.message };
+        }
+        
+        console.log('✅ Default admin created successfully');
+        console.log('   Username: admin');
+        console.log('   Password: admin123');
+        console.log('   Email: admin@examplatform.com');
+        
+        return { 
+            success: true, 
+            message: 'Admin created', 
+            created: true,
+            credentials: {
+                username: 'admin',
+                password: 'admin123',
+                email: 'admin@examplatform.com'
+            }
+        };
+    } catch (error) {
+        console.error('Error creating default admin:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ==================== ADMIN SUPER-POWERS ====================
 
 function getOriginalUser() {
@@ -166,7 +259,10 @@ function getEffectiveUser() {
 
 async function impersonateUser(userId) {
     if (!isAdmin()) return { success: false, error: 'غير مصرح' };
-    const { data, error } = await sb.from(TABLES.users).select('*').eq('id', userId).single();
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'No database connection' };
+    
+    const { data, error } = await client.from(TABLES.users).select('*').eq('id', userId).single();
     if (error || !data) return { success: false, error: 'المستخدم غير موجود' };
     const originalUser = getUser();
     localStorage.setItem('originalUser', JSON.stringify(originalUser));
@@ -218,25 +314,30 @@ const examAuth = {
 // ==================== DATABASE MODULE ====================
 const examDB = {
     client() { return getSupabaseClient(); },
-    from(table) { return getSupabaseClient().from(table); },
-    users() { return getSupabaseClient().from(TABLES.users); },
-    classes() { return getSupabaseClient().from(TABLES.classes); },
-    subjects() { return getSupabaseClient().from(TABLES.subjects); },
-    exams() { return getSupabaseClient().from(TABLES.exams); },
-    questions() { return getSupabaseClient().from(TABLES.questions); },
-    examQuestions() { return getSupabaseClient().from(TABLES.exam_questions); },
-    groups() { return getSupabaseClient().from(TABLES.groups); },
-    groupMembers() { return getSupabaseClient().from(TABLES.group_members); },
-    attempts() { return getSupabaseClient().from(TABLES.attempts); },
-    notifications() { return getSupabaseClient().from(TABLES.notifications); },
+    from(table) { 
+        const client = getSupabaseClient();
+        return client ? client.from(table) : null; 
+    },
+    users() { return this.from(TABLES.users); },
+    classes() { return this.from(TABLES.classes); },
+    subjects() { return this.from(TABLES.subjects); },
+    exams() { return this.from(TABLES.exams); },
+    questions() { return this.from(TABLES.questions); },
+    examQuestions() { return this.from(TABLES.exam_questions); },
+    groups() { return this.from(TABLES.groups); },
+    groupMembers() { return this.from(TABLES.group_members); },
+    attempts() { return this.from(TABLES.attempts); },
+    notifications() { return this.from(TABLES.notifications); },
     rpc(functionName, params = {}) {
-        return getSupabaseClient().rpc(functionName, params);
+        const client = getSupabaseClient();
+        return client ? client.rpc(functionName, params) : null;
     },
     subscribe(channel, callback) {
-        return getSupabaseClient()
+        const client = getSupabaseClient();
+        return client ? client
             .channel(channel)
             .on('postgres_changes', { event: '*', schema: 'public' }, callback)
-            .subscribe();
+            .subscribe() : null;
     }
 };
 
@@ -244,7 +345,9 @@ const examDB = {
 
 async function fetchClasses() {
     try {
-        const { data, error } = await sb.from(TABLES.classes).select('*').order('name');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        const { data, error } = await client.from(TABLES.classes).select('*').order('name');
         if (error) { console.error('Error:', error); return []; }
         return data || [];
     } catch (error) { console.error('Error:', error); return []; }
@@ -252,7 +355,9 @@ async function fetchClasses() {
 
 async function fetchSubjects() {
     try {
-        const { data, error } = await sb.from(TABLES.subjects).select('*').order('name');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        const { data, error } = await client.from(TABLES.subjects).select('*').order('name');
         if (error) { console.error('Error:', error); return []; }
         return data || [];
     } catch (error) { console.error('Error:', error); return []; }
@@ -260,7 +365,9 @@ async function fetchSubjects() {
 
 async function fetchUsers(filters = {}) {
     try {
-        let query = sb.from(TABLES.users).select('*');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        let query = client.from(TABLES.users).select('*');
         if (filters.role && filters.role !== 'all') query = query.eq('role', filters.role);
         if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status);
         const { data, error } = await query.order('created_at', { ascending: false });
@@ -271,7 +378,9 @@ async function fetchUsers(filters = {}) {
 
 async function fetchExams(filters = {}) {
     try {
-        let query = sb.from(TABLES.exams).select('*');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        let query = client.from(TABLES.exams).select('*');
         if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status);
         if (filters.classId && filters.classId !== 'all') query = query.eq('class_id', filters.classId);
         if (filters.subjectId && filters.subjectId !== 'all') query = query.eq('subject_id', filters.subjectId);
@@ -284,7 +393,9 @@ async function fetchExams(filters = {}) {
 
 async function fetchQuestions(filters = {}) {
     try {
-        let query = sb.from(TABLES.questions).select('*');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        let query = client.from(TABLES.questions).select('*');
         if (filters.status && filters.status !== 'all') query = query.eq('status', filters.status);
         if (filters.type && filters.type !== 'all') query = query.eq('type', filters.type);
         if (filters.teacherId) query = query.eq('teacher_id', filters.teacherId);
@@ -298,7 +409,9 @@ async function fetchQuestions(filters = {}) {
 
 async function fetchGroups(filters = {}) {
     try {
-        let query = sb.from(TABLES.groups).select('*');
+        const client = getSupabaseClient();
+        if (!client) return [];
+        let query = client.from(TABLES.groups).select('*');
         if (filters.teacherId) query = query.eq('teacher_id', filters.teacherId);
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) { console.error('Error:', error); return []; }
@@ -308,7 +421,9 @@ async function fetchGroups(filters = {}) {
 
 async function fetchGroupMembers(groupId) {
     try {
-        const { data, error } = await sb.from(TABLES.group_members).select('*').eq('group_id', groupId);
+        const client = getSupabaseClient();
+        if (!client) return [];
+        const { data, error } = await client.from(TABLES.group_members).select('*').eq('group_id', groupId);
         if (error) { console.error('Error:', error); return []; }
         return data || [];
     } catch (error) { console.error('Error:', error); return []; }
@@ -316,11 +431,14 @@ async function fetchGroupMembers(groupId) {
 
 async function fetchAdminStats() {
     try {
-        const { data: users } = await sb.from(TABLES.users).select('role');
-        const { data: exams } = await sb.from(TABLES.exams).select('status');
-        const { data: questions } = await sb.from(TABLES.questions).select('status').eq('status', 'pending');
-        const { data: groups } = await sb.from(TABLES.groups).select('id');
-        const { data: attempts } = await sb.from(TABLES.attempts).select('id');
+        const client = getSupabaseClient();
+        if (!client) return { totalUsers: 0, teachers: 0, students: 0, totalExams: 0, pendingQuestions: 0, totalGroups: 0, totalAttempts: 0 };
+        
+        const { data: users } = await client.from(TABLES.users).select('role');
+        const { data: exams } = await client.from(TABLES.exams).select('status');
+        const { data: questions } = await client.from(TABLES.questions).select('status').eq('status', 'pending');
+        const { data: groups } = await client.from(TABLES.groups).select('id');
+        const { data: attempts } = await client.from(TABLES.attempts).select('id');
 
         return {
             totalUsers: users?.length || 0,
@@ -338,9 +456,11 @@ async function fetchAdminStats() {
 
 async function fetchTeacherStats(teacherId) {
     try {
-        const { data: exams } = await sb.from(TABLES.exams).select('id').eq('teacher_id', teacherId);
-        const { data: questions } = await sb.from(TABLES.questions).select('id').eq('teacher_id', teacherId);
-        const { data: groups } = await sb.from(TABLES.groups).select('id').eq('teacher_id', teacherId);
+        const client = getSupabaseClient();
+        if (!client) return { totalExams: 0, totalQuestions: 0, totalGroups: 0 };
+        const { data: exams } = await client.from(TABLES.exams).select('id').eq('teacher_id', teacherId);
+        const { data: questions } = await client.from(TABLES.questions).select('id').eq('teacher_id', teacherId);
+        const { data: groups } = await client.from(TABLES.groups).select('id').eq('teacher_id', teacherId);
         return {
             totalExams: exams?.length || 0,
             totalQuestions: questions?.length || 0,
@@ -353,8 +473,10 @@ async function fetchTeacherStats(teacherId) {
 
 async function fetchStudentStats(studentId) {
     try {
-        const { data: attempts } = await sb.from(TABLES.attempts).select('score, total_points').eq('student_id', studentId);
-        const { data: groups } = await sb.from(TABLES.group_members).select('id').eq('student_id', studentId);
+        const client = getSupabaseClient();
+        if (!client) return { totalAttempts: 0, totalGroups: 0, avgScore: 0 };
+        const { data: attempts } = await client.from(TABLES.attempts).select('score, total_points').eq('student_id', studentId);
+        const { data: groups } = await client.from(TABLES.group_members).select('id').eq('student_id', studentId);
         const totalAttempts = attempts?.length || 0;
         const avgScore = totalAttempts > 0
             ? Math.round(attempts.reduce((sum, a) => sum + (a.score / a.total_points * 100), 0) / totalAttempts)
@@ -368,11 +490,13 @@ async function fetchStudentStats(studentId) {
 // ==================== EXPORTS ====================
 window.sb = sb;
 window.getSupabaseClient = getSupabaseClient;
+window.initSupabase = initSupabase;
 window.getUser = getUser;
 window.setUser = setUser;
 window.logout = logout;
 window.hashPassword = hashPassword;
 window.loginUser = loginUser;
+window.createDefaultAdmin = createDefaultAdmin;
 window.isAdmin = isAdmin;
 window.isAdminViewingAs = isAdminViewingAs;
 window.getEffectiveUser = getEffectiveUser;
@@ -392,4 +516,4 @@ window.fetchAdminStats = fetchAdminStats;
 window.fetchTeacherStats = fetchTeacherStats;
 window.fetchStudentStats = fetchStudentStats;
 
-console.log('✅ supabase-client.js (Merged V1+V2) loaded successfully');
+console.log('✅ supabase-client.js (FIXED V2) loaded successfully');

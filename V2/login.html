@@ -1,612 +1,362 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الدخول — منصة الاختبارات</title>
-  <link rel="stylesheet" href="shared/styles.css">
-  <style>
-    /* Login Specific Styles */
-    .login-page {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: var(--bg-body);
-    }
-
-    .login-hero {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 48px;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 480px;
-      text-align: center;
-    }
-
-    .hero-logo {
-      width: 80px;
-      height: 80px;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
-      margin: 0 auto 32px;
-      border: 1px solid rgba(255,255,255,0.3);
-    }
-
-    .hero-title {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 16px;
-      line-height: 1.2;
-    }
-
-    .hero-desc {
-      font-size: 1.125rem;
-      opacity: 0.9;
-      line-height: 1.7;
-      margin-bottom: 40px;
-    }
-
-    .hero-features {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      text-align: right;
-    }
-
-    .hero-feature {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(255,255,255,0.15);
-      padding: 16px 20px;
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .hero-feature-icon {
-      font-size: 1.5rem;
-    }
-
-    .hero-feature-text {
-      font-weight: 600;
-    }
-
-    /* Demo Access Section */
-    .demo-section {
-      margin-top: 32px;
-      padding-top: 32px;
-      border-top: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .demo-title {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-
-    .demo-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .demo-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.15);
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
-    }
-
-    .demo-btn:hover {
-      background: rgba(255,255,255,0.25);
-      transform: translateY(-2px);
-    }
-
-    .demo-btn .role-badge {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: rgba(255,255,255,0.2);
-    }
-
-    /* Login Form Side */
-    .login-form-side {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 48px;
-    }
-
-    .login-container {
-      width: 100%;
-      max-width: 420px;
-    }
-
-    .login-header {
-      margin-bottom: 32px;
-      text-align: center;
-    }
-
-    .login-header h1 {
-      font-size: 1.875rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: var(--text-main);
-    }
-
-    .login-header p {
-      color: var(--text-muted);
-    }
-
-    .login-tabs {
-      display: flex;
-      background: var(--bg-body);
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 28px;
-      border: 1px solid var(--border-color);
-    }
-
-    .login-tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 0.875rem;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      transition: all 0.2s ease;
-    }
-
-    .login-tab.active {
-      background: var(--bg-surface);
-      color: var(--primary-600);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .login-form {
-      display: none;
-    }
-
-    .login-form.active {
-      display: block;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .form-options {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      font-size: 0.875rem;
-    }
-
-    .remember-me {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
-
-    .remember-me input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary-600);
-    }
-
-    .forgot-link {
-      color: var(--primary-600);
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .forgot-link:hover {
-      text-decoration: underline;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      margin-bottom: 24px;
-    }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-      color: var(--text-muted);
-      font-size: 0.875rem;
-    }
-
-    .divider::before,
-    .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border-color);
-    }
-
-    .social-login {
-      display: flex;
-      gap: 12px;
-    }
-
-    .social-btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .social-btn:hover {
-      background: var(--bg-body);
-      border-color: var(--primary-500);
-      color: var(--primary-600);
-    }
-
-    .register-link {
-      text-align: center;
-      margin-top: 24px;
-      color: var(--text-secondary);
-      font-size: 0.9375rem;
-    }
-
-    .register-link a {
-      color: var(--primary-600);
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    /* Theme Toggle */
-    .theme-toggle {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      box-shadow: var(--shadow-md);
-      z-index: 100;
-    }
-
-    @media (max-width: 1024px) {
-      .login-page {
-        grid-template-columns: 1fr;
-      }
-      .login-hero {
-        display: none;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول — منصة الاختبارات</title>
+    <link rel="stylesheet" href="shared/styles.css">
+    <style>
+        /* أنماط إضافية لصفحة تسجيل الدخول */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            color: #666;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .login-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .admin-info {
+            background: #f0f0ff;
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .admin-info h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-  <button class="theme-toggle" onclick="toggleTheme()" title="تبديل الوضع">🌓</button>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>📚 منصة الاختبارات الذكية</h1>
+                <p>سجل الدخول إلى حسابك</p>
+            </div>
+            
+            <div id="errorMsg" class="error-message"></div>
+            <div id="successMsg" class="success-message"></div>
+            
+            <form id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label for="identifier">البريد الإلكتروني / اسم المستخدم / رقم الهاتف</label>
+                    <input type="text" id="identifier" name="identifier" required 
+                           placeholder="أدخل بريدك أو اسم المستخدم">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">كلمة المرور</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="أدخل كلمة المرور">
+                </div>
+                
+                <button type="submit" class="btn-login" id="loginBtn">
+                    تسجيل الدخول
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>ليس لديك حساب؟ <a href="register.html">سجل الآن</a></p>
+                <p><a href="forgot-password.html">نسيت كلمة المرور؟</a></p>
+            </div>
+            
+            <!-- معلومات الأدمن الافتراضي -->
+            <div class="admin-info" id="adminInfo" style="display: none;">
+                <h4>🔐 معلومات الأدمن الافتراضي</h4>
+                <p><strong>اسم المستخدم:</strong> admin</p>
+                <p><strong>كلمة المرور:</strong> admin123</p>
+                <p><strong>البريد:</strong> admin@examplatform.com</p>
+                <button onclick="createAdminAndShow()" style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    إنشاء حساب أدمن افتراضي
+                </button>
+            </div>
+        </div>
+    </div>
 
-  <div class="login-page">
-    <!-- Hero Side -->
-    <div class="login-hero">
-      <div class="hero-content">
-        <div class="hero-logo">📚</div>
-        <h2 class="hero-title">منصة الاختبارات الذكية</h2>
-        <p class="hero-desc">
-          نظام متكامل لإدارة الاختبارات الإلكترونية مع أمان متقدم، 
-          تصحيح آلي، وتحليلات فورية للأداء.
-        </p>
+    <!-- ============================================ -->
+    <!-- ترتيب تحميل الملفات مهم جداً! -->
+    <!-- ============================================ -->
+    
+    <!-- 1. مكتبة Supabase (يجب أن تُحمّل أولاً) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 2. supabase-client.js (يعتمد على مكتبة Supabase) -->
+    <script src="shared/supabase-client.js"></script>
+    
+    <!-- 3. app.js (يعتمد على supabase-client.js) -->
+    <script src="shared/app.js"></script>
+    
+    <!-- 4. كود صفحة تسجيل الدخول -->
+    <script>
+        // ============================================
+        // Login Handler
+        // ============================================
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+            
+            // إخفاء الرسائل السابقة
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            // التحقق من المدخلات
+            if (!identifier || !password) {
+                showError('يرجى ملء جميع الحقول');
+                return false;
+            }
+            
+            // تفعيل حالة التحميل
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span> جاري تسجيل الدخول...';
+            
+            try {
+                // التحقق من توفر الدوال
+                if (typeof loginUser !== 'function') {
+                    throw new Error('loginUser function not available. Check script loading order.');
+                }
+                
+                const result = await loginUser(identifier, password);
+                
+                if (result.success) {
+                    // حفظ بيانات المستخدم
+                    setUser(result.user);
+                    
+                    showSuccess('تم تسجيل الدخول بنجاح! جاري التوجيه...');
+                    
+                    // التوجيه حسب الدور
+                    setTimeout(() => {
+                        switch(result.user.role) {
+                            case 'admin':
+                                window.location.href = 'admin/dashboard.html';
+                                break;
+                            case 'teacher':
+                                window.location.href = 'teacher/dashboard.html';
+                                break;
+                            case 'student':
+                                window.location.href = 'student/dashboard.html';
+                                break;
+                            default:
+                                window.location.href = 'index.html';
+                        }
+                    }, 1500);
+                } else {
+                    showError(result.error || 'فشل تسجيل الدخول');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('حدث خطأ: ' + error.message);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'تسجيل الدخول';
+            }
+            
+            return false;
+        }
         
-        <div class="hero-features">
-          <div class="hero-feature">
-            <span class="hero-feature-icon">🔒</span>
-            <span class="hero-feature-text">وضع امتحان آمن مع منع الغش الإلكتروني</span>
-          </div>
-          <div class="hero-feature">
-            <span class="hero-feature-icon">⚡</span>
-            <span class="hero-feature-text">تصحيح فوري ونتائج لحظية</span>
-          </div>
-          <div class="hero-feature">
-            <span class="hero-feature-icon">📊</span>
-            <span class="hero-feature-text">تقارير تحليلية متقدمة للطلاب والمعلمين</span>
-          </div>
-        </div>
-
-        <!-- Demo Access -->
-        <div class="demo-section">
-          <div class="demo-title">🚀 دخول سريع للمعاينة</div>
-          <div class="demo-buttons">
-            <button class="demo-btn" onclick="demoLogin('admin')">
-              <span>👨‍💼</span>
-              <span>دخول كمدير نظام</span>
-              <span class="role-badge">Admin</span>
-            </button>
-            <button class="demo-btn" onclick="demoLogin('teacher')">
-              <span>👨‍🏫</span>
-              <span>دخول كمعلم</span>
-              <span class="role-badge">Teacher</span>
-            </button>
-            <button class="demo-btn" onclick="demoLogin('student')">
-              <span>👨‍🎓</span>
-              <span>دخول كطالب</span>
-              <span class="role-badge">Student</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Form Side -->
-    <div class="login-form-side">
-      <div class="login-container">
-        <div class="login-header">
-          <h1>مرحباً بعودتك! 👋</h1>
-          <p>سجل دخولك للوصول إلى لوحة التحكم</p>
-        </div>
-
-        <div class="login-tabs">
-          <button class="login-tab active" onclick="switchTab('login')">تسجيل الدخول</button>
-          <button class="login-tab" onclick="switchTab('register')">حساب جديد</button>
-        </div>
-
-        <!-- Login Form -->
-        <form id="loginForm" class="login-form active" onsubmit="handleLogin(event)">
-          <div class="form-group">
-            <label class="form-label">البريد الإلكتروني</label>
-            <input type="email" class="form-input" placeholder="name@school.edu" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">كلمة المرور</label>
-            <input type="password" class="form-input" placeholder="••••••••" required>
-          </div>
-          
-          <div class="form-options">
-            <label class="remember-me">
-              <input type="checkbox" checked>
-              <span>تذكرني</span>
-            </label>
-            <a href="forgot-password.html" class="forgot-link">نسيت كلمة المرور؟</a>
-          </div>
-
-          <button type="submit" class="btn btn-primary submit-btn">
-            <span>🔐</span>
-            <span>تسجيل الدخول</span>
-          </button>
-
-          <div class="divider">أو</div>
-
-          <div class="social-login">
-            <button type="button" class="social-btn" onclick="socialLogin('google')">
-              <span>🔍</span> Google
-            </button>
-            <button type="button" class="social-btn" onclick="socialLogin('microsoft')">
-              <span>🪟</span> Microsoft
-            </button>
-          </div>
-        </form>
-
-        <!-- Register Form -->
-        <form id="registerForm" class="login-form" onsubmit="handleRegister(event)">
-          <div class="form-group">
-            <label class="form-label">الاسم الكامل</label>
-            <input type="text" class="form-input" placeholder="محمد أحمد" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">البريد الإلكتروني</label>
-            <input type="email" class="form-input" placeholder="name@school.edu" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">نوع الحساب</label>
-            <select class="form-input" required>
-              <option value="">اختر نوع الحساب...</option>
-              <option value="student">طالب</option>
-              <option value="teacher">معلم</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">كلمة المرور</label>
-            <input type="password" class="form-input" placeholder="8+ أحرف" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">تأكيد كلمة المرور</label>
-            <input type="password" class="form-input" placeholder="••••••••" required>
-          </div>
-
-          <button type="submit" class="btn btn-primary submit-btn">
-            <span>✨</span>
-            <span>إنشاء الحساب</span>
-          </button>
-
-          <p class="register-link">
-            بالتسجيل، أنت توافق على <a href="#">شروط الاستخدام</a>
-          </p>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <script src="shared/supabase-client.js"></script>
-  <script src="shared/app.js"></script>
-  <script>
-    // Theme Toggle
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
-      localStorage.setItem('theme', current === 'dark' ? 'light' : 'dark');
-    }
-
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-
-    // Tab Switching
-    function switchTab(tab) {
-      document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(tab + 'Form').classList.add('active');
-    }
-
-    // Demo Login
-    async function demoLogin(role) {
-      App.Loading.show('جاري تسجيل الدخول...');
-      
-      // محاكاة بيانات دخول لكل دور
-      const demoCredentials = {
-        admin: { email: 'admin@demo.com', password: 'demo123', redirect: 'admin/dashboard.html' },
-        teacher: { email: 'teacher@demo.com', password: 'demo123', redirect: 'teacher/dashboard.html' },
-        student: { email: 'student@demo.com', password: 'demo123', redirect: 'student/dashboard.html' }
-      };
-
-      const creds = demoCredentials[role];
-      
-      // في البيئة الحقيقية، استخدم:
-      // const { data, error } = await examAuth.signIn(creds.email, creds.password);
-      
-      // محاكاة للـ Demo
-      setTimeout(() => {
-        App.Loading.hide();
-        App.Storage.set('demo_role', role);
-        App.Storage.set('demo_user', {
-          id: 'demo-' + role,
-          email: creds.email,
-          role: role,
-          full_name: role === 'admin' ? 'مدير النظام' : role === 'teacher' ? 'معلم تجريبي' : 'طالب تجريبي'
-        });
-        window.location.href = creds.redirect;
-      }, 1000);
-    }
-
-    // Real Login
-    async function handleLogin(e) {
-      e.preventDefault();
-      App.Loading.show('جاري التحقق...');
-      
-      const form = e.target;
-      const email = form.querySelector('input[type="email"]').value;
-      const password = form.querySelector('input[type="password"]').value;
-
-      const { data, error } = await examAuth.signIn(email, password);
-      
-      App.Loading.hide();
-      
-      if (error) {
-        App.Toast.error(error.message || 'فشل تسجيل الدخول');
-        return;
-      }
-
-      const user = await examAuth.getUser();
-      const role = user?.role || 'student';
-      
-      // Redirect based on role
-      const redirects = {
-        admin: 'admin/dashboard.html',
-        teacher: 'teacher/dashboard.html',
-        student: 'student/dashboard.html'
-      };
-      
-      window.location.href = redirects[role] || 'student/dashboard.html';
-    }
-
-    // Register
-    async function handleRegister(e) {
-      e.preventDefault();
-      App.Loading.show('جاري إنشاء الحساب...');
-      
-      const form = e.target;
-      const inputs = form.querySelectorAll('input, select');
-      
-      const fullName = inputs[0].value;
-      const email = inputs[1].value;
-      const role = inputs[2].value;
-      const password = inputs[3].value;
-      const confirmPassword = inputs[4].value;
-
-      if (password !== confirmPassword) {
-        App.Loading.hide();
-        App.Toast.error('كلمات المرور غير متطابقة');
-        return;
-      }
-
-      const { data, error } = await examAuth.signUp(email, password, {
-        full_name: fullName,
-        role: role
-      });
-
-      App.Loading.hide();
-
-      if (error) {
-        App.Toast.error(error.message);
-        return;
-      }
-
-      App.Toast.success('تم إنشاء الحساب! تحقق من بريدك الإلكتروني.');
-      switchTab('login');
-    }
-
-    function socialLogin(provider) {
-      App.Toast.info('تسجيل الدخول بـ ' + provider + ' قريباً');
-    }
-  </script>
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            const successMsg = document.getElementById('successMsg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+        }
+        
+        // ============================================
+        // Create Default Admin
+        // ============================================
+        async function createAdminAndShow() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'جاري الإنشاء...';
+            
+            try {
+                if (typeof createDefaultAdmin !== 'function') {
+                    throw new Error('createDefaultAdmin not available');
+                }
+                
+                const result = await createDefaultAdmin();
+                
+                if (result.success) {
+                    if (result.created) {
+                        showSuccess('✅ تم إنشاء حساب الأدمن بنجاح! يمكنك تسجيل الدخول الآن.');
+                    } else {
+                        showSuccess('ℹ️ ' + result.message);
+                    }
+                } else {
+                    showError('❌ خطأ: ' + result.error);
+                }
+            } catch (error) {
+                showError('❌ خطأ: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'إنشاء حساب أدمن افتراضي';
+            }
+        }
+        
+        // ============================================
+        // Check if admin exists and show info
+        // ============================================
+        async function checkAdminStatus() {
+            try {
+                const client = getSupabaseClient();
+                if (!client) return;
+                
+                const { data, error } = await client
+                    .from('exam_users')
+                    .select('id')
+                    .eq('role', 'admin')
+                    .limit(1);
+                
+                const adminInfo = document.getElementById('adminInfo');
+                
+                if (error || !data || data.length === 0) {
+                    // لا يوجد أدمن - أظهر زر الإنشاء
+                    adminInfo.style.display = 'block';
+                }
+            } catch (e) {
+                console.log('Could not check admin status:', e);
+            }
+        }
+        
+        // تشغيل الفحص عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', checkAdminStatus);
+        
+        // ============================================
+        // Auto-fill for testing (remove in production)
+        // ============================================
+        // Uncomment the following lines for easier testing:
+        // document.getElementById('identifier').value = 'admin';
+        // document.getElementById('password').value = 'admin123';
+    </script>
 </body>
 </html>
